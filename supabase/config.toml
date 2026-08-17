@@ -1,0 +1,18 @@
+# Supabase CLI configuration.
+# Tạo để `supabase functions deploy` chạy được từ thư mục root repo
+# (trước đây thiếu config.toml nên CLI không biết project ref nào để deploy).
+project_id = "ycmuuczwnogybyklzpsa"
+
+# Edge Functions đều gọi qua supabase.functions.invoke() với JWT của user,
+# nên giữ verify_jwt mặc định = true (an toàn). Không cần --no-verify-jwt.
+[functions.parse-mt4]
+verify_jwt = true
+
+[functions.compute-deltas]
+verify_jwt = true
+
+[functions.detect-violations]
+verify_jwt = true
+
+[functions.weekly-audit]
+verify_jwt = true
