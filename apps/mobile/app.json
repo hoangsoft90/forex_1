@@ -57,14 +57,7 @@
     "buildToolsVersion": "36.0.0"
    }
   }
- ],
- [
-  "./plugins/pin-gradle-dependency",
-  {
-   "dependency": "com.google.android.gms:play-services-ads",
-   "version": "24.2.0"
-  }
- ]
+ ],["./plugins/pin-gradle-dependency",{"dependency":"com.google.android.gms:play-services-ads","version":"24.2.0"}],"expo-notifications"
 ],
     "experiments": {
       "typedRoutes": true,

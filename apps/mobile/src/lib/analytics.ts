@@ -37,3 +37,9 @@ export const EXECUTION_EVENTS = {
   WIDGET_OPENED: 'execution_widget_opened',
   SAVED: 'execution_saved',
 } as const;
+
+/** Event chuẩn cho Fast Plan (Retention Module 1) — đo AC ≤ 15 giây từ mở form đến lưu. */
+export const FAST_PLAN_EVENTS = {
+  OPENED: 'fast_plan_opened',
+  SAVED: 'fast_plan_saved',
+} as const;

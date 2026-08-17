@@ -4,11 +4,14 @@ import { StyleSheet, View } from 'react-native';
 
 import AdBanner from '@/components/ad-banner';
 import { initAdMob } from '@/lib/admob';
+import { configureNotificationHandler } from '@/lib/notification-manager';
 
 export default function MainLayout() {
   useEffect(() => {
     // Khởi tạo AdMob 1 lần (register test device) khi nhóm main mount.
     initAdMob();
+    // Notification hiển thị cả khi app foreground (Module 8).
+    configureNotificationHandler();
   }, []);
   return (
     <View style={styles.container}>
@@ -66,6 +69,14 @@ export default function MainLayout() {
           <Stack.Screen
             name="portfolio-risk"
             options={{ headerShown: true, title: 'Rủi ro danh mục' }}
+          />
+          <Stack.Screen
+            name="setup-analytics"
+            options={{ headerShown: true, title: 'Setup Analytics' }}
+          />
+          <Stack.Screen
+            name="danger-zone"
+            options={{ headerShown: true, title: 'Khu vực nguy hiểm' }}
           />
         </Stack>
       </View>

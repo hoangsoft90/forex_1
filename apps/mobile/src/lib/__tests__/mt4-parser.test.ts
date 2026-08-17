@@ -104,3 +104,143 @@ describe('parseMt4History — báo lỗi dòng không nhận diện được (kh
     expect(r.errorLines.length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * ⚠️ Retention Layer Module 0 — các bộ test dưới đây vẫn là GIẢ LẬP cho các BIẾN THỂ
+ * format (locale EU, ngày châu Âu, deal-based...) — CHƯA phải dữ liệu thật từ broker.
+ * Test pass ≠ verify. Ngưỡng 95% chỉ tính trên dữ liệu THẬT (đang chờ mẫu từ user).
+ */
+
+describe('parseMt4History — decimal separator theo locale (Module 0 hardening)', () => {
+  it('EU: phẩy là thập phân (giá 1,10050 / 2400,00), detect locale = commaDecimal', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tTime\tPrice\tCommission\tTaxes\tSwap\tProfit\tComments',
+      '10001\t2024.01.02 10:15\tbuy\t0,10\tEURUSD\t1,10050\t1,09500\t1,11000\t2024.01.02 14:30\t1,11000\t0,00\t0,00\t0,00\t100,00\t[manual]',
+      '10002\t2024.01.02 15:00\tsell\t0,20\tXAUUSD\t2400,00\t2410,00\t2390,00\t2024.01.02 18:00\t2390,00\t0,00\t0,00\t-5,00\t-50,00\t[s/l]',
+    ].join('\n');
+
+    const r = parseMt4History(text);
+    expect(r.detectedLocale).toBe('commaDecimal');
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades).toHaveLength(2);
+    expect(r.trades[0].lotSize).toBeCloseTo(0.1, 6);
+    expect(r.trades[0].openPrice).toBeCloseTo(1.1005, 6);
+    expect(r.trades[0].closePrice).toBeCloseTo(1.11, 6);
+    expect(r.trades[0].profit).toBeCloseTo(100, 6);
+    expect(r.trades[1].profit).toBeCloseTo(-50, 6);
+  });
+
+  it('EU: chấm là nghìn + phẩy thập phân (1.100,50) → 1100.5', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tTime\tPrice\tCommission\tTaxes\tSwap\tProfit\tComments',
+      '10001\t2024.01.02 10:15\tbuy\t1,00\tUS30\t35.100,50\t35.050,00\t35.200,00\t2024.01.02 14:30\t35.200,00\t0,00\t0,00\t0,00\t1.250,00\t[manual]',
+    ].join('\n');
+
+    const r = parseMt4History(text);
+    expect(r.detectedLocale).toBe('commaDecimal');
+    expect(r.trades).toHaveLength(1);
+    expect(r.trades[0].openPrice).toBeCloseTo(35100.5, 4);
+    expect(r.trades[0].closePrice).toBeCloseTo(35200, 4);
+    expect(r.trades[0].profit).toBeCloseTo(1250, 4);
+  });
+
+  it('US: phẩy là nghìn (1,100.50) → 1100.5, locale = periodDecimal', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tTime\tPrice\tCommission\tTaxes\tSwap\tProfit\tComments',
+      '10001\t2024.01.02 10:15\tbuy\t1.00\tUS30\t35,100.50\t35,050.00\t35,200.00\t2024.01.02 14:30\t35,200.00\t0.00\t0.00\t0.00\t1,250.00\t[manual]',
+    ].join('\n');
+
+    const r = parseMt4History(text);
+    expect(r.detectedLocale).toBe('periodDecimal');
+    expect(r.trades).toHaveLength(1);
+    expect(r.trades[0].openPrice).toBeCloseTo(35100.5, 4);
+    expect(r.trades[0].profit).toBeCloseTo(1250, 4);
+  });
+});
+
+describe('parseMt4History — đa format ngày giờ (Module 0 hardening)', () => {
+  it('ngày dạng dash YYYY-MM-DD', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tClose Time\tClose Price\tProfit',
+      '10001\t2024-01-02 10:15\tbuy\t0.10\tEURUSD\t1.10000\t1.09500\t1.11000\t2024-01-02 14:30\t1.11000\t100.00',
+    ].join('\n');
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades[0].openTime).toBe('2024-01-02T10:15:00Z');
+    expect(r.trades[0].closeTime).toBe('2024-01-02T14:30:00Z');
+  });
+
+  it('ngày châu Âu DD.MM.YYYY', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tClose Time\tClose Price\tProfit',
+      '10001\t02.01.2024 10:15\tbuy\t0.10\tEURUSD\t1.10000\t1.09500\t1.11000\t02.01.2024 14:30\t1.11000\t100.00',
+    ].join('\n');
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades[0].openTime).toBe('2024-01-02T10:15:00Z');
+    expect(r.trades[0].closeTime).toBe('2024-01-02T14:30:00Z');
+  });
+
+  it('ngày slash YYYY/MM/DD + có giây', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tClose Time\tClose Price\tProfit',
+      '10001\t2024/01/02 10:15:30\tbuy\t0.10\tEURUSD\t1.10000\t1.09500\t1.11000\t2024/01/02 14:30:00\t1.11000\t100.00',
+    ].join('\n');
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades[0].openTime).toBe('2024-01-02T10:15:30Z');
+  });
+});
+
+describe('parseMt4History — deal-based (Type buy/sell + Entry in/out, Module 0 hardening)', () => {
+  it('ghép in+out theo Position → 1 lệnh đóng đầy đủ (open từ in, close+profit từ out)', () => {
+    const text = [
+      'Ticket\tTime\tType\tEntry\tPosition\tVolume\tSymbol\tPrice\tS/L\tT/P\tProfit\tComment',
+      '50001\t2024.01.02 10:15\tbuy\tin\t777001\t0.10\tEURUSD\t1.10000\t1.09500\t1.11000\t\topen',
+      '50002\t2024.01.02 14:30\tbuy\tout\t777001\t0.10\tEURUSD\t1.11000\t1.09500\t1.11000\t100.00\tclose',
+    ].join('\n');
+
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades).toHaveLength(1);
+    const t = r.trades[0];
+    expect(t.direction).toBe('buy');
+    expect(t.symbol).toBe('EURUSD');
+    expect(t.openTime).toBe('2024-01-02T10:15:00Z');
+    expect(t.openPrice).toBeCloseTo(1.1, 6);
+    expect(t.closeTime).toBe('2024-01-02T14:30:00Z');
+    expect(t.closePrice).toBeCloseTo(1.11, 6);
+    expect(t.profit).toBeCloseTo(100, 6);
+    expect(t.ticket).toBe('50001');
+  });
+
+  it('in-deal chưa có out → lệnh mở (closeTime null)', () => {
+    const text = [
+      'Ticket\tTime\tType\tEntry\tPosition\tVolume\tSymbol\tPrice\tS/L\tT/P\tProfit\tComment',
+      '50003\t2024.01.03 09:00\tsell\tin\t777002\t0.20\tGBPUSD\t1.27000\t1.27500\t1.26000\t\topen',
+    ].join('\n');
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades).toHaveLength(1);
+    expect(r.trades[0].closeTime).toBeNull();
+    expect(r.trades[0].direction).toBe('sell');
+  });
+});
+
+describe('parseMt4History — skip có đếm dòng không phải lệnh (Module 0 hardening)', () => {
+  it('deposit/credit/bonus/commission → skippedNonTrade đếm đúng, không phải lỗi', () => {
+    const text = [
+      'Order\tTime\tType\tSize\tSymbol\tPrice\tS/L\tT/P\tTime\tPrice\tCommission\tTaxes\tSwap\tProfit\tComments',
+      '10001\t2024.01.02 10:15\tbuy\t0.10\tEURUSD\t1.10000\t1.09500\t1.11000\t2024.01.02 14:30\t1.11000\t0.00\t0.00\t0.00\t100.00\t[manual]',
+      '90001\t2024.01.02 09:00\tdeposit\t-\t-\t-\t-\t-\t2024.01.02 09:05\t-\t-\t-\t-\t5000.00\tdeposit',
+      '90002\t2024.01.02 09:10\tcredit\t-\t-\t-\t-\t-\t2024.01.02 09:10\t-\t-\t-\t-\t100.00\tbonus',
+      '90003\t2024.01.02 09:11\tbonus\t-\t-\t-\t-\t-\t2024.01.02 09:11\t-\t-\t-\t-\t50.00\tbonus',
+      '90004\t2024.01.02 15:00\tcommission\t-\t-\t-\t-\t-\t2024.01.02 15:01\t-\t-\t-\t-\t-12.00\tcommission',
+    ].join('\n');
+
+    const r = parseMt4History(text);
+    expect(r.errorLines).toHaveLength(0);
+    expect(r.trades).toHaveLength(1);
+    expect(r.skippedNonTrade).toBe(4);
+  });
+});

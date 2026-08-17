@@ -457,3 +457,43 @@ create index idx_trade_plans_user_status on trade_plans(user_id, status);
 create index idx_discipline_snapshots_user_period on discipline_score_snapshots(user_id, period_start);
 create index idx_analytics_events_user_event on analytics_events(user_id, event_name, created_at);
 create index idx_trade_executions_user_plan on trade_executions(user_id, trade_plan_id);
+
+-- ------------------------------------------------------------
+-- 13. Notification preferences + Feature flags (Retention Layer Module 8)
+-- ------------------------------------------------------------
+-- Cấu hình notification riêng từng user (Retention M8)
+create table notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  morning_brief_enabled boolean default true,
+  morning_brief_time time default '08:00',
+  evening_review_enabled boolean default true,
+  evening_review_time time default '21:00',
+  push_token text,
+  updated_at timestamptz default now()
+);
+
+alter table notification_preferences enable row level security;
+
+create policy "notification_prefs_select_own" on notification_preferences
+  for select using (user_id = auth.uid());
+create policy "notification_prefs_insert_own" on notification_preferences
+  for insert with check (user_id = auth.uid());
+create policy "notification_prefs_update_own" on notification_preferences
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Feature flags đơn giản (thay vì hardcode — dễ bật/tắt Instant Audit)
+create table feature_flags (
+  flag_name text primary key,
+  is_enabled boolean not null default false,
+  updated_at timestamptz default now()
+);
+
+alter table feature_flags enable row level security;
+
+-- Flag mọi user đọc được (đọc-only, chỉ admin/service thay đổi)
+create policy "feature_flags_select_all" on feature_flags
+  for select using (true);
+
+-- Seed: Instant Audit mặc định TẮT (gate cứng Module 0 — chỉ bật sau khi verify thật ≥95%)
+insert into feature_flags (flag_name, is_enabled) values ('INSTANT_AUDIT_ENABLED', false)
+on conflict (flag_name) do nothing;

@@ -14,32 +14,47 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Re-export parser logic: dùng chung định nghĩa với app để đảm bảo test đối chiếu.
-// (Trong Deno, import từ file local — Edge Function deploy sẽ bundle cả file.)
+// ⚠️ KEEP IN SYNC: parser này phải GIỐNG HỆT `apps/mobile/src/lib/mt4-parser.ts`
+// (Edge Function Deno không import được từ app — đang duplicate, sửa phải sửa cả 2).
+// Retention Layer Module 0: đã hardening cho biến thể format (locale số, đa format
+// ngày, deal-based in/out) nhưng CHƯA verify với dữ liệu thật — test pass ≠ Done.
+
 export type ParsedMt4Trade = {
+  /** ticket/order number (deal id cho deal-based) */
   ticket: string;
   symbol: string;
   direction: 'buy' | 'sell';
   lotSize: number;
-  openTime: string;
+  openTime: string; // ISO
   openPrice: number;
   sl: number | null;
   tp: number | null;
-  closeTime: string | null;
+  closeTime: string | null; // ISO, null nếu lệnh còn mở
   closePrice: number | null;
   profit: number | null;
+  /** payload gốc để debug/audit */
   rawLine: string;
 };
 
 export type ParseMt4Result = {
   trades: ParsedMt4Trade[];
+  /** Các dòng không parse được (hiển thị cho user sửa tay) */
   errorLines: { lineNumber: number; content: string; reason: string }[];
+  /** Số dòng hợp lệ nhưng KHÔNG phải lệnh (balance, deposit, withdrawal, credit, bonus, commission...) — bỏ qua có đếm */
+  skippedNonTrade: number;
+  /** Locale số đã phát hiện ('periodDecimal' | 'commaDecimal') — để debug khi user báo lỗi */
+  detectedLocale: NumberLocale;
 };
 
+/** Locale số: dấu thập phân là chấm (US) hay phẩy (EU). */
+export type NumberLocale = 'periodDecimal' | 'commaDecimal';
+
 const COLUMN_ALIASES: Record<string, string[]> = {
-  order: ['order', 'ticket', 'deal', 'position'],
+  order: ['order', 'ticket', 'deal'],
+  position: ['position', 'pos id', 'posid'],
   time: ['time', 'opentime', 'open time', 'closetime', 'close time'],
   type: ['type'],
+  entry: ['entry'],
   size: ['size', 'volume', 'vol', 'lots', 'amount'],
   symbol: ['symbol', 'item', 'instrument', 'pair'],
   price: ['price', 'openprice', 'open price', 'closeprice', 'close price'],
@@ -71,10 +86,28 @@ function secondIndexOf(headers: string[], pred: (h: string) => boolean): number 
 }
 
 function parseMt4Time(t: string): string | null {
-  const m = t.trim().match(/^(\d{4})\.(\d{2})\.(\d{2})[\sT]+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  const s = t.trim();
+  const m = s.match(
+    /^(\d{1,4})[.\-/](\d{1,2})[.\-/](\d{2,4})[\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?$/,
+  );
   if (!m) return null;
-  const [, y, mo, d, h, mi, s] = m;
-  const iso = `${y}-${mo}-${d}T${h}:${mi}:${s ?? '00'}Z`;
+  const [, a, b, c, h, mi, sec] = m;
+  let y: string, mo: string, d: string;
+  if (a.length === 4) {
+    y = a; mo = b; d = c;
+  } else if (c.length === 4) {
+    y = c;
+    const first = Number(a);
+    const second = Number(b);
+    if (first > 12) { d = a; mo = b; }
+    else if (second > 12) { mo = a; d = b; }
+    else { d = a; mo = b; }
+  } else {
+    return null;
+  }
+  if (Number(mo) < 1 || Number(mo) > 12 || Number(d) < 1 || Number(d) > 31) return null;
+  if (Number(h) > 23 || Number(mi) > 59) return null;
+  const iso = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}T${String(h).padStart(2, '0')}:${mi}:${sec ?? '00'}Z`;
   return new Date(iso).toString() === 'Invalid Date' ? null : iso;
 }
 
@@ -83,7 +116,7 @@ function splitRow(line: string): string[] {
   const tokens = line.trim().split(/\s+/);
   const merged: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
-    if (i + 1 < tokens.length && /^\d{4}\.\d{2}\.\d{2}$/.test(tokens[i])) {
+    if (i + 1 < tokens.length && /^\d{1,4}[.\-/]\d{1,2}[.\-/]\d{2,4}$/.test(tokens[i])) {
       merged.push(`${tokens[i]} ${tokens[i + 1]}`);
       i++;
     } else {
@@ -93,9 +126,53 @@ function splitRow(line: string): string[] {
   return merged;
 }
 
-function toNum(v: string | undefined): number | null {
-  if (v == null || v.trim() === '') return null;
-  const n = parseFloat(v.replace(/,/g, ''));
+function looksNumeric(v: string): boolean {
+  const s = v.trim();
+  if (/^\d{1,4}[.\-/]\d{1,2}[.\-/]\d{2,4}$/.test(s)) return false;
+  return /^-?\d{1,3}([.,\s]\d{3})*([.,]\d+)?$/.test(s) || /^-?\d+[.,]\d+$/.test(s);
+}
+
+function detectNumberLocale(rawText: string): NumberLocale {
+  let commaDecimal = 0;
+  let periodDecimal = 0;
+  const tokens = rawText.split(/[\s\t\n]+/);
+  for (const t of tokens) {
+    if (!looksNumeric(t)) continue;
+    const hasDot = t.includes('.');
+    const hasComma = t.includes(',');
+    if (!hasDot && !hasComma) continue;
+    if (hasDot && hasComma) {
+      if (t.lastIndexOf(',') > t.lastIndexOf('.')) commaDecimal++;
+      else periodDecimal++;
+    } else if (hasComma) {
+      commaDecimal++;
+    } else {
+      periodDecimal++;
+    }
+  }
+  return commaDecimal > periodDecimal ? 'commaDecimal' : 'periodDecimal';
+}
+
+function parseNumber(v: string | undefined, locale: NumberLocale): number | null {
+  if (v == null) return null;
+  let s = v.trim().replace(/ /g, '');
+  if (!s || s === '-' || s === '.') return null;
+  if (s.includes('.') && s.includes(',')) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (s.includes(',')) {
+    if (locale === 'commaDecimal') s = s.replace(',', '.');
+    else s = s.replace(/,/g, '');
+  } else if (s.includes('.')) {
+    if (locale === 'commaDecimal' && /^\d{1,3}(\.\d{3})+$/.test(s)) {
+      s = s.replace(/\./g, '');
+    }
+  }
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
+  const n = parseFloat(s);
   return Number.isNaN(n) ? null : n;
 }
 
@@ -104,9 +181,19 @@ function isTradeType(t: string): t is 'buy' | 'sell' {
   return v === 'buy' || v === 'sell' || v.startsWith('buy') || v.startsWith('sell');
 }
 
+const NON_TRADE_TYPES = ['balance', 'deposit', 'withdrawal', 'credit', 'bonus', 'commission', 'interest', 'dividend', 'transfer', 'correction', 'charges', 'fee', 'adjustment'];
+
+function entryIs(v: string | undefined, kind: 'in' | 'out'): boolean {
+  if (v == null) return false;
+  const e = v.trim().toLowerCase();
+  return e === kind || e === kind + 'deal' || e.startsWith(kind);
+}
+
 function parseMt4History(rawText: string): ParseMt4Result {
   const lines = rawText.split(/\r?\n/);
-  const result: ParseMt4Result = { trades: [], errorLines: [] };
+  const result: ParseMt4Result = { trades: [], errorLines: [], skippedNonTrade: 0, detectedLocale: detectNumberLocale(rawText) };
+  const locale = result.detectedLocale;
+
   const dataLines: { n: number; text: string }[] = [];
   let headerIdx = -1;
   let headerCols: string[] = [];
@@ -118,7 +205,9 @@ function parseMt4History(rawText: string): ParseMt4Result {
     const joined = normalizeHeader(text);
     const isHeader =
       cols.length >= 4 &&
-      (COLUMN_ALIASES.order.some((a) => joined.includes(a)) || joined.includes('type')) &&
+      (COLUMN_ALIASES.order.some((a) => joined.includes(a)) ||
+        COLUMN_ALIASES.position.some((a) => joined.includes(a)) ||
+        joined.includes('type')) &&
       cols.some((c) => COLUMN_ALIASES.symbol.some((a) => normalizeHeader(c).includes(a))) &&
       cols.some((c) => COLUMN_ALIASES.price.some((a) => normalizeHeader(c).includes(a)));
     if (isHeader && headerIdx === -1) {
@@ -134,11 +223,15 @@ function parseMt4History(rawText: string): ParseMt4Result {
     return {
       trades: [],
       errorLines: [{ lineNumber: 1, content: rawText.slice(0, 100), reason: 'Không tìm thấy dòng tiêu đề cột (Order/Ticket, Type, Symbol...) — format không đúng MT4.' }],
+      skippedNonTrade: 0,
+      detectedLocale: locale,
     };
   }
 
   const colOrder = findColumnIndex(headerCols, 'order');
+  const colPosition = findColumnIndex(headerCols, 'position');
   const colType = findColumnIndex(headerCols, 'type');
+  const colEntry = findColumnIndex(headerCols, 'entry');
   const colSize = findColumnIndex(headerCols, 'size');
   const colSymbol = findColumnIndex(headerCols, 'symbol');
   const colPrice = findColumnIndex(headerCols, 'price');
@@ -155,49 +248,107 @@ function parseMt4History(rawText: string): ParseMt4Result {
       ? headerCols.findIndex((h) => h.includes('close price'))
       : secondIndexOf(headerCols, (h) => h.includes('price'));
 
-  for (const { n, text } of dataLines) {
-    const cols = splitRow(text);
+  function buildTrade(n: number, text: string, cols: string[], isDealLeg: 'in' | 'out' | null): ParsedMt4Trade | null {
     const typeRaw = cols[colType] ?? '';
-    if (!typeRaw) continue;
     const typeLow = typeRaw.toLowerCase();
-    if (typeLow.startsWith('balance') || typeLow.startsWith('deposit') || typeLow.startsWith('withdrawal')) continue;
+    if (NON_TRADE_TYPES.some((k) => typeLow.startsWith(k))) {
+      result.skippedNonTrade++;
+      return null;
+    }
     if (!isTradeType(typeLow)) {
       result.errorLines.push({ lineNumber: n, content: text, reason: `Type không nhận diện được: "${typeRaw}"` });
-      continue;
+      return null;
     }
     const symbol = cols[colSymbol] ?? '';
-    const lotSize = toNum(cols[colSize]);
-    const openPrice = toNum(cols[colPrice]);
+    const lotSize = parseNumber(cols[colSize], locale);
+    const openPrice = parseNumber(cols[colPrice], locale);
+
     if (!symbol || lotSize == null || openPrice == null) {
       result.errorLines.push({ lineNumber: n, content: text, reason: 'Thiếu Symbol / Volume / Price hợp lệ.' });
-      continue;
+      return null;
     }
+
     const openTimeRaw = cols[colTime] ?? '';
     const openTime = openTimeRaw ? parseMt4Time(openTimeRaw) : null;
     if (!openTime) {
       result.errorLines.push({ lineNumber: n, content: text, reason: `Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): "${openTimeRaw}"` });
-      continue;
+      return null;
     }
+
     const closeTimeRaw = colCloseTime >= 0 ? cols[colCloseTime] : '';
     const closeTime = closeTimeRaw && closeTimeRaw !== '-' ? parseMt4Time(closeTimeRaw) : null;
     const closePriceRaw = colClosePrice >= 0 ? cols[colClosePrice] : '';
-    const closePrice = closePriceRaw ? toNum(closePriceRaw) : null;
-    const profit = toNum(cols[colProfit]);
+    const closePrice = closePriceRaw ? parseNumber(closePriceRaw, locale) : null;
+    const profit = parseNumber(cols[colProfit], locale);
 
-    result.trades.push({
-      ticket: cols[colOrder] ?? `line-${n}`,
+    return {
+      ticket: (colOrder >= 0 ? cols[colOrder] : colPosition >= 0 ? cols[colPosition] : undefined) ?? `line-${n}`,
       symbol,
       direction: typeLow.startsWith('buy') ? 'buy' : 'sell',
       lotSize,
       openTime,
       openPrice,
-      sl: toNum(cols[colSl]),
-      tp: toNum(cols[colTp]),
+      sl: parseNumber(cols[colSl], locale),
+      tp: parseNumber(cols[colTp], locale),
       closeTime,
       closePrice,
       profit,
       rawLine: text,
-    });
+    };
+  }
+
+  const isDealBased = colEntry >= 0;
+
+  if (isDealBased) {
+    type InDeal = { trade: ParsedMt4Trade; posKey: string };
+    const inDeals: InDeal[] = [];
+    const outDeals: { n: number; text: string; cols: string[]; posKey: string }[] = [];
+    for (const { n, text } of dataLines) {
+      const cols = splitRow(text);
+      const entryRaw = colEntry >= 0 ? cols[colEntry] : '';
+      const typeLow = (cols[colType] ?? '').toLowerCase();
+      if (NON_TRADE_TYPES.some((k) => typeLow.startsWith(k))) {
+        result.skippedNonTrade++;
+        continue;
+      }
+      if (entryIs(entryRaw, 'in')) {
+        const t = buildTrade(n, text, cols, 'in');
+        if (t) inDeals.push({ trade: t, posKey: (colPosition >= 0 ? cols[colPosition] : cols[colOrder]) ?? '' });
+      } else if (entryIs(entryRaw, 'out')) {
+        outDeals.push({ n, text, cols, posKey: (colPosition >= 0 ? cols[colPosition] : cols[colOrder]) ?? '' });
+      } else {
+        const t = buildTrade(n, text, cols, null);
+        if (t) result.trades.push(t);
+      }
+    }
+    for (const out of outDeals) {
+      const match = inDeals.find((d) => d.posKey && d.posKey === out.posKey);
+      if (match) {
+        // Ghép in+out: open từ in-deal, close + profit từ out-deal.
+        // Trong deal-based, cột "Time"/"Price" của out-deal chính là thời điểm/giá ĐÓNG.
+        result.trades.push({
+          ...match.trade,
+          closeTime: parseMt4Time(out.cols[colTime] ?? '') ?? match.trade.closeTime,
+          closePrice: parseNumber(out.cols[colPrice], locale) ?? match.trade.closePrice,
+          profit: parseNumber(out.cols[colProfit], locale) ?? match.trade.profit,
+          rawLine: `${match.trade.rawLine}\n${out.text}`,
+        });
+      } else {
+        const t = buildTrade(out.n, out.text, out.cols, 'out');
+        if (t) result.trades.push({ ...t, rawLine: `${t.rawLine} [deal out — không ghép được in-deal]` });
+      }
+    }
+    const outKeys = new Set(outDeals.map((o) => o.posKey));
+    for (const d of inDeals) {
+      if (!outKeys.has(d.posKey)) result.trades.push(d.trade);
+    }
+    return result;
+  }
+
+  for (const { n, text } of dataLines) {
+    const cols = splitRow(text);
+    const t = buildTrade(n, text, cols, null);
+    if (t) result.trades.push(t);
   }
 
   return result;
@@ -243,6 +394,7 @@ Deno.serve(async (req: Request) => {
 
     // Lưu executions (chỉ lệnh đóng — có closeTime) kèm raw_import_payload
     let imported = 0;
+    let openOnly = 0;
     for (const t of parsed.trades) {
       const row = {
         user_id: user.id,
@@ -280,8 +432,10 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         imported,
         errorLines: parsed.errorLines,
+        skippedNonTrade: parsed.skippedNonTrade,
+        detectedLocale: parsed.detectedLocale,
         message: imported > 0
-          ? `Import ${imported} lệnh thành công. Chú ý: format parser đang là GIẢ ĐỊNH — hãy kiểm tra với export MT4 thật.`
+          ? `Import ${imported} lệnh thành công. Chú ý: format parser đang là GIẢ ĐỊNH — chưa verify với dữ liệu thật MT4 (Retention Layer Module 0 đang chờ mẫu thật).`
           : 'Không import được lệnh nào — kiểm tra các dòng lỗi bên dưới.',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

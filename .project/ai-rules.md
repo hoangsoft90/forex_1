@@ -23,7 +23,7 @@
 
 ## Trước khi báo "xong"
 
-13. **Verify bắt buộc** (trong `apps/mobile`): `npx tsc --noEmit` = 0 lỗi · `npm run lint` = 0 · `npx jest` pass (147 test hiện tại, thêm test cho công thức mới).
+13. **Verify bắt buộc** (trong `apps/mobile`): `npx tsc --noEmit` = 0 lỗi · `npm run lint` = 0 · `npx jest` pass (226 test hiện tại, thêm test cho công thức mới).
 14. Đụng native/package mới → chạy `npx expo export --platform android` + `--platform web`.
 15. **Code review** theo AGENTS.md (OCR → Ponytail → Impact → Dead code → Pattern → Scope → Lessons) trước khi commit; task lớn phải chạy Task Completion Hook (ADR/memory/working.md).
 16. Build APK để tìm lỗi native thật: theo skill `build-debug-apk-gh` (push lên main → GH Actions → tải artifact), KHÔNG chỉ dựa vào `expo export`.

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useAuth } from '@/lib/auth-context';
+import { isInstantAuditEnabled } from '@/lib/instant-audit';
 import { supabase } from '@/lib/supabase';
 import {
   buildWeaknessProfile,
@@ -48,7 +49,12 @@ export default function QuizScreen() {
       });
       if (upsertError) throw upsertError;
       await refreshProfile();
-      router.replace('/(onboarding)/explain');
+      // Module 3 (Retention): Instant Audit bật (gate đã mở — đọc từ feature_flags) →
+      // bước dán lịch sử tùy chọn; ngược lại → fallback 3.3 "Dự đoán điểm yếu" (KHÔNG gọi parser).
+      const auditEnabled = await isInstantAuditEnabled();
+      router.replace(
+        auditEnabled ? '/(onboarding)/instant-audit' : '/(onboarding)/weakness-summary',
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Có lỗi xảy ra khi lưu.');
     } finally {

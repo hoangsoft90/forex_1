@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import CostOfIndisciplineCard from '@/components/cost-of-indiscipline-card';
 import { useAuth } from '@/lib/auth-context';
+import { computeCostOfIndiscipline, CostResult } from '@/lib/cost-of-indiscipline';
 import { weekBounds } from '@/lib/discipline-score';
 import { supabase } from '@/lib/supabase';
 import { generateWeeklyAudit } from '@/lib/weekly-audit';
@@ -11,6 +13,7 @@ type AuditData = {
   totalTrades: number;
   followedPlanPercent: number;
   prevented: number;
+  costResult: CostResult | null;
 };
 
 export default function WeeklyAuditScreen() {
@@ -23,11 +26,11 @@ export default function WeeklyAuditScreen() {
     setLoading(true);
     const { start, end } = weekBounds(new Date());
 
-    const [{ data: executions }, { data: deltas }, { data: violations }, { data: interruptions }] =
+    const [{ data: executions }, { data: deltas }, { data: violations }, { data: interruptions }, { data: plans }] =
       await Promise.all([
         supabase
           .from('trade_executions')
-          .select('id, trade_plan_id, pnl_amount, exit_time')
+          .select('id, trade_plan_id, pnl_amount, exit_time, symbol, direction, lot_size')
           .eq('user_id', user.id)
           .not('exit_time', 'is', null)
           .gte('exit_time', `${start}T00:00:00`)
@@ -46,9 +49,19 @@ export default function WeeklyAuditScreen() {
           .in('user_decision', ['cancelled', 'reduced_risk'])
           .gte('responded_at', `${start}T00:00:00`)
           .lte('responded_at', `${end}T23:59:59`),
+        supabase
+          .from('trade_plans')
+          .select('id, planned_entry, planned_sl, planned_tp'),
       ]);
 
-    const execList = (executions ?? []) as { id: string; trade_plan_id: string | null; pnl_amount: number | null }[];
+    const execList = (executions ?? []) as {
+      id: string;
+      trade_plan_id: string | null;
+      pnl_amount: number | null;
+      symbol: string;
+      direction: 'buy' | 'sell';
+      lot_size: number;
+    }[];
     const totalTrades = execList.length;
     const weekPnl = execList.reduce((s, e) => s + (e.pnl_amount ?? 0), 0);
 
@@ -79,7 +92,39 @@ export default function WeeklyAuditScreen() {
       weekPnl,
     });
 
-    setData({ text, totalTrades, followedPlanPercent, prevented });
+    // ---- Cost of Indiscipline (Module 4) — theo TUẦN, ngưỡng 30/3 ----
+    let costResult: CostResult | null = null;
+    const planList = (plans ?? []) as {
+      id: string;
+      planned_entry: number;
+      planned_sl: number;
+      planned_tp: number | null;
+    }[];
+    const plansById = new Map(planList.map((p) => [p.id, p]));
+    const followedByExec: Record<string, boolean> = {};
+    for (const d of deltas ?? []) {
+      if (d.followed_plan != null) followedByExec[d.trade_execution_id] = d.followed_plan;
+    }
+    const plansByExec: Record<string, { planned_entry: number; planned_sl: number; planned_tp: number | null }> = {};
+    for (const e of execList) {
+      if (e.trade_plan_id && plansById.has(e.trade_plan_id)) {
+        const p = plansById.get(e.trade_plan_id)!;
+        plansByExec[e.id] = { planned_entry: p.planned_entry, planned_sl: p.planned_sl, planned_tp: p.planned_tp };
+      }
+    }
+    costResult = computeCostOfIndiscipline({
+      executions: execList as {
+        id: string;
+        symbol: string;
+        direction: 'buy' | 'sell';
+        lot_size: number;
+        pnl_amount: number | null;
+      }[],
+      followedByExec,
+      plansByExec,
+    });
+
+    setData({ text, totalTrades, followedPlanPercent, prevented, costResult });
     setLoading(false);
   }, [user]);
 
@@ -121,6 +166,9 @@ export default function WeeklyAuditScreen() {
           <Text style={styles.statLabel}>lệnh đã ngăn</Text>
         </View>
       </View>
+
+      {/* Cost of Indiscipline — Module 4 (disclaimer cố định bắt buộc) */}
+      {data.costResult && <CostOfIndisciplineCard result={data.costResult} />}
     </ScrollView>
   );
 }

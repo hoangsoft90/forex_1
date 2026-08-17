@@ -54,11 +54,30 @@ useEffect(() => { load(); }, [load]);
 - **AsyncStorage** (cooldown): fail-open — lỗi lưu không chặn quyền Pro.
 - Insert audit phụ (pro_unlocks): fail chỉ warn, không rollback quyền chính.
 
+## Feature flags (đọc từ DB, không hardcode)
+
+- Flag điều khiển tính năng theo môi trường/bật-tắt không cần release → lưu bảng `feature_flags`, đọc qua hàm async (`isInstantAuditEnabled()` trong `instant-audit.ts`).
+- **Fail-closed**: DB lỗi → fallback false (tính năng gate TẮT), không bao giờ tự bật.
+- Đúng pattern từ data_model mục 13: seed mặc định trong schema.sql.
+
+## Ngưỡng thống nhất 30 lệnh
+
+- Mọi tính năng pattern thống kê dùng `MIN_CLOSED_TRADES = 30` (cost: 30 tổng + 3 lệch; setup: 30; danger-zone: 30 + pattern ≥5 lần).
+- Dưới ngưỡng → KHÔNG hiện con số/kết luận; hiện "Cần thêm dữ liệu"/progressText (setup-analytics hiện tiến độ X/30, không ẩn hoàn toàn).
+- Không hạ ngưỡng để demo — test assert hằng số (cost 12/30, danger-zone 25 lệnh ẩn...).
+
+## Guard symbol không hỗ trợ
+
+- Symbol từ dữ liệu ngoài (import MT4) có thể ngoài `SYMBOL_PIP_CONFIG` (GBPUSD, EURJPY, USDCAD...) → **LUÔN check `isSupportedSymbol` trước khi gọi `pipValuePerLot`/`pipStep`** — cast `as SymbolKey` rồi đọc cfg undefined = TypeError CRASH cả màn hình (đã từng xảy ra ở cost-of-indiscipline, fix 2026-08-17).
+- Hàm trả 0/null an toàn cho symbol lạ, không suy đoán, kèm test không-crash.
+
 ## Test
 
 - Jest + jest-expo, mock AsyncStorage in-memory (không dùng `require()` → lint `no-require-imports`).
+- **`jest.setup.js`**: mock AsyncStorage TOÀN CỤC — nhiều lib giờ import `supabase.ts` (kéo theo AsyncStorage) → null trong jest; setup mock trước khi test chạy (đã đăng ký trong package.json `setupFiles`).
 - Suite theo file lib: `src/lib/__tests__/<tên>.test.ts`.
-- Yêu cầu tối thiểu: **mọi công thức** (lot size, delta, violations, discipline score, interruption, ATR, portfolio risk, cooldown, MT4 parser) có test — hiện 147 test / 13 suite.
+- **UI snapshot test** (disclaimer, gating): `react-test-renderer` + `act()` (React 19 bắt buộc); text node bị tách khoảng trắng giữa `$` và số → normalize whitespace 2 phía khi assert; không bỏ hết space (phá tiếng Việt).
+- Yêu cầu tối thiểu: **mọi công thức** (lot size, delta, violations, discipline score, interruption, ATR, portfolio risk, cooldown, MT4 parser, cost-of-indiscipline, setup-analytics, danger-zone, discipline-streak, notification-content, instant-audit) có test — hiện 226 test / ~20 suite.
 - Test màn hình (fetch logic): chưa có — các bug fetch (vòng lặp, filter tuần) nằm ở lớp này, review code phải soi kỹ.
 
 ## Lint/Typecheck

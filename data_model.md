@@ -291,3 +291,31 @@ create index idx_rule_violations_user_type on rule_violations(user_id, violation
 create index idx_trade_plans_user_status on trade_plans(user_id, status);
 create index idx_discipline_snapshots_user_period on discipline_score_snapshots(user_id, period_start);
 ```
+---
+
+## 13. Notification preferences + Feature flags (Retention Layer — bổ sung, không sửa bảng cũ)
+
+```sql
+-- Cấu hình notification riêng từng user (Module 8 Push Notification)
+create table notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  morning_brief_enabled boolean default true,
+  morning_brief_time time default '08:00',
+  evening_review_enabled boolean default true,
+  evening_review_time time default '21:00',
+  push_token text,
+  updated_at timestamptz default now()
+);
+
+-- Feature flags đơn giản (thay vì hardcode trong code, dễ bật/tắt Instant Audit)
+create table feature_flags (
+  flag_name text primary key,
+  is_enabled boolean not null default false,
+  updated_at timestamptz default now()
+);
+-- Seed: insert into feature_flags (flag_name, is_enabled) values ('INSTANT_AUDIT_ENABLED', false);
+```
+
+Ghi chú:
+- `INSTANT_AUDIT_ENABLED` = false mặc định (gate cứng Module 0) — đọc từ bảng `feature_flags`, KHÔNG hardcode trong code.
+- Không cần bảng mới cho Today Dashboard / Cost of Indiscipline / Setup Analytics / Danger Zone / Streak — tất cả tính runtime trên dữ liệu có sẵn (tránh phình schema).

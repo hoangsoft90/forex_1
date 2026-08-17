@@ -11,6 +11,7 @@ import {
 
 import TradingViewChart from '@/components/tradingview-chart';
 import { useAuth } from '@/lib/auth-context';
+import { missingOptionalDetails } from '@/lib/fast-plan';
 import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 
@@ -181,6 +182,16 @@ export default function TradeDetailScreen() {
         <Text style={styles.thesis}>Điều kiện hủy: {plan.invalidation_condition}</Text>
       )}
 
+      {/* Retention Module 1: nhắc nhẹ (không chặn) điền bổ sung khi plan thiếu chi tiết */}
+      {plan && missingOptionalDetails(plan).length > 0 && (
+        <View style={styles.reminderBox}>
+          <Text style={styles.reminderText}>
+            💡 Plan này chưa điền: {missingOptionalDetails(plan).join(', ')} — điền bổ sung giúp bạn
+            nhận phân tích setup chính xác hơn.
+          </Text>
+        </View>
+      )}
+
       <Text style={[styles.pnl, (exec.pnl_amount ?? 0) >= 0 ? styles.pnlPos : styles.pnlNeg]}>
         {exec.pnl_amount != null ? `PnL: ${exec.pnl_amount >= 0 ? '+' : ''}$${exec.pnl_amount.toFixed(2)}` : 'PnL: chưa đóng'}
       </Text>
@@ -216,4 +227,13 @@ const styles = StyleSheet.create({
   pnlNeg: { color: '#d33' },
   backBtn: { marginTop: 16, padding: 10 },
   backBtnText: { color: '#208AEF', fontSize: 15, fontWeight: '600' },
+  reminderBox: {
+    backgroundColor: '#FFF8E1',
+    borderWidth: 1,
+    borderColor: '#F5C542',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  reminderText: { fontSize: 13, lineHeight: 19, color: '#8a6d3b' },
 });

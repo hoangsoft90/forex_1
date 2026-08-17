@@ -18,8 +18,8 @@ App kỷ luật giao dịch **forex** dành cho trader cá nhân. Triết lý c�
 | Ads | **AdMob** (`react-native-google-mobile-ads` v16.4) | Banner bottom + Rewarded → Pro 24h; flag `TEST_ADS` trong `ads-config.ts` |
 | CI | **GitHub Actions** (`.github/workflows/build-apk.yml`) | Build debug APK (assembleDebug, no keystore, no EAS token) khi push lên `main` |
 | State | Không dùng thư viện state global — `auth-context.tsx` (React Context) là nguồn session/tier/onboarding | Không Redux/Zustand |
-| Test | **Jest + jest-expo** | 147 test (13 suite), tập trung công thức lib |
-| OpenSpec | `openspec/changes/phase1-mvp` + `phase2-mvp` | Workflow chuẩn của project (propose → apply → archive) |
+| Test | **Jest + jest-expo** | **226 test** (~20 suite), tập trung công thức lib + snapshot UI |
+| OpenSpec | 3 change đã archive: `phase1-mvp`, `phase2-mvp`, `retention-layer` | Workflow chuẩn của project (propose → apply → archive) — 22 specs / 91 requirements |
 
 ## Cấu trúc thư mục
 
@@ -29,27 +29,30 @@ forex_1/
 │   ├── app.json                  # Config native: AdMob App ID, build-properties (targetSdk 36, cleartext HTTP), navigationBar
 │   ├── src/app/                  # Routes expo-router (file-based)
 │   │   ├── (auth)/               # login
-│   │   ├── (onboarding)/         # balance → quiz → explain → constitution (flow bắt buộc, dùng replace)
-│   │   ├── (main)/               # index, new-plan, execution-widget, journal, trade-detail, scores, weekly-audit, portfolio-risk, pro, settings, ...
+│   │   ├── (onboarding)/         # balance → quiz → weakness-summary/instant-audit → explain → constitution (flow bắt buộc, dùng replace)
+│   │   ├── (main)/               # index (Today Dashboard), new-plan (full+fast), execution-widget, journal, trade-detail, scores, weekly-audit, portfolio-risk, setup-analytics, danger-zone, pro, settings, ...
 │   │   ├── _layout.tsx           # Root: AuthProvider + useProtectedRoute (redirect theo session/onboarding)
 │   │   └── +not-found.tsx        # 404 có lối thoát
 │   ├── src/components/           # ad-banner, tradingview-chart (mỗi cái có .native + web stub)
 │   ├── src/lib/                  # Toàn bộ business logic thuần (test được) + supabase client
-│   ├── src/lib/__tests__/        # 13 suite, 147 test
+│   ├── src/lib/__tests__/        # ~20 suite, 226 test
 │   └── src/constants/theme.ts
 ├── supabase/
-│   ├── schema.sql                # 15 bảng Phase 1 + RLS + trigger adaptive decrease + indexes
+│   ├── schema.sql                # 17 bảng + RLS + trigger adaptive decrease + indexes (mục 13: notification_preferences + feature_flags)
 │   ├── migrations-phase2.sql     # ⚠️ CHƯA CHẠY trên SQL Editor (bảng pro_unlocks)
 │   ├── config.toml               # project_id + verify_jwt cho functions
-│   └── functions/                # parse-mt4, compute-deltas, detect-violations, weekly-audit (đã deploy)
+│   └── functions/                # parse-mt4 (cần redeploy M0), compute-deltas, detect-violations, weekly-audit
 ├── openspec/
-│   ├── changes/phase1-mvp/       # proposal + 9 specs + design + tasks
-│   └── changes/phase2-mvp/       # proposal + 4 specs + tasks
+│   ├── changes/archive/          # phase1-mvp, phase2-mvp, retention-layer (đã archive)
+│   └── specs/                    # 22 specs đã sync (retention-layer + 41 requirements)
 ├── .github/workflows/build-apk.yml
 ├── .project/                     # Knowledge Item (file này)
-├── data_model.md                 # Schema tham chiếu (không tự đổi cấu trúc)
+├── data_model.md                 # Schema tham chiếu (17 bảng — không tự đổi cấu trúc)
 ├── mvp_scope.md                  # Phạm vi Phase 1 + acceptance criteria
 ├── plan1_final_v2.md             # Lý do thiết kế ("tại sao")
+├── retention_layer_addendum.md   # Spec đợt Retention Layer (9 module 0–8)
+├── features.md                   # Inventory tính năng (cập nhật sau từng module)
+├── can_lam.md                    # ⚠️ 12 việc user cần làm (SQL mục 13, revoke token, MT4 thật...)
 └── working.md                    # Nhật ký làm việc (đổi thường xuyên)
 ```
 

@@ -12,24 +12,31 @@
 | Navigation review + fix | ✅ 6/6 yêu cầu | safeBack, +not-found, trade-detail edge case |
 | Code review toàn diện | ✅ Đã review + fix 4 bug chính | 4 bug nhỏ còn lại (dưới) |
 | targetSdk 36 + Android SDK + cooldown ads | ✅ Xong | — |
+| **Retention Layer (9 module 0–8)** | ✅ Code xong + review | 147 → 224 test, review thêm +2 = 226 |
+| OpenSpec sync đợt Retention | ✅ Archived `2026-08-17-retention-layer` | 22 specs / 91 requirements |
+| `can_lam.md` (việc user cần làm) | ✅ Đã tạo | 12 việc phân ưu tiên |
 
 ## Todo còn lại (theo thứ tự ưu tiên)
 
-### Ngay (blocker / bảo mật)
-- [ ] **Commit + push** các thay đổi chưa commit (fix review, targetSdk 36, cooldown ads, .project/) — repo đang có diff lớn chưa commit sau `1cd965c`.
-- [ ] **Chạy `supabase/migrations-phase2.sql` trên SQL Editor** (tạo bảng `pro_unlocks`) — chưa chạy thì insert audit fail (quyền Pro vẫn hoạt động, code đã graceful).
-- [ ] **User revoke GH token cũ** đã dán trong chat (`ghp_m31j33...`) — skill mới đọc token mới từ env/chat.
+> 📋 **Chi tiết đầy đủ + lệnh cụ thể: `can_lam.md` (root) — 12 việc.**
 
-### Phase 1 chưa khép (đã báo cáo, chờ user)
-- [ ] **MT4 parser verify với dữ liệu thật** — parser dựa format GIẢ ĐỊNH (comment + báo cáo đã đánh dấu rõ), cần export thật từ MT4 desktop/mobile.
-- [ ] **Đo acceptance criteria thời gian thực** (onboarding ≤3 phút, widget ≤20 giây) qua bảng `analytics_events`.
+### Ngay (blocker / bảo mật)
+- [ ] **Chạy SQL mục 13 trên SQL Editor** (bảng `notification_preferences` + `feature_flags` + seed `INSTANT_AUDIT_ENABLED=false`) — phần cuối `supabase/schema.sql`; chưa chạy thì notification + instant-audit không hoạt động.
+- [ ] **Deploy lại edge function `parse-mt4`** (parser đã hardening ở M0 — bản đang deploy là bản cũ).
+- [ ] **User revoke GH token cũ** đã dán trong chat (`ghp_m31j33...`) — khẩn cấp bảo mật; skill mới đọc token mới từ env/chat.
+- [ ] **Commit + push** toàn bộ diff đang treo (Retention M0–8 + jest.setup + schema mục 13 + openspec + can_lam.md + .project/) — sau đó GH Actions tự build APK kiểm tra native (expo-notifications mới).
+- [ ] **Chạy `supabase/migrations-phase2.sql` trên SQL Editor** (bảng `pro_unlocks`) — chưa chạy thì insert audit fail (quyền Pro vẫn hoạt động, code đã graceful).
+
+### Chờ user cung cấp / xác nhận
+- [ ] **Cung cấp export MT4/MT5 THẬT** (3–4 mẫu, ≥2 sàn, MT4+MT5) → verify M0 ≥95% → mở gate `INSTANT_AUDIT_ENABLED` (hiện M3 chạy fallback quiz đúng spec, không có deadline ép).
+- [ ] **Xác nhận giả định M4**: "PnL giả định cho lệnh lệch plan = đạt planned_tp" — spec không ghi rõ kết cục giả định.
+- [ ] **Đo acceptance criteria thời gian thực** (onboarding ≤3 phút, Fast Plan ≤15s, widget ≤20s, Dashboard ≤2s) qua bảng `analytics_events`.
 - [ ] **Legal disclaimer + tuân thủ Nghị định 13** (quyền riêng tư dữ liệu VN) trước khi ra mắt.
 - [ ] Thanh toán thật Momo/VNPay (khi có merchant account) — bảng `subscriptions` đã sẵn schema.
 
 ### Phase 2 còn treo
 - [ ] **Tạo AdMob account** khi sẵn sàng: App ID + Banner/Rewarded Unit ID thật vào `.env` + `app.json`, đổi `TEST_ADS=false`.
 - [ ] **Test ads thật trên máy**: build APK (GH Actions) → xem log lấy device ID → đưa vào `TEST_DEVICE_IDS`.
-- [ ] **Cần dev build** (expo prebuild + build APK) để chạy AdMob/WebView — không chạy được trong Expo Go.
 - [ ] Nguồn giá thật cho ATR + correlation (Phase 3 — hiện là ước lượng tham chiếu, đã ghi rõ trong UI).
 
 ### Bug nhỏ chưa fix (từ code review 2026-08-17, user chọn fix 4 chính trước)
@@ -52,6 +59,9 @@
 | 2026-08-17 | Không có +not-found | Thêm 404 có lối thoát |
 | 2026-08-17 | AdMob API v16.4 (MobileAds(), BannerAdSize) | Sửa theo export thực tế của package |
 | 2026-08-17 | Edge function deploy lỗi path `supabase/supabase/...` | Deploy từ root + config.toml |
+| 2026-08-17 | 🔴 `cost-of-indiscipline` CRASH khi import MT4 symbol ngoài 3 cặp (GBPUSD/EURJPY/USDCAD) | Guard `isSupportedSymbol` → trả 0 (không crash, không suy đoán) + 2 test |
+| 2026-08-17 | Danger-zone màn chi tiết hiện biểu đồ cả khi <30 lệnh | Chỉ render biểu đồ khi `totalClosed >= 30` |
+| 2026-08-17 | `configureNotificationHandler` không được gọi → notification không hiển thị khi app foreground | Wire vào `(main)/_layout` useEffect |
 
 ## Quyết định quan trọng (decision log)
 
@@ -69,10 +79,20 @@
 | Onboarding dùng `replace` (flow tuyến tính bắt buộc) | Hardware back thoát app ở bước balance — chấp nhận, nút UI luôn có |
 | Không dùng LLM cho score/audit Phase 1 | Rule-based, minh bạch, không tốn chi phí |
 | Free tối đa 3 luật / Pro không giới hạn | mvp_scope mục 12 |
+| `INSTANT_AUDIT_ENABLED` đọc từ bảng `feature_flags` (KHÔNG hardcode), fallback false khi DB lỗi | Đúng ghi chú data_model mục 13 — dễ bật/tắt không cần release; an toàn: không bao giờ tự bật |
+| Instant Audit M3 gate cứng: ≥95% parse thật mới bật; dưới ngưỡng → fallback quiz VĨNH VIỄN | Nguyên tắc bất biến user chốt — không hạ ngưỡng, không có deadline ép |
+| Fast Plan GIỮ SL bắt buộc (5 trường, không rút xuống 3) | Không đổi đề xuất gốc từng có — phá vỡ công thức lot size Phase 1 |
+| Ngưỡng thống nhất ≥30 lệnh đóng (cost 30/3, setup 30, danger-zone 30+5 lần) — KHÔNG hạ để demo | Nguyên tắc bất biến; test assert hằng số |
+| Cost of Indiscipline disclaimer hiển thị ngay dưới con số (không footnote), đúng nguyên văn | Nguyên tắc bất biến — snapshot test không cho rút gọn |
+| M4 giả định: "PnL giả định lệnh lệch plan = đạt planned_tp" | ⚠️ CHƯA user duyệt — spec không ghi kết cục giả định; sửa 1 hàm nếu user chọn khác |
+| Notification = LOCAL (expo-notifications), chưa server push | Đủ Phase này; cột `push_token` đã sẵn nếu sau này làm remote push qua Edge Function |
+| Notification permission hỏi SAU lần đầu thấy Dashboard (markDashboardSeen) | Đúng ngữ cảnh, không hỏi ngay mở app lần đầu, không hỏi lại lần 2 |
+| Evening notification chỉ khi có lệnh đóng trong ngày | Tránh notification rỗng gây khó chịu (AC bắt buộc) |
+| Danger Zone pattern "lệnh thứ N" đếm theo `entry_time` (UTC, chưa theo timezone user) | Phase 8 sẽ thêm timezone cho notification — báo user nếu cần chuyển múi giờ |
 
 ## Deploy / Môi trường
 
-- **Supabase project**: `ycmuuczwnogybyklzpsa` — schema Phase 1 đã chạy, **migrations-phase2 CHƯA**.
-- **Edge functions**: 4 functions đã deploy, `verify_jwt=true`.
-- **Git**: main trên GitHub; git config local placeholder → commit dùng env vars.
+- **Supabase project**: `ycmuuczwnogybyklzpsa` — schema Phase 1 đã chạy, **mục 13 (notification_preferences + feature_flags) CHƯA**, migrations-phase2 (pro_unlocks) CHƯA.
+- **Edge functions**: 4 functions đã deploy nhưng **`parse-mt4` cần redeploy** (parser hardening M0 chưa lên); `verify_jwt=true`.
+- **Git**: main trên GitHub (commit `1cd965c`, `41c3261`); toàn bộ diff đợt Retention đang treo chưa commit.
 - **Android SDK local**: `~/Android/Sdk` (platform-36, build-tools 36.0.0) — targetSdk 36 cho Google Play.

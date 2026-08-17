@@ -12,8 +12,10 @@ import {
 
 import TradingViewChart from '@/components/tradingview-chart';
 import { AdaptiveCondition, suggestAdaptiveRisk } from '@/lib/atr';
+import { FAST_PLAN_EVENTS, trackEvent } from '@/lib/analytics';
 import { checkInterruption, ClosedExecution, Interruption } from '@/lib/interruption';
 import { useAuth } from '@/lib/auth-context';
+import { validateFastPlan } from '@/lib/fast-plan';
 import { safeBack } from '@/lib/navigation';
 import {
   calculateLotSize,
@@ -36,15 +38,18 @@ export default function NewPlanScreen() {
   const [maxDailyRule, setMaxDailyRule] = useState<number | null>(null);
   const [balance, setBalance] = useState<number>(0);
 
-  // Form state
+  // ---- 5 trường BẮT BUỘC hiển thị ngay ----
   const [symbol, setSymbol] = useState('EURUSD');
   const [direction, setDirection] = useState<'buy' | 'sell'>('buy');
-  const [thesis, setThesis] = useState('');
-  const [setupTag, setSetupTag] = useState('breakout');
   const [entry, setEntry] = useState('');
   const [sl, setSl] = useState('');
-  const [tp, setTp] = useState('');
   const [riskPercent, setRiskPercent] = useState('');
+
+  // ---- Trường tùy chọn (gấp gọn dưới "Chi tiết thêm") ----
+  const [showDetails, setShowDetails] = useState(false);
+  const [tp, setTp] = useState('');
+  const [thesis, setThesis] = useState('');
+  const [setupTag, setSetupTag] = useState('breakout');
   const [invalidation, setInvalidation] = useState('');
   const [confidence, setConfidence] = useState(3);
 
@@ -70,7 +75,11 @@ export default function NewPlanScreen() {
       .eq('rule_type', 'max_risk_per_trade')
       .eq('is_active', true)
       .maybeSingle();
-    setMaxRiskRule(rule?.base_value ?? null);
+    const ruleVal = rule?.base_value ?? null;
+    setMaxRiskRule(ruleVal);
+    // Fast Plan: Risk% mặc định = max_risk_per_trade, cho phép sửa.
+    // Chỉ prefill khi user chưa tự nhập gì.
+    setRiskPercent((prev) => (prev === '' && ruleVal != null ? String(ruleVal) : prev));
 
     const { data: dailyRule } = await supabase
       .from('trading_rules')
@@ -109,18 +118,18 @@ export default function NewPlanScreen() {
     // Fetch-on-mount: setState xảy ra sau await (async)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadConfig();
+    // AC Module 1: đo từ lúc mở form đến lúc lưu plan (≤ 15 giây).
+    trackEvent(FAST_PLAN_EVENTS.OPENED, { source: 'fast-plan-screen' });
   }, [loadConfig]);
 
   const entryNum = parseFloat(entry);
   const slNum = parseFloat(sl);
   const tpNum = tp ? parseFloat(tp) : null;
   const riskNum = parseFloat(riskPercent);
-  const hasValidInputs =
-    isSupportedSymbol(symbol) &&
-    entryNum > 0 &&
-    slNum > 0 &&
-    entryNum !== slNum &&
-    riskNum > 0;
+
+  // Validate chặn cứng 5 trường (SL bắt buộc — bảo vệ Risk Engine, không thương lượng).
+  const validation = validateFastPlan({ symbol, direction, entry, sl, riskPercent });
+  const hasValidInputs = validation.ok;
 
   const lotSize = hasValidInputs
     ? calculateLotSize({
@@ -133,6 +142,7 @@ export default function NewPlanScreen() {
     : 0;
 
   const riskAmount = riskNum > 0 && balance > 0 ? calculateRiskAmount(balance, riskNum) : 0;
+  // R:R chỉ hiển thị khi có TP — TP là optional thật sự.
   const rr = hasValidInputs ? calculateRiskReward(entryNum, slNum, tpNum) : null;
   const pips = hasValidInputs ? distanceInPips(symbol as SymbolKey, entryNum, slNum) : 0;
   const overLimit = maxRiskRule != null && riskNum > 0 && isRiskOverLimit(riskNum, maxRiskRule);
@@ -191,7 +201,7 @@ export default function NewPlanScreen() {
 
   async function handleSave() {
     if (!hasValidInputs) {
-      setError('Vui lòng nhập đầy đủ Symbol, Direction, Entry, SL, Risk% hợp lệ.');
+      setError(validation.ok ? 'Vui lòng nhập đầy đủ Symbol, Direction, Entry, SL, Risk% hợp lệ.' : validation.reason);
       return;
     }
     if (!user) return;
@@ -261,6 +271,8 @@ export default function NewPlanScreen() {
           responded_at: new Date().toISOString(),
         });
       }
+      // AC Module 1: đo thời gian từ mở form (fast_plan_opened) đến lưu (fast_plan_saved).
+      await trackEvent(FAST_PLAN_EVENTS.SAVED, { symbol, direction, has_tp: tpNum != null, source: 'fast-plan-screen' });
       safeBack(router, '/(main)');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Có lỗi khi lưu plan.');
@@ -276,15 +288,15 @@ export default function NewPlanScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Tạo Trade Plan</Text>
+      <Text style={styles.title}>Fast Plan</Text>
       <Text style={styles.subtitle}>
-        Lập kế hoạch TRƯỚC khi vào lệnh — Risk Engine tính lot size tự động.
+        Chỉ 5 trường bắt buộc — lập kế hoạch nhanh, Risk Engine tự tính lot size.
       </Text>
 
-      {/* Symbol + Direction */}
+      {/* Symbol + Direction — bắt buộc */}
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Symbol</Text>
+          <Text style={styles.label}>Symbol *</Text>
           {['EURUSD', 'XAUUSD', 'USDJPY'].map((s) => (
             <TouchableOpacity
               key={s}
@@ -299,7 +311,7 @@ export default function NewPlanScreen() {
           )}
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>Direction</Text>
+          <Text style={styles.label}>Direction *</Text>
           {DIRECTIONS.map((d) => (
             <TouchableOpacity
               key={d}
@@ -314,37 +326,10 @@ export default function NewPlanScreen() {
         </View>
       </View>
 
-      <Text style={styles.label}>Thesis (lý do vào lệnh)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="VD: Breakout khỏi vùng tích lũy H4"
-        placeholderTextColor="#888"
-        value={thesis}
-        onChangeText={setThesis}
-        multiline
-      />
-
-      <Text style={styles.label}>Setup tag</Text>
-      <View style={styles.row}>
-        {SETUP_TAGS.map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.chip, setupTag === t && styles.chipActive]}
-            onPress={() => setSetupTag(t)}
-          >
-            <Text style={[styles.chipText, setupTag === t && styles.chipTextActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* TradingView chart — hiển thị giá symbol đang chọn (Phase 2) */}
-      <Text style={styles.label}>Chart {symbol}</Text>
-      <TradingViewChart symbol={symbol} height={220} />
-
-      {/* Entry / SL / TP */}
+      {/* Entry / SL — bắt buộc. SL chặn cứng. */}
       <View style={styles.row}>
         <View style={styles.third}>
-          <Text style={styles.label}>Entry</Text>
+          <Text style={styles.label}>Entry *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -355,7 +340,7 @@ export default function NewPlanScreen() {
           />
         </View>
         <View style={styles.third}>
-          <Text style={styles.label}>SL</Text>
+          <Text style={styles.label}>SL *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -366,30 +351,20 @@ export default function NewPlanScreen() {
           />
         </View>
         <View style={styles.third}>
-          <Text style={styles.label}>TP (tùy chọn)</Text>
+          <Text style={styles.label}>Risk % *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
-            value={tp}
-            onChangeText={setTp}
-            placeholder="1.1150"
+            value={riskPercent}
+            onChangeText={setRiskPercent}
+            placeholder={maxRiskRule != null ? String(maxRiskRule) : '1'}
             placeholderTextColor="#888"
           />
         </View>
       </View>
-
-      {/* Risk % */}
-      <Text style={styles.label}>
-        Risk % {maxRiskRule != null ? `(giới hạn của bạn: ${maxRiskRule}%)` : ''}
-      </Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="decimal-pad"
-        value={riskPercent}
-        onChangeText={setRiskPercent}
-        placeholder="1"
-        placeholderTextColor="#888"
-      />
+      {maxRiskRule != null && (
+        <Text style={styles.hint}>Risk% mặc định theo rule của bạn: {maxRiskRule}% (có thể sửa).</Text>
+      )}
       {overLimit && (
         <Text style={styles.overRisk}>
           ⚠ Risk {riskNum}% vượt quá giới hạn {maxRiskRule}% — bạn phải giảm xuống hoặc quay lại.
@@ -408,7 +383,7 @@ export default function NewPlanScreen() {
         </View>
       )}
 
-      {/* Risk Engine kết quả */}
+      {/* Risk Engine kết quả — real-time như cũ, không đổi công thức */}
       {hasValidInputs && (
         <View style={styles.resultBox}>
           <Text style={styles.resultTitle}>Risk Engine</Text>
@@ -419,27 +394,74 @@ export default function NewPlanScreen() {
         </View>
       )}
 
-      <Text style={styles.label}>Invalidation condition (điều kiện hủy)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="VD: mất vùng 1.0950"
-        placeholderTextColor="#888"
-        value={invalidation}
-        onChangeText={setInvalidation}
-      />
+      {/* Chi tiết thêm — gấp gọn, tùy chọn */}
+      <TouchableOpacity style={styles.detailsToggle} onPress={() => setShowDetails((v) => !v)}>
+        <Text style={styles.detailsToggleText}>
+          {showDetails ? '▲ Ẩn chi tiết thêm' : '▼ Chi tiết thêm (tùy chọn)'}
+        </Text>
+      </TouchableOpacity>
+      {showDetails && (
+        <View>
+          <Text style={styles.label}>TP (tùy chọn — R:R chỉ hiện khi có TP)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            value={tp}
+            onChangeText={setTp}
+            placeholder="1.1150"
+            placeholderTextColor="#888"
+          />
 
-      <Text style={styles.label}>Confidence level: {confidence}/5</Text>
-      <View style={styles.row}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <TouchableOpacity
-            key={n}
-            style={[styles.confBtn, confidence === n && styles.confBtnActive]}
-            onPress={() => setConfidence(n)}
-          >
-            <Text style={[styles.confText, confidence === n && styles.confTextActive]}>{n}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          <Text style={styles.label}>Thesis (lý do vào lệnh)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="VD: Breakout khỏi vùng tích lũy H4"
+            placeholderTextColor="#888"
+            value={thesis}
+            onChangeText={setThesis}
+            multiline
+          />
+
+          <Text style={styles.label}>Setup tag</Text>
+          <View style={styles.row}>
+            {SETUP_TAGS.map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[styles.chip, setupTag === t && styles.chipActive]}
+                onPress={() => setSetupTag(t)}
+              >
+                <Text style={[styles.chipText, setupTag === t && styles.chipTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Invalidation condition (điều kiện hủy)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="VD: mất vùng 1.0950"
+            placeholderTextColor="#888"
+            value={invalidation}
+            onChangeText={setInvalidation}
+          />
+
+          <Text style={styles.label}>Confidence level: {confidence}/5</Text>
+          <View style={styles.row}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.confBtn, confidence === n && styles.confBtnActive]}
+                onPress={() => setConfidence(n)}
+              >
+                <Text style={[styles.confText, confidence === n && styles.confTextActive]}>{n}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* TradingView chart — hiển thị giá symbol đang chọn (Phase 2) */}
+          <Text style={styles.label}>Chart {symbol}</Text>
+          <TradingViewChart symbol={symbol} height={220} />
+        </View>
+      )}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -495,6 +517,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 19,
   },
+  hint: { fontSize: 11, opacity: 0.6, marginTop: 4 },
   label: { fontSize: 14, fontWeight: '600', marginTop: 12, marginBottom: 6 },
   input: {
     borderWidth: 1,
@@ -542,6 +565,16 @@ const styles = StyleSheet.create({
   },
   resultTitle: { fontSize: 15, fontWeight: '700', color: '#208AEF', marginBottom: 4 },
   resultLine: { fontSize: 14 },
+  detailsToggle: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 14,
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+  },
+  detailsToggleText: { fontSize: 14, fontWeight: '600', color: '#555' },
   confBtn: {
     borderWidth: 1,
     borderColor: '#ccc',

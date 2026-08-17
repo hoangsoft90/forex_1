@@ -12,9 +12,10 @@
              ▼
 ┌────────────────────────────┐      ┌──────────────────────────┐
 │  Supabase Postgres         │◄────►│  Edge Functions (Deno)    │
-│  15 bảng Phase 1 + RLS     │ JWT  │  parse-mt4                │
+│  17 bảng + RLS             │ JWT  │  parse-mt4 (hardened M0)   │
 │  + trigger adaptive GIẢM   │      │  compute-deltas           │
-│  + bảng pro_unlocks (P2)   │      │  detect-violations        │
+│  + notification_preferences│      │  detect-violations        │
+│  + feature_flags (M8)      │      │  weekly-audit             │
 └────────────────────────────┘      │  weekly-audit             │
                                     └──────────────────────────┘
 ```
@@ -35,7 +36,7 @@
 
 **Auth state** (`src/lib/auth-context.tsx`): session + user + onboarding state + tier + subscriptionExpiresAt. `refreshProfile()` đọc `user_profiles` + đếm rule bắt buộc.
 
-## Data model (15 bảng Phase 1 + 1 bảng Phase 2)
+## Data model (15 bảng Phase 1 + 2 bảng đợt Retention = 17)
 
 Nguồn chính thức: `supabase/schema.sql` (không tự đổi — đối chiếu `data_model.md`).
 
@@ -56,6 +57,8 @@ Nguồn chính thức: `supabase/schema.sql` (không tự đổi — đối chi�
 | `subscriptions` | Thanh toán thật (chưa dùng — payment_provider không có 'admob') | — |
 | `analytics_events` | Đo acceptance criteria (onboarding ≤3', widget ≤20s) | bổ sung theo yêu cầu user |
 | `pro_unlocks` (Phase 2) | Audit mỗi lần mở Pro qua ad | ⚠️ migration chưa chạy trên SQL Editor |
+| `notification_preferences` (M8) | user_id PK, morning/evening enable + time, push_token | ⚠️ SQL mục 13 chưa chạy — cần trước khi dùng notification |
+| `feature_flags` (M8) | flag_name PK, is_enabled; seed `INSTANT_AUDIT_ENABLED=false` | Gate cứng Instant Audit M3 — đọc từ đây, không hardcode |
 
 **RLS**: mọi bảng đều `enable row level security`, policy `user_id = auth.uid()` (insert/update với check). Edge functions dùng **service role key** (vượt RLS).
 
@@ -70,6 +73,12 @@ Nguồn chính thức: `supabase/schema.sql` (không tự đổi — đối chi�
 - **Adaptive ATR** (`atr.ts`): `suggest = min(adjusted_value, base_value)` — không bao giờ tăng.
 - **Portfolio Risk** (`portfolio-risk.ts`): tổng risk vị thế mở, ngưỡng `min(maxRiskPerTrade×3, maxDailyLoss)`; correlation = hệ số ƯỚC LƯỢNG (ghi rõ trong UI).
 - **ATR hiện tại**: giá trị ƯỚC LƯỢNG theo symbol (XAUUSD 24/15, USDJPY 0.9/0.8, EURUSD 0.0018/0.0012) — chưa phải dữ liệu thật (Phase 3 cần nguồn giá).
+- **Cost of Indiscipline** (`cost-of-indiscipline.ts`, M4): `hypothetical_pnl` (lệnh followed=true giữ PnL thật + lệnh lệch plan có đủ plan → PnL giả định tại planned_tp) − `actual_pnl`; ngưỡng ≥30 lệnh + ≥3 lệch plan; lệnh lệch plan thiếu planned_tp → BỎ (không suy đoán); symbol ngoài config → 0 (guard `isSupportedSymbol`, không crash).
+- **Setup Analytics** (`setup-analytics.ts`, M5): winrate/avg R:R/PnL theo `setup_tag`; null+'other' → "Chưa phân loại"; ngưỡng 30 lệnh.
+- **Danger Zone** (`danger-zone.ts`, M2+M6): pattern giờ + "lệnh thứ N trong ngày" (theo entry_time); ngưỡng 30 lệnh + pattern ≥5 lần (`MIN_CLOSED_TRADES`/`MIN_PATTERN_OCCURRENCE`); loại `is_negative=false` không tính.
+- **Discipline Streak** (`discipline-streak.ts`, M7): lệnh liên tiếp gần nhất followed=true + không vi phạm, sort theo entry_time; reset 0 khi vi phạm/lệch plan.
+- **Instant Audit** (`instant-audit.ts`, M3): `isInstantAuditEnabled()` đọc `feature_flags` (fallback false); flag=true → parse-mt4 → `detectViolations` (Behavior Engine cũ, không logic mới).
+- **Notification content** (`notification-content.ts`, M8): 2 loại (sáng/evening), tone Auditor cân bằng — banned words test; evening ok:false nếu không có lệnh đóng.
 
 ## Edge Functions (đã deploy, JWT required qua config.toml `verify_jwt=true`)
 
