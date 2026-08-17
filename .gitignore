@@ -46,3 +46,7 @@ Thumbs.db
 *.log
 .env
 .env.*
+
+# Expo prebuild-generated native projects (CI regenerates via `expo prebuild`)
+/apps/mobile/android/
+/apps/mobile/ios/

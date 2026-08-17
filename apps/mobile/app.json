@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Trading Discipline OS",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,8 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.trademind.trading"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,7 @@
         "backgroundColor": "#ffffff",
         "barStyle": "dark-content"
       },
-      "package": "com.hoangsoft90.mobile"
+      "package": "com.trademind.trading"
     },
     "web": {
       "output": "single",
@@ -56,8 +57,7 @@
     "targetSdkVersion": 36,
     "buildToolsVersion": "36.0.0"
    }
-  }
- ],["./plugins/pin-gradle-dependency",{"dependency":"com.google.android.gms:play-services-ads","version":"24.2.0"}],"expo-notifications"
+  }     ],["./plugins/pin-gradle-dependency",{"dependency":"com.google.android.gms:play-services-ads","version":"24.2.0"}],"expo-notifications","./plugins/embed-js-in-debug"
 ],
     "experiments": {
       "typedRoutes": true,
