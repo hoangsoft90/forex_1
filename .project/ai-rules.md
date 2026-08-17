@@ -26,7 +26,7 @@
 13. **Verify bắt buộc** (trong `apps/mobile`): `npx tsc --noEmit` = 0 lỗi · `npm run lint` = 0 · `npx jest` pass (226 test hiện tại, thêm test cho công thức mới).
 14. Đụng native/package mới → chạy `npx expo export --platform android` + `--platform web`.
 15. **Code review** theo AGENTS.md (OCR → Ponytail → Impact → Dead code → Pattern → Scope → Lessons) trước khi commit; task lớn phải chạy Task Completion Hook (ADR/memory/working.md).
-16. Build APK để tìm lỗi native thật: theo skill `build-debug-apk-gh` (push lên main → GH Actions → tải artifact), KHÔNG chỉ dựa vào `expo export`.
+16. Build APK để tìm lỗi native thật: theo skill `build-debug-apk-gh` (push lên main → GH Actions → tải artifact), KHÔNG chỉ dựa vào `expo export`. Debug APK đã nhúng JS bundle (plugin `embed-js-in-debug` — `bundleInDebug=true`); nếu app cài vào máy không mở được (logcat "Unable to load script") → dùng skill `apk-standalone-on-device`. Identity app hiện tại: package `com.trademind.trading`, tên "Trading Discipline OS" — KHÔNG dùng lại `com.hoangsoft90.mobile`.
 17. Thay đổi schema/API → cập nhật ADR + nhắc user chạy migration trên SQL Editor.
 
 ## Cấm kỵ riêng project
