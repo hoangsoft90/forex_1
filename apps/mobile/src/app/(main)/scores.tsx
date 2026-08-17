@@ -31,7 +31,7 @@ export default function ScoresScreen() {
         supabase.from('user_profiles').select('subscription_tier').eq('id', user.id).maybeSingle(),
         supabase
           .from('trade_executions')
-          .select('trade_plan_id, pnl_amount, exit_time')
+          .select('id, trade_plan_id, pnl_amount, exit_time')
           .eq('user_id', user.id)
           .not('exit_time', 'is', null)
           .gte('exit_time', `${start}T00:00:00`)
@@ -49,17 +49,19 @@ export default function ScoresScreen() {
 
     setTier(profile?.subscription_tier ?? 'free');
 
-    // Discipline: lệnh tuần này có plan + delta
-    const execList = (executions ?? []) as { trade_plan_id: string | null; pnl_amount: number | null }[];
+    // Discipline: lệnh tuần này có plan + delta CỦA TUẦN NÀY (không tính delta lịch sử)
+    const execList = (executions ?? []) as { id: string; trade_plan_id: string | null; pnl_amount: number | null }[];
     const plannedExecs = execList.filter((e) => e.trade_plan_id);
     const totalPlanned = plannedExecs.length;
-    const followedCount = (deltas ?? []).filter((d) => d.followed_plan === true).length;
+    const weekPlanIds = new Set(plannedExecs.map((e) => e.id));
+    const weekDeltas = (deltas ?? []).filter((d) => weekPlanIds.has(d.trade_execution_id));
+    const followedCount = weekDeltas.filter((d) => d.followed_plan === true).length;
     const violationsCount = violations?.length ?? 0;
     const prevented = interruptions?.length ?? 0;
 
     const discipline = computeDisciplineScore({
-      followedPlanCount: Math.min(followedCount, totalPlanned || followedCount),
-      totalPlannedCount: totalPlanned > 0 ? totalPlanned : followedCount,
+      followedPlanCount: followedCount,
+      totalPlannedCount: totalPlanned,
       violationsCount,
     });
 

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -8,6 +8,11 @@ import {
   View,
 } from 'react-native';
 
+import {
+  formatCooldown,
+  getLastRewardedAt,
+  getRemainingCooldownMs,
+} from '@/lib/ad-cooldown';
 import { useAuth } from '@/lib/auth-context';
 import { isAdmobConfigured } from '@/lib/admob';
 import { safeBack } from '@/lib/navigation';
@@ -19,9 +24,29 @@ export default function ProScreen() {
   const { tier, subscriptionExpiresAt, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Cooldown: số ms còn phải chờ trước khi xem ad tiếp theo (0 = sẵn sàng).
+  const [cooldownMs, setCooldownMs] = useState(0);
+
+  // Load cooldown lúc mở màn hình + đồng hồ đếm ngược mỗi giây.
+  useEffect(() => {
+    let mounted = true;
+    getLastRewardedAt().then((last) => {
+      if (mounted) setCooldownMs(getRemainingCooldownMs(last));
+    });
+    const timer = setInterval(() => {
+      getLastRewardedAt().then((last) => {
+        if (mounted) setCooldownMs(getRemainingCooldownMs(last));
+      });
+    }, 1000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   const status = getProStatus(tier, subscriptionExpiresAt);
   const admobReady = isAdmobConfigured();
+  const cooldownActive = cooldownMs > 0;
 
   async function handleWatchAd() {
     setLoading(true);
@@ -34,6 +59,9 @@ export default function ProScreen() {
     } else {
       setMessage(result.reason);
     }
+    // Cập nhật lại cooldown ngay sau khi xem (thành công hoặc bị chặn).
+    const last = await getLastRewardedAt();
+    setCooldownMs(getRemainingCooldownMs(last));
   }
 
   return (
@@ -58,18 +86,28 @@ export default function ProScreen() {
       )}
 
       <TouchableOpacity
-        style={[styles.button, (loading || !admobReady) && styles.buttonDisabled]}
+        style={[styles.button, (loading || !admobReady || cooldownActive) && styles.buttonDisabled]}
         onPress={handleWatchAd}
-        disabled={loading || !admobReady}
+        disabled={loading || !admobReady || cooldownActive}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
+        ) : cooldownActive ? (
+          <Text style={styles.buttonText}>
+            ⏳ Thử lại sau {formatCooldown(cooldownMs)}
+          </Text>
         ) : (
           <Text style={styles.buttonText}>
             {admobReady ? '▶ Xem quảng cáo — mở Pro 24h' : 'Quảng cáo chưa được cấu hình'}
           </Text>
         )}
       </TouchableOpacity>
+
+      {cooldownActive ? (
+        <Text style={styles.hint}>
+          Bạn vừa xem quảng cáo. Xem lần tiếp theo sau {formatCooldown(cooldownMs)} để chống spam.
+        </Text>
+      ) : null}
 
       {!admobReady ? (
         <Text style={styles.hint}>

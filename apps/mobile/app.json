@@ -47,16 +47,25 @@
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
-        }
-      ]
-    ],
+      ], [
+  "expo-build-properties",
+  {
+   "android": {
+    "usesCleartextTraffic": true,
+    "compileSdkVersion": 36,
+    "targetSdkVersion": 36,
+    "buildToolsVersion": "36.0.0"
+   }
+  }
+ ],
+ [
+  "./plugins/pin-gradle-dependency",
+  {
+   "dependency": "com.google.android.gms:play-services-ads",
+   "version": "24.2.0"
+  }
+ ]
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

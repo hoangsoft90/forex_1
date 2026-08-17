@@ -27,12 +27,12 @@ export default function WeeklyAuditScreen() {
       await Promise.all([
         supabase
           .from('trade_executions')
-          .select('trade_plan_id, pnl_amount, exit_time')
+          .select('id, trade_plan_id, pnl_amount, exit_time')
           .eq('user_id', user.id)
           .not('exit_time', 'is', null)
           .gte('exit_time', `${start}T00:00:00`)
           .lte('exit_time', `${end}T23:59:59`),
-        supabase.from('plan_vs_reality_deltas').select('followed_plan').eq('user_id', user.id),
+        supabase.from('plan_vs_reality_deltas').select('trade_execution_id, followed_plan').eq('user_id', user.id),
         supabase
           .from('rule_violations')
           .select('violation_type, detected_at')
@@ -48,12 +48,15 @@ export default function WeeklyAuditScreen() {
           .lte('responded_at', `${end}T23:59:59`),
       ]);
 
-    const execList = (executions ?? []) as { trade_plan_id: string | null; pnl_amount: number | null }[];
+    const execList = (executions ?? []) as { id: string; trade_plan_id: string | null; pnl_amount: number | null }[];
     const totalTrades = execList.length;
     const weekPnl = execList.reduce((s, e) => s + (e.pnl_amount ?? 0), 0);
 
-    const followed = (deltas ?? []).filter((d) => d.followed_plan === true).length;
-    const totalDelta = (deltas ?? []).length;
+    // % theo plan CHỈ tính trên delta của các lệnh TUẦN NÀY (không gộp lịch sử)
+    const weekIds = new Set(execList.map((e) => e.id));
+    const weekDeltas = (deltas ?? []).filter((d) => weekIds.has(d.trade_execution_id));
+    const followed = weekDeltas.filter((d) => d.followed_plan === true).length;
+    const totalDelta = weekDeltas.length;
     const followedPlanPercent = totalDelta > 0 ? (followed / totalDelta) * 100 : 0;
 
     // Top violation

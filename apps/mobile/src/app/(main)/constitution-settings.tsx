@@ -113,7 +113,9 @@ export default function ConstitutionSettingsScreen() {
   async function addRule(template: RuleTemplate) {
     if (!user) return;
     setError(null);
-    if (!canAddRule(activeCount + 1, tier)) {
+    // ⚠️ KHÔNG dùng activeCount + 1 — canAddRule(n) = n < 3; cộng 1 sẽ chặn
+    // luôn lần thứ 3 (Free: 2 bắt buộc + 1 tùy chọn, tổng 3 là hợp lệ).
+    if (!canAddRule(activeCount, tier)) {
       setError(`Gói ${tier === 'pro' ? 'Pro' : 'Free'} không cho thêm: Free tối đa 3 luật.`);
       return;
     }

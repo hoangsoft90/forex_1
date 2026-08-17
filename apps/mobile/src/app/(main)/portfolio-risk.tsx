@@ -57,11 +57,14 @@ export default function PortfolioRiskScreen() {
       balance,
     }));
 
-    setSymbols([...new Set(open.map((e) => e.symbol))]);
+    // Dùng biến local (không đưa `symbols` vào deps) — setSymbols với mảng mới
+    // mỗi lần sẽ làm `load` đổi identity → useEffect chạy lại → VÒNG LẶP VÔ HẠN.
+    const uniqueSymbols = [...new Set(open.map((e) => e.symbol))];
+    setSymbols(uniqueSymbols);
     setTotalRisk(computePortfolioRisk(positions, { maxRiskPerTrade: maxRisk, maxDailyLoss: maxDaily }));
-    setCorrPairs(correlationMatrix(symbols));
+    setCorrPairs(correlationMatrix(uniqueSymbols));
     setLoading(false);
-  }, [user, symbols]);
+  }, [user]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

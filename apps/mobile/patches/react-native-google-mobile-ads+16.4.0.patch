@@ -1,0 +1,49 @@
+diff --git a/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsCommon.java b/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsCommon.java
+--- a/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsCommon.java
++++ b/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsCommon.java
+@@ -69,7 +69,13 @@
+             reactViewGroup.getContext(), adWidth);
+       }
+       if ("LARGE_ANCHORED_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
+-        return AdSize.getLargeAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
++        // [patch-package] getLargeAnchoredAdaptiveBannerAdSize is play-services-ads
++        // 25.x-only; 24.2.0 (pinned for Kotlin 2.1) lacks it. Fall back to the
++        // current-orientation anchored adaptive size — functionally equivalent and
++        // already used below. The app itself only uses BannerAdSize.BANNER, so this
++        // is a dead path.
++        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
++            reactViewGroup.getContext(), adWidth);
+       }
+       return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+           reactViewGroup.getContext(), adWidth);
+diff --git a/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsModule.kt b/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsModule.kt
+--- a/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsModule.kt
++++ b/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsModule.kt
+@@ -25,7 +25,6 @@
+ import com.google.android.gms.ads.AdRequest
+ import com.google.android.gms.ads.AdValue;
+ import com.google.android.gms.ads.OnAdInspectorClosedListener
+-import com.google.android.gms.ads.AgeRestrictedTreatment
+ 
+ class ReactNativeGoogleMobileAdsModule(
+   reactContext: ReactApplicationContext
+@@ -63,15 +62,10 @@
+       }
+     }
+ 
+-    if (requestConfiguration.hasKey("ageRestrictedTreatment")) {
+-      val ageRestrictedTreatment = requestConfiguration.getString("ageRestrictedTreatment")
+-
+-      when (ageRestrictedTreatment) {
+-        "CHILD" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+-        "TEEN" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.TEEN)
+-        "UNSPECIFIED" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.UNSPECIFIED)
+-      }
+-    }
++    // [patch-package] AgeRestrictedTreatment is play-services-ads 25.x-only and does
++    // not exist in 24.2.0 (pinned for Kotlin 2.1 compatibility). The app never sends
++    // "ageRestrictedTreatment" from JS (ads-config only sets testDeviceIdentifiers),
++    // so this config path is dead code — removed instead of crashing the build.
+ 
+     if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
+       val tagForChildDirectedTreatment = requestConfiguration.getBoolean("tagForChildDirectedTreatment")

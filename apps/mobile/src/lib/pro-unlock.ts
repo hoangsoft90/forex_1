@@ -11,6 +11,12 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import {
+  formatCooldown,
+  getLastRewardedAt,
+  getRemainingCooldownMs,
+  recordRewardedAt,
+} from '@/lib/ad-cooldown';
 import { showRewardedAd } from '@/lib/admob';
 import { proExpiry24h } from '@/lib/tier';
 
@@ -20,12 +26,28 @@ export type UnlockProResult =
 
 /**
  * Chạy toàn bộ luồng: xem ad → ghi Pro 24h. Trả về kết quả cho UI.
+ *
+ * Cooldown: sau mỗi lần xem hết ad phải chờ `AD_REWARD_COOLDOWN_MS`
+ * (5 phút) mới xem lần tiếp theo — chống spam cộng dồn Pro liên tục.
  */
 export async function unlockProViaAd(): Promise<UnlockProResult> {
+  // Bước 0: kiểm tra cooldown trước khi hiện ad.
+  const lastWatchedAt = await getLastRewardedAt();
+  const remaining = getRemainingCooldownMs(lastWatchedAt);
+  if (remaining > 0) {
+    return {
+      ok: false,
+      reason: `Bạn vừa xem quảng cáo. Thử lại sau ${formatCooldown(remaining)}.`,
+    };
+  }
+
   const ad = await showRewardedAd();
   if (!ad.rewarded) {
     return { ok: false, reason: ad.error ?? 'Chưa xem hết quảng cáo.' };
   }
+
+  // Ghi nhận lượt xem thành công → bắt đầu cooldown cho lần sau.
+  await recordRewardedAt();
 
   const {
     data: { user },

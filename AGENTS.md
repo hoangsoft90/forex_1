@@ -237,30 +237,33 @@ Phân biệt rõ 2 tình huống:
 - KHÔNG được tự ý khởi động lại/khởi tạo lại bất kỳ service nào (AgentMemory, cocoindex-code daemon, codebase-memory-mcp) — chỉ báo cáo và nhắc user tự xử lý nếu cần restart.
 
 # PROJECT
-<!-- Từ đây trở xuống là phần RIÊNG của từng project — điền cụ thể khi khởi tạo, không để trống các mục đánh dấu ĐIỀN -->
 
 ## Role & Context
-<!-- ĐIỀN: project này làm gì, tech stack chính, vai trò của agent (vd: full-stack dev cho SaaS X) -->
+- **Trading Discipline OS** — app kỷ luật giao dịch forex cho trader cá nhân (Phase 1: MVP 9 module ✅ · Phase 2: AdMob/Pro, TradingView chart, Portfolio Risk, Adaptive ATR ✅).
+- Stack: **Expo SDK 57** (React Native + TypeScript + expo-router, `apps/mobile`) + **Supabase** (Postgres + Auth + Edge Functions Deno). Ads: AdMob (banner + rewarded → Pro 24h).
+- Agent là full-stack dev: mobile + schema/RLS/edge functions + CI (GH Actions debug APK) + config native (targetSdk 36, cleartext HTTP).
 
 ## Initial Setup & Navigation
-`context.md`/`working.md`/`operating_rules.md` đã được đọc tự động ở "SESSION START" (đầu file) — KHÔNG đọc lại ở đây, tránh tốn token 2 lần. Mục này chỉ để ĐIỀN thêm bước navigation RIÊNG của project, ví dụ: đọc sâu hơn trong `.project/README.md` nếu cần tra cứu cấu trúc schema/API, hoặc thứ tự đọc các service trong monorepo.
-
-<!-- ĐIỀN thêm nếu project có quy trình navigation riêng (vd: cấu trúc monorepo, service nào đọc trước) -->
+`context.md`/`working.md`/`operating_rules.md` được đọc tự động ở "SESSION START" — KHÔNG đọc lại. Khi cần tra cứu sâu, đọc **`.project/`** (Knowledge Item — entry point `.project/README.md`):
+- `overview.md` — mục đích/stack/cấu trúc/env vars · `architecture.md` — data model 16 bảng + công thức + edge functions · `patterns.md` — quy ước code · `state.md` — tiến độ/todo/bug/decision log · `modules/` — chi tiết từng module.
+- Tài liệu gốc khi đụng phạm vi: `plan1_final_v2.md` (tại sao) → `data_model.md` (schema) → `mvp_scope.md` (phạm vi + AC).
+- Edge function deploy: chạy từ ROOT repo (`supabase functions deploy <tên>`) — chạy từ `supabase/` sẽ lỗi path nhân đôi.
 
 ## Critical Rules (Must Follow)
-<!-- ĐIỀN các rule RIÊNG của project ở đây (không lặp lại nội dung đã có ở phần trên của file này) -->
-1. <!-- ĐIỀN -->
-2. <!-- ĐIỀN -->
-<!-- ... thêm rule riêng nếu cần ... -->
-n. **Xem thêm phần hạ tầng chung ở đầu file** (không lặp lại ở đây): luôn ưu tiên tool MCP nội bộ trước grep thủ công · không báo "hoàn thành" nếu chưa test/lint/Code Review · không tự commit code thuộc vùng loại trừ Ponytail khi chưa có xác nhận user.
+1. **KHÔNG tự sáng tạo công thức nghiệp vụ** (lot size, risk %, Discipline/Edge score, delta, violation) — implement ĐÚNG mvp_scope; công thức sai → báo user trước, không tự sửa.
+2. **KHÔNG tự đổi schema** (`data_model.md`/`schema.sql`) — bảng/field là ràng buộc cứng; đổi schema/API → hỏi user + cập nhật ADR + nhắc chạy migration trên SQL Editor.
+3. **KHÔNG nới lỏng ràng buộc "adaptive chỉ GIẢM risk"** (trigger DB + `atr.ts` khóa cứng) và **không thêm dịch vụ ngoài** (analytics/SMS/payment) khi chưa được yêu cầu — Phase 1 giữ 100% free.
+4. **Ads**: chỉ sửa cấu hình ở `src/lib/ads-config.ts`; giữ `TEST_ADS=true` trừ khi user yêu cầu ra mắt thật; rewarded phải qua cooldown 5 phút (`ad-cooldown.ts`).
+5. **Navigation**: mọi back dùng `safeBack(router, fallback)`; onboarding dùng `replace` trực tiếp (KHÔNG safeBack — canGoBack về login → loop). Không để màn hình treo spinner vĩnh viễn khi thiếu dữ liệu (deep-link).
+6. **Business logic → `src/lib/*.ts` thuần** (không import react-native) + unit test; package native-only → tách `.native.ts(x)` + web stub.
+7. **Không commit secrets** (`.env`, token) — verify `git status`/dry-run trước commit; git config local là placeholder → commit dùng env vars `GIT_AUTHOR_NAME/EMAIL` (xem skill `build-debug-apk-gh`).
+8. **Verify bắt buộc trước khi báo xong**: trong `apps/mobile` — `npx tsc --noEmit` = 0 · `npm run lint` = 0 · `npx jest` pass (147 test) · đụng native → `npx expo export --platform android` + `--platform web`.
+9. Chi tiết thêm: `.project/ai-rules.md` (17 rule) + phần hạ tầng chung đầu file (MCP tools trước grep, test/lint/Code Review trước khi báo xong, vùng loại trừ Ponytail cần xác nhận user).
 
 ## Workflow
-<!-- ĐIỀN workflow riêng của project, ví dụ mẫu bên dưới — sửa/xóa/thêm theo thực tế -->
-- **Bug fixing**: <!-- ĐIỀN: check ở đâu trước, log ở đâu -->
-- **Feature add**: 
-  - Nghĩ kỹ xem là Client hay Server Component.
-  - Update `working.md` sau khi làm xong.
-  - Test kĩ tính năng trước khi báo cáo cho user.
+- **Bug fixing**: check logic ở `apps/mobile/src/lib/*.ts` (thuần, test được) → màn hình `src/app/` → query/schema `supabase/`. Log: `console.warn` cho lỗi không chặn luồng (analytics/ads/audit), không log secret.
+- **Feature add**: xác định module thuộc Phase nào → tạo/cập nhật OpenSpec change (`openspec/changes/<tên>/`) nếu chưa có → code theo `patterns.md` → test + lint + typecheck → cập nhật `working.md` → báo cáo user.
+- **Build APK**: theo skill `build-debug-apk-gh` (push main → GH Actions assembleDebug → tải artifact) — build APK mới tìm chính xác lỗi native, `expo export` không đủ.
 
 ## Git & Kiểm thử (BẮT BUỘC cho **task lớn** — xem định nghĩa đầu file; tuân theo phương pháp TDD/debugging của Superpowers)
 
@@ -271,8 +274,7 @@ n. **Xem thêm phần hạ tầng chung ở đầu file** (không lặp lại �
   - Khi cần xem lại/review thay đổi vừa làm: dùng `git diff` (chưa commit) hoặc `git log -p -1`/`git show <sha>` (đã commit) để chỉ đọc phần THAY ĐỔI, thay vì `view`/`cat` lại nguyên file.
   - Chỉ đọc lại nguyên file khi diff không đủ ngữ cảnh để hiểu (vd: cần xem toàn bộ hàm bao quanh đoạn diff) hoặc đây là lần đầu tiếp cận file đó.
   - Áp dụng tương tự cho bước Code Review (impact review): ưu tiên `git diff`/`detect_changes{since}` để khoanh vùng, không quét lại toàn bộ codebase.
-- **Branch/Commit convention:** ...
-  <!-- Điền quy ước riêng của project, ví dụ: feat/, fix/, chore/ prefix; Conventional Commits; branch từ main/develop -->
+- **Branch/Commit convention:** repo có 1 branch `main` (push thẳng, workflow GH Actions trigger build APK). Commit theo Conventional Commits ngắn gọn (feat:/fix:/chore:/docs:), kèm footer `Generated with Codebuff` (quy ước mặc định của tool). Git config local là placeholder → dùng `GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL` env khi commit. Build APK qua GH Actions chỉ khi push `main` — commit nhỏ/thường xuyên để workflow build đúng bản mới nhất.
 - **Targeted testing (ưu tiên, để tiết kiệm thời gian/token với project lớn):**
   - Trước khi chạy test, gọi `detect_changes{project, scope, since}` (codebase-memory-mcp) để xác định phạm vi file/module bị ảnh hưởng bởi thay đổi.
   - Nếu `detect_changes` không khả dụng (codebase-memory-mcp down): dùng `git diff --name-only` để lấy danh sách file thay đổi, suy ra test liên quan theo quy ước đặt tên test của project; nếu không suy ra được, chạy full test suite (chấp nhận tốn thời gian hơn là bỏ sót).
