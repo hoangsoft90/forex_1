@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { listWeaknesses } from '@/lib/instant-audit';
@@ -21,6 +22,7 @@ import { supabase } from '@/lib/supabase';
  * KHÔNG gọi parser. Giữ vĩnh viễn cho đến khi Module 0 đạt ngưỡng thật.
  */
 export default function WeaknessSummaryScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Record<string, boolean> | null>(null);
@@ -55,19 +57,13 @@ export default function WeaknessSummaryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Dự đoán điểm yếu của bạn</Text>
-      <Text style={styles.subtitle}>
-        Từ những câu trả lời vừa rồi, đây là các điểm yếu bạn tự nhận có thể ảnh hưởng
-        đến kết quả giao dịch. Hệ thống sẽ theo dõi và đối chiếu với hành vi thực tế.
-      </Text>
+      <Text style={styles.title}>{t('weaknessSummary.title')}</Text>
+      <Text style={styles.subtitle}>{t('weaknessSummary.subtitle')}</Text>
 
       {weaknesses.length === 0 ? (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>✅ Không có điểm yếu nổi bật</Text>
-          <Text style={styles.cardBody}>
-            Bạn không tự nhận bất kỳ thói quen rủi ro nào trong quiz. Nếu kết quả giao dịch
-            không như mong đợi, hãy theo dõi Journal — dữ liệu thật sẽ cho câu trả lời chính xác nhất.
-          </Text>
+          <Text style={styles.cardTitle}>{t('weaknessSummary.noWeaknessTitle')}</Text>
+          <Text style={styles.cardBody}>{t('weaknessSummary.noWeaknessBody')}</Text>
         </View>
       ) : (
         weaknesses.map((w) => (
@@ -79,18 +75,15 @@ export default function WeaknessSummaryScreen() {
       )}
 
       <View style={styles.note}>
-        <Text style={styles.noteText}>
-          Lưu ý: đây là dự đoán dựa trên câu trả lời của bạn — khi có dữ liệu lệnh thực tế,
-          hệ thống sẽ đối chiếu để xác định điểm yếu chính xác hơn.
-        </Text>
+        <Text style={styles.noteText}>{t('weaknessSummary.note')}</Text>
       </View>
 
       <TouchableOpacity style={styles.button} onPress={() => router.replace('/(onboarding)/explain')}>
-        <Text style={styles.buttonText}>Tiếp tục</Text>
+        <Text style={styles.buttonText}>{t('common.continue')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(onboarding)/quiz')}>
-        <Text style={styles.backText}>‹ Quay lại trả lời quiz</Text>
+        <Text style={styles.backText}>{t('weaknessSummary.backToQuiz')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

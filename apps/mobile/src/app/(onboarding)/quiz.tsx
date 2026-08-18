@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { isInstantAuditEnabled } from '@/lib/instant-audit';
@@ -15,12 +16,13 @@ import { supabase } from '@/lib/supabase';
 import {
   buildWeaknessProfile,
   isQuizComplete,
+  localizeQuestion,
   QUIZ_QUESTIONS,
   QuizAnswerMap,
-  QuizOption,
 } from '@/lib/weakness-quiz';
 
 export default function QuizScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
   const [answers, setAnswers] = useState<QuizAnswerMap>({});
@@ -33,7 +35,7 @@ export default function QuizScreen() {
 
   async function handleSubmit() {
     if (!isQuizComplete(answers)) {
-      setError('Vui lòng trả lời tất cả câu hỏi trước khi tiếp tục.');
+      setError(t('quiz.error'));
       return;
     }
     if (!user) return;
@@ -56,7 +58,7 @@ export default function QuizScreen() {
         auditEnabled ? '/(onboarding)/instant-audit' : '/(onboarding)/weakness-summary',
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi xảy ra khi lưu.');
+      setError(e instanceof Error ? e.message : t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -66,32 +68,31 @@ export default function QuizScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Hồ sơ điểm yếu</Text>
-      <Text style={styles.subtitle}>
-        Trả lời theo thói quen giao dịch thực tế của bạn — không có câu trả lời đúng/sai.
-      </Text>
+      <Text style={styles.title}>{t('quiz.title')}</Text>
+      <Text style={styles.subtitle}>{t('quiz.subtitle')}</Text>
 
-      {QUIZ_QUESTIONS.map((q) => (
-        <View key={q.id} style={styles.questionBlock}>
-          <Text style={styles.question}>
-            {q.question}
-          </Text>
-          {q.options.map((opt: QuizOption) => {
-            const selected = answers[q.id] === opt.weight;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                style={[styles.option, selected && styles.optionSelected]}
-                onPress={() => selectOption(q.id, opt.weight)}
-              >
-                <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
+      {QUIZ_QUESTIONS.map((q) => {
+        const localized = localizeQuestion(q);
+        return (
+          <View key={q.id} style={styles.questionBlock}>
+            <Text style={styles.question}>{localized.question}</Text>
+            {localized.options.map((opt) => {
+              const selected = answers[q.id] === opt.weight;
+              return (
+                <TouchableOpacity
+                  key={opt.label}
+                  style={[styles.option, selected && styles.optionSelected]}
+                  onPress={() => selectOption(q.id, opt.weight)}
+                >
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        );
+      })}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -99,7 +100,7 @@ export default function QuizScreen() {
         style={styles.backBtn}
         onPress={() => router.replace('/(onboarding)/balance')}
       >
-        <Text style={styles.backText}>‹ Quay lại nhập số dư</Text>
+        <Text style={styles.backText}>{t('quiz.backToBalance')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -111,7 +112,9 @@ export default function QuizScreen() {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>
-            {complete ? 'Xem kết quả' : `Còn ${QUIZ_QUESTIONS.length - Object.keys(answers).length} câu chưa trả lời`}
+            {complete
+              ? t('quiz.viewResults')
+              : t('quiz.remaining', { count: QUIZ_QUESTIONS.length - Object.keys(answers).length })}
           </Text>
         )}
       </TouchableOpacity>

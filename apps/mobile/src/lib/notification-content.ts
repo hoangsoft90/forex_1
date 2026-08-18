@@ -10,6 +10,8 @@
  * KHÔNG phán xét/hù dọa. Tránh: "Bạn lại vi phạm rồi!" → dùng: "Discipline Score hôm nay: 82. Xem chi tiết?"
  */
 
+import i18n from '@/i18n';
+
 export type MorningBriefInput = {
   /** Discipline Score hôm qua (snapshot gần nhất) — null nếu chưa có */
   yesterdayScore: number | null;
@@ -32,21 +34,21 @@ export type NotificationContent =
 export function buildMorningBrief(input: MorningBriefInput): NotificationContent {
   const scoreLine =
     input.yesterdayScore != null
-      ? `Discipline Score hôm qua: ${Math.round(input.yesterdayScore)}.`
-      : 'Bắt đầu ghi nhận lệnh để có điểm kỷ luật.';
+      ? i18n.t('notification.morningScore', { score: Math.round(input.yesterdayScore) })
+      : i18n.t('notification.morningNoScore');
 
   if (input.activeRules.length === 0) {
     return {
       ok: true,
-      title: 'Chúc một ngày giao dịch tốt lành',
-      body: `${scoreLine} Thiết lập hiến pháp giao dịch để bắt đầu.`,
+      title: i18n.t('notification.morningTitle'),
+      body: `${scoreLine} ${i18n.t('notification.morningNoRules')}`,
     };
   }
   const rulesLine = input.activeRules.slice(0, 3).join(', ');
   return {
     ok: true,
-    title: 'Chúc một ngày giao dịch tốt lành',
-    body: `${scoreLine} Rules hôm nay: ${rulesLine}.`,
+    title: i18n.t('notification.morningTitle'),
+    body: `${scoreLine} ${i18n.t('notification.morningRules', { rules: rulesLine })}`,
   };
 }
 
@@ -57,7 +59,7 @@ export function buildEveningReview(input: EveningReviewInput): NotificationConte
   }
   return {
     ok: true,
-    title: 'Xem lại hôm nay',
-    body: `Bạn đã đóng ${input.closedCount} lệnh hôm nay. Dành 1 phút review — mọi nhận xét đều là thông tin, không phải phán xét.`,
+    title: i18n.t('notification.eveningTitle'),
+    body: i18n.t('notification.eveningBody', { count: input.closedCount }),
   };
 }

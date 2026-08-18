@@ -2,9 +2,11 @@
  * Weekly Performance Audit — Module 9.
  *
  * Rule-based text generation (KHÔNG dùng LLM — mvp_scope mục 9):
- * template có sẵn, điền số thật vào chỗ trống. Phải tự nhiên tiếng Việt,
- * xử lý đúng khi count = 0 (tránh câu cụt/lặp vô nghĩa).
+ * template có sẵn, điền số thật vào chỗ trống. Phải tự nhiên theo ngôn ngữ
+ * đang dùng, xử lý đúng khi count = 0 (tránh câu cụt/lặp vô nghĩa).
  */
+
+import i18n from '@/i18n';
 
 export type WeeklyAuditInput = {
   /** Số lệnh trong tuần */
@@ -20,56 +22,57 @@ export type WeeklyAuditInput = {
 };
 
 const VIOLATION_LABELS: Record<string, string> = {
-  overconfidence_size: 'vào lệnh quá khối lượng',
-  revenge_trading: 'revenge trade',
-  hope_trading: 'dời Stop Loss',
-  martingale_negative: 'tăng lot sau lệnh thua',
-  news_gambling: 'vào lệnh trước tin lớn',
-  max_daily_loss_exceeded: 'vượt mức lỗ tối đa trong ngày',
-  checklist_skipped: 'bỏ qua checklist',
+  overconfidence_size: 'weeklyAudit.violation.overconfidenceSize',
+  revenge_trading: 'weeklyAudit.violation.revengeTrading',
+  hope_trading: 'weeklyAudit.violation.hopeTrading',
+  martingale_negative: 'weeklyAudit.violation.martingaleNegative',
+  news_gambling: 'weeklyAudit.violation.newsGambling',
+  max_daily_loss_exceeded: 'weeklyAudit.violation.maxDailyLoss',
+  checklist_skipped: 'weeklyAudit.violation.checklistSkipped',
 };
 
 /** Sinh báo cáo tuần theo template (mvp_scope mục 9) — không gọi AI. */
 export function generateWeeklyAudit(input: WeeklyAuditInput): string {
   const parts: string[] = [];
+  const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts);
 
   // Mở đầu: số lệnh + % theo plan
   if (input.totalTrades > 0) {
     parts.push(
-      `Tuần này bạn thực hiện ${input.totalTrades} lệnh, ${input.followedPlanPercent.toFixed(0)}% theo đúng plan.`,
+      t('weeklyAudit.opening', {
+        trades: input.totalTrades,
+        pct: input.followedPlanPercent.toFixed(0),
+      }),
     );
   } else {
-    parts.push('Tuần này bạn chưa có lệnh nào được ghi nhận.');
+    parts.push(t('weeklyAudit.noTrades'));
     return parts.join(' ');
   }
 
   // Vi phạm phổ biến nhất (chỉ khi có)
   if (input.topViolation && input.topViolation.count > 0) {
-    const label = VIOLATION_LABELS[input.topViolation.type] ?? input.topViolation.type;
+    const labelKey = VIOLATION_LABELS[input.topViolation.type] ?? input.topViolation.type;
+    const label = i18n.exists(labelKey) ? t(labelKey) : labelKey;
     parts.push(
       input.topViolation.count === 1
-        ? `Vi phạm phổ biến nhất: ${label} (1 lần).`
-        : `Vi phạm phổ biến nhất: ${label} (${input.topViolation.count} lần).`,
+        ? t('weeklyAudit.topViolationOne', { label })
+        : t('weeklyAudit.topViolationMany', { label, count: input.topViolation.count }),
     );
   } else {
-    parts.push('Tuần này bạn không có vi phạm nào được ghi nhận — giữ vững nhé.');
+    parts.push(t('weeklyAudit.noViolations'));
   }
 
   // Bad trades prevented
   if (input.badTradesPrevented > 0) {
-    parts.push(
-      `App đã giúp bạn tránh ${input.badTradesPrevented} lệnh vi phạm rule của chính mình.`,
-    );
+    parts.push(t('weeklyAudit.prevented', { count: input.badTradesPrevented }));
   }
 
   // PnL + kết luận
   if (input.weekPnl >= 0) {
-    parts.push(
-      `Kết quả tuần: +$${input.weekPnl.toFixed(2)}. Tiếp tục duy trì kỷ luật như thế này.`,
-    );
+    parts.push(t('weeklyAudit.positivePnl', { amount: input.weekPnl.toFixed(2) }));
   } else {
     parts.push(
-      `Kết quả tuần: -$${Math.abs(input.weekPnl).toFixed(2)}. Nhìn vào % theo plan để phân biệt do chiến lược hay do hành vi.`,
+      t('weeklyAudit.negativePnl', { amount: Math.abs(input.weekPnl).toFixed(2) }),
     );
   }
 

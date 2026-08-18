@@ -12,6 +12,8 @@
  *     (gate cứng cho Onboarding Instant Audit — retention_layer_addendum.md Module 0/3).
  */
 
+import i18n from '@/i18n';
+
 export type ParsedMt4Trade = {
   /** ticket/order number (deal id cho deal-based) */
   ticket: string;
@@ -250,7 +252,7 @@ export function parseMt4History(rawText: string): ParseMt4Result {
   if (headerIdx === -1) {
     return {
       trades: [],
-      errorLines: [{ lineNumber: 1, content: rawText.slice(0, 100), reason: 'Không tìm thấy dòng tiêu đề cột (Order/Ticket, Type, Symbol...) — format không đúng MT4.' }],
+      errorLines: [{ lineNumber: 1, content: rawText.slice(0, 100), reason: i18n.t('mt4Parser.noHeader') }],
       skippedNonTrade: 0,
       detectedLocale: locale,
     };
@@ -288,7 +290,7 @@ export function parseMt4History(rawText: string): ParseMt4Result {
       return null;
     }
     if (!isTradeType(typeLow)) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: `Type không nhận diện được: "${typeRaw}"` });
+      result.errorLines.push({ lineNumber: n, content: text, reason: i18n.t('mt4Parser.badType', { type: typeRaw }) });
       return null;
     }
     const symbol = cols[colSymbol] ?? '';
@@ -296,14 +298,14 @@ export function parseMt4History(rawText: string): ParseMt4Result {
     const openPrice = parseNumber(cols[colPrice], locale);
 
     if (!symbol || lotSize == null || openPrice == null) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: 'Thiếu Symbol / Volume / Price hợp lệ.' });
+      result.errorLines.push({ lineNumber: n, content: text, reason: i18n.t('mt4Parser.missingFields') });
       return null;
     }
 
     const openTimeRaw = cols[colTime] ?? '';
     const openTime = openTimeRaw ? parseMt4Time(openTimeRaw) : null;
     if (!openTime) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: `Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): "${openTimeRaw}"` });
+      result.errorLines.push({ lineNumber: n, content: text, reason: i18n.t('mt4Parser.badTime', { time: openTimeRaw }) });
       return null;
     }
 

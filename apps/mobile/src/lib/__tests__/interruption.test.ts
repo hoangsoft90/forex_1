@@ -173,7 +173,7 @@ describe('interruption — evidence 2 tầng (test case mvp_scope mục 4)', () 
     });
     expect(r?.triggerType).toBe('revenge_pattern');
     expect(r?.evidenceMode).toBe('cohort_benchmark');
-    expect(r?.evidenceText).toBe(COHORT_BENCHMARKS.revenge_pattern);
+    expect(r?.evidenceText).toBe(COHORT_BENCHMARKS.revenge_pattern());
   });
 
   it('đúng 15 lệnh → personal mode (≥ 15)', () => {

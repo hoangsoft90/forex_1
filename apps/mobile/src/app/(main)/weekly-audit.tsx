@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import CostOfIndisciplineCard from '@/components/cost-of-indiscipline-card';
 import { useAuth } from '@/lib/auth-context';
@@ -17,6 +18,7 @@ type AuditData = {
 };
 
 export default function WeeklyAuditScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [data, setData] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,8 +147,8 @@ export default function WeeklyAuditScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Weekly Performance Audit</Text>
-      <Text style={styles.subtitle}>Tổng kết tuần này — sinh từ số liệu thật, không dùng AI.</Text>
+      <Text style={styles.title}>{t('weeklyAudit.title')}</Text>
+      <Text style={styles.subtitle}>{t('weeklyAudit.subtitle')}</Text>
 
       <View style={styles.auditBox}>
         <Text style={styles.auditText}>{data.text}</Text>
@@ -155,15 +157,15 @@ export default function WeeklyAuditScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{data.totalTrades}</Text>
-          <Text style={styles.statLabel}>lệnh</Text>
+          <Text style={styles.statLabel}>{t('weeklyAudit.trades')}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{data.followedPlanPercent.toFixed(0)}%</Text>
-          <Text style={styles.statLabel}>theo plan</Text>
+          <Text style={styles.statLabel}>{t('weeklyAudit.followedPlan')}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{data.prevented}</Text>
-          <Text style={styles.statLabel}>lệnh đã ngăn</Text>
+          <Text style={styles.statLabel}>{t('weeklyAudit.prevented')}</Text>
         </View>
       </View>
 

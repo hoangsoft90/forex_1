@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
+import i18n from '@/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { computeInstantAudit, formatInstantAudit, isInstantAuditEnabled } from '@/lib/instant-audit';
 import { supabase } from '@/lib/supabase';
@@ -39,6 +41,7 @@ type AuditExec = {
  * Nếu parse có dòng lỗi: hiện RÕ số dòng lỗi, KHÔNG hiện audit từ dữ liệu thiếu mà không cảnh báo.
  */
 export default function InstantAuditScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [text, setText] = useState('');
@@ -54,7 +57,7 @@ export default function InstantAuditScreen() {
 
   async function handleAnalyze() {
     if (!text.trim()) {
-      setError('Dán lịch sử giao dịch từ MT4/MT5 (Account History → Copy) trước, hoặc bấm Bỏ qua.');
+      setError(t('instantAudit.pasteError'));
       return;
     }
     setLoading(true);
@@ -62,7 +65,7 @@ export default function InstantAuditScreen() {
     setAuditText(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('parse-mt4', {
-        body: { text },
+        body: { text, lang: i18n.language },
       });
       if (fnError) throw fnError;
       const result = data as ParseResult;
@@ -70,10 +73,10 @@ export default function InstantAuditScreen() {
       // AC: parse có dòng lỗi → hiển thị rõ số dòng lỗi + KHÔNG hiện audit không cảnh báo
       if (result.errorLines.length > 0) {
         setError(
-          `⚠ ${result.errorLines.length} dòng không import được (dòng ${result.errorLines
-            .slice(0, 5)
-            .map((e) => e.lineNumber)
-            .join(', ')}...) — kết quả dưới đây dựa trên dữ liệu thiếu. Bạn có thể sửa tay trong Journal sau.`,
+          t('instantAudit.errorLines', {
+            count: result.errorLines.length,
+            lines: result.errorLines.slice(0, 5).map((e) => e.lineNumber).join(', '),
+          }),
         );
       }
 
@@ -87,7 +90,7 @@ export default function InstantAuditScreen() {
         .limit(200);
       const list = (execs ?? []) as AuditExec[];
       if (list.length === 0) {
-        setError('Chưa có lệnh nào được import — kiểm tra lại định dạng dán.');
+        setError(t('instantAudit.noImported'));
         return;
       }
       const audit = computeInstantAudit(list);
@@ -95,8 +98,8 @@ export default function InstantAuditScreen() {
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Lỗi khi gọi Edge Function: ${e.message} — đảm bảo đã deploy function parse-mt4`
-          : 'Có lỗi xảy ra.',
+          ? t('instantAudit.edgeError', { message: e.message })
+          : t('common.error'),
       );
     } finally {
       setLoading(false);
@@ -114,9 +117,9 @@ export default function InstantAuditScreen() {
     // An toàn kép: nếu vô tình điều hướng tới khi flag tắt → về explain (không gọi parser)
     return (
       <View style={styles.center}>
-        <Text style={styles.offText}>Instant Audit chưa được bật.</Text>
+        <Text style={styles.offText}>{t('instantAudit.off')}</Text>
         <TouchableOpacity style={styles.button} onPress={() => router.replace('/(onboarding)/explain')}>
-          <Text style={styles.buttonText}>Tiếp tục</Text>
+          <Text style={styles.buttonText}>{t('common.continue')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -124,11 +127,8 @@ export default function InstantAuditScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Điểm yếu thực tế của bạn</Text>
-      <Text style={styles.subtitle}>
-        Dán lịch sử giao dịch gần đây (MT4/MT5 → Account History → Copy) để xem điểm yếu
-        từ dữ liệu thật. Không bắt buộc — bấm Bỏ qua nếu chưa có.
-      </Text>
+      <Text style={styles.title}>{t('instantAudit.title')}</Text>
+      <Text style={styles.subtitle}>{t('instantAudit.subtitle')}</Text>
 
       <TextInput
         style={styles.textarea}
@@ -152,11 +152,11 @@ export default function InstantAuditScreen() {
         onPress={handleAnalyze}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Phân tích</Text>}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('instantAudit.analyze')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.skipBtn} onPress={() => router.replace('/(onboarding)/explain')}>
-        <Text style={styles.skipText}>Bỏ qua — tiếp tục</Text>
+        <Text style={styles.skipText}>{t('instantAudit.skip')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

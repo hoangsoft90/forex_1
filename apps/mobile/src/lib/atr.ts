@@ -11,6 +11,8 @@
  * không bao giờ đề xuất tăng.
  */
 
+import i18n from '@/i18n';
+
 export type Candle = {
   high: number;
   low: number;
@@ -85,7 +87,7 @@ export function suggestAdaptiveRisk(
   const fallback: AdaptiveSuggestion = {
     active: false,
     suggestedRiskPercent: baseValue,
-    reason: 'Không kích hoạt adaptive — giữ risk gốc.',
+    reason: i18n.t('atr.notActive'),
     appliedConditionId: null,
     atrNow,
     atrAverage,
@@ -96,7 +98,7 @@ export function suggestAdaptiveRisk(
   if (atrNow == null || atrAverage == null || atrAverage <= 0) {
     return {
       ...fallback,
-      reason: 'Thiếu dữ liệu ATR — giữ risk gốc (không tự ý điều chỉnh).',
+      reason: i18n.t('atr.missingData'),
     };
   }
 
@@ -113,7 +115,14 @@ export function suggestAdaptiveRisk(
   return {
     active: true,
     suggestedRiskPercent: suggested,
-    reason: `ATR hiện tại = ${atrNow.toFixed(2)} (gấp ${ratio.toFixed(2)}x trung bình ${atrAverage.toFixed(2)}) — vượt ngưỡng ${condition.condition_value}x. Adaptive giảm risk ${baseValue}% → ${suggested}%.`,
+    reason: i18n.t('atr.activeReason', {
+      atrNow: atrNow.toFixed(2),
+      ratio: ratio.toFixed(2),
+      atrAverage: atrAverage.toFixed(2),
+      threshold: condition.condition_value,
+      base: baseValue,
+      suggested,
+    }),
     appliedConditionId: condition.id,
     atrNow,
     atrAverage,

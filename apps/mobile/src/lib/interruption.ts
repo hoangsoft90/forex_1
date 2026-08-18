@@ -11,6 +11,8 @@
  *   - ≥ 15 lệnh đã đóng → personal (query dữ liệu thật của user)
  */
 
+import i18n from '@/i18n';
+
 export type TriggerType = 'over_risk' | 'max_daily_loss' | 'revenge_pattern';
 
 export type Interruption = {
@@ -25,14 +27,11 @@ export const PERSONAL_EVIDENCE_MIN_EXECUTIONS = 15;
 /** Khoảng thời gian (phút) coi là "mở lệnh ngay sau lệnh thua" (revenge window). */
 export const REVENGE_WINDOW_MINUTES = 10;
 
-/** Câu benchmark tĩnh cho cold-start (< 15 lệnh) — hardcode theo mvp_scope mục 4. */
-export const COHORT_BENCHMARKS: Record<TriggerType, string> = {
-  over_risk:
-    '73% trader tăng risk sau khi thua lệnh đều thua tiếp lệnh đó. Vượt giới hạn risk của bạn làm tăng rủi ro cháy tài khoản.',
-  max_daily_loss:
-    'Hầu hết trader thua tiếp sau khi đã chạm mức lỗ tối đa trong ngày. Dừng lại là quyết định đúng đắn.',
-  revenge_pattern:
-    '73% trader tăng lot sau lệnh thua đều thua tiếp lệnh đó. Bạn đang mở lệnh ngược chiều ngay sau lệnh thua.',
+/** Câu benchmark tĩnh cho cold-start (< 15 lệnh) — theo ngôn ngữ đang dùng. */
+export const COHORT_BENCHMARKS: Record<TriggerType, () => string> = {
+  over_risk: () => i18n.t('interruption.benchmark.overRisk'),
+  max_daily_loss: () => i18n.t('interruption.benchmark.maxDailyLoss'),
+  revenge_pattern: () => i18n.t('interruption.benchmark.revengePattern'),
 };
 
 export type ClosedExecution = {
@@ -89,16 +88,15 @@ export function buildPersonalRevengeEvidence(closed: ClosedExecution[], nowIso: 
 
   if (revengePnl.length === 0) {
     // Fallback: vẫn có đủ 15 lệnh nhưng chưa có tiền lệ revenge lỗ → dùng cohort
-    return COHORT_BENCHMARKS.revenge_pattern;
+    return COHORT_BENCHMARKS.revenge_pattern();
   }
   const avgLoss = revengePnl.reduce((s, v) => s + v, 0) / revengePnl.length;
   const lastLoss =
     sorted.filter((e) => e.pnl_amount != null && e.pnl_amount < 0).pop()?.pnl_amount ?? 0;
-  return (
-    `Bạn vừa thua $${Math.abs(lastLoss).toFixed(0)}. Lần trước bạn mở lệnh ngược chiều ` +
-    `ngay sau lệnh thua, bạn mất thêm trung bình $${Math.abs(avgLoss).toFixed(0)}. ` +
-    `Lần này bạn có chắc muốn tiếp tục?`
-  );
+  return i18n.t('interruption.personalRevenge', {
+    lastLoss: Math.abs(lastLoss).toFixed(0),
+    avgLoss: Math.abs(avgLoss).toFixed(0),
+  });
 }
 
 /**
@@ -117,21 +115,24 @@ export function checkInterruption(p: InterruptionCheckParams): Interruption | nu
       type: 'over_risk',
       mode: personalMode ? 'personal' : 'cohort_benchmark',
       text: personalMode
-        ? `Risk ${p.planRiskPercent}% vượt giới hạn ${p.maxRiskPercent}% của bạn. ` +
-          'Trước đây bạn thường thua nhiều hơn khi tăng risk vượt giới hạn.'
-        : COHORT_BENCHMARKS.over_risk,
+        ? i18n.t('interruption.personalOverRisk', {
+            risk: p.planRiskPercent,
+            limit: p.maxRiskPercent,
+          })
+        : COHORT_BENCHMARKS.over_risk(),
     });
   }
 
   // 2. max_daily_loss
-  if (p.maxDailyLossAmount != null && p.todayLossAmount >= p.maxDailyLossAmount) {
-    triggers.push({
+  if (p.maxDailyLossAmount != null && p.todayLossAmount >= p.maxDailyLossAmount) {    triggers.push({
       type: 'max_daily_loss',
       mode: personalMode ? 'personal' : 'cohort_benchmark',
       text: personalMode
-        ? `Bạn đã lỗ $${p.todayLossAmount.toFixed(0)} hôm nay, đạt giới hạn $${p.maxDailyLossAmount.toFixed(0)}. `
-          + 'Trước đây tiếp tục giao dịch sau khi chạm giới hạn thường làm lỗ sâu thêm.'
-        : COHORT_BENCHMARKS.max_daily_loss,
+        ? i18n.t('interruption.personalMaxDailyLoss', {
+            loss: p.todayLossAmount.toFixed(0),
+            limit: p.maxDailyLossAmount.toFixed(0),
+          })
+        : COHORT_BENCHMARKS.max_daily_loss(),
     });
   }
 
@@ -147,7 +148,7 @@ export function checkInterruption(p: InterruptionCheckParams): Interruption | nu
           mode: personalMode ? 'personal' : 'cohort_benchmark',
           text: personalMode
             ? buildPersonalRevengeEvidence(p.closedExecutions, p.nowIso ?? new Date().toISOString())
-            : COHORT_BENCHMARKS.revenge_pattern,
+            : COHORT_BENCHMARKS.revenge_pattern(),
         });
       }
     }

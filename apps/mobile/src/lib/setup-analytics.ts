@@ -9,6 +9,7 @@
  * Dưới ngưỡng → "Cần thêm N lệnh nữa (hiện có X/30)" — không ẩn hoàn toàn.
  */
 
+import i18n from '@/i18n';
 import { calculateRiskReward } from '@/lib/risk-engine';
 
 export const MIN_TRADES_FOR_SETUP_STATS = 30;
@@ -16,10 +17,10 @@ export const MIN_TRADES_FOR_SETUP_STATS = 30;
 export type SetupGroupKey = 'breakout' | 'rejection' | 'trend_continuation' | 'uncategorized';
 
 export const SETUP_GROUP_LABELS: Record<SetupGroupKey, string> = {
-  breakout: 'Breakout',
-  rejection: 'Rejection',
-  trend_continuation: 'Trend Continuation',
-  uncategorized: 'Chưa phân loại',
+  breakout: 'setupAnalytics.group.breakout',
+  rejection: 'setupAnalytics.group.rejection',
+  trend_continuation: 'setupAnalytics.group.trendContinuation',
+  uncategorized: 'setupAnalytics.group.uncategorized',
 };
 
 export type SetupGroupResult = {
@@ -71,7 +72,10 @@ export function computeSetupAnalytics(input: SetupAnalyticsInput): SetupAnalytic
     return {
       totalClosed,
       showable: false,
-      progressText: `Cần thêm ${MIN_TRADES_FOR_SETUP_STATS - totalClosed} lệnh nữa (hiện có ${totalClosed}/30) để phân tích đáng tin cậy.`,
+      progressText: i18n.t('setupAnalytics.progress', {
+        need: MIN_TRADES_FOR_SETUP_STATS - totalClosed,
+        count: totalClosed,
+      }),
       groups: [],
     };
   }
@@ -80,7 +84,7 @@ export function computeSetupAnalytics(input: SetupAnalyticsInput): SetupAnalytic
   const byGroup = new Map<SetupGroupKey, SetupGroupResult>();
   const init = (key: SetupGroupKey): SetupGroupResult => ({
     key,
-    label: SETUP_GROUP_LABELS[key],
+    label: i18n.t(SETUP_GROUP_LABELS[key]),
     count: 0,
     wins: 0,
     winrate: 0,
@@ -130,7 +134,16 @@ export function bestSetupInsight(groups: SetupGroupResult[]): string | null {
   const best = [...candidates].sort((a, b) => b.totalPnl - a.totalPnl)[0];
   const worst = [...candidates].sort((a, b) => a.totalPnl - b.totalPnl)[0];
   if (best.key === worst.key) {
-    return `Setup "${best.label}" là nhóm giao dịch nhiều nhất với ${best.totalPnl >= 0 ? '+' : ''}$${best.totalPnl.toFixed(0)} PnL.`;
+    return i18n.t('setupAnalytics.insightSingle', {
+      label: best.label,
+      pnl: best.totalPnl.toFixed(0),
+    });
   }
-  return `Setup "${best.label}" đang có edge tốt nhất (+$${best.totalPnl.toFixed(0)} PnL, winrate ${best.winrate.toFixed(0)}%) — trong khi "${worst.label}" thấp nhất (${worst.totalPnl >= 0 ? '+' : ''}$${worst.totalPnl.toFixed(0)}).`;
+  return i18n.t('setupAnalytics.insightBestWorst', {
+    bestLabel: best.label,
+    bestPnl: best.totalPnl.toFixed(0),
+    bestWinrate: best.winrate.toFixed(0),
+    worstLabel: worst.label,
+    worstPnl: worst.totalPnl.toFixed(0),
+  });
 }

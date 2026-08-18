@@ -7,6 +7,8 @@
  * + giữ type contract cho TypeScript.
  */
 
+import i18n from '@/i18n';
+
 export type RewardResult = {
   rewarded: boolean;
   error?: string | null;
@@ -20,5 +22,5 @@ export function isAdmobConfigured(): boolean {
 export function initAdMob(): void {}
 
 export async function showRewardedAd(): Promise<RewardResult> {
-  return { rewarded: false, error: 'AdMob không hỗ trợ trên web.' };
+  return { rewarded: false, error: i18n.t('admob.webUnsupported') };
 }

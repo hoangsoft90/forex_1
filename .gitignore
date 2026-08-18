@@ -50,3 +50,6 @@ Thumbs.db
 # Expo prebuild-generated native projects (CI regenerates via `expo prebuild`)
 /apps/mobile/android/
 /apps/mobile/ios/
+
+# Supabase CLI temp files (project ref, versions, linked project info)
+/supabase/.temp/

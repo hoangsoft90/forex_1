@@ -85,7 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s?.user) {
         await refreshProfile();
       } else {
+        // Sign-out / mất session: clear toàn bộ state user — tránh tier/expiry cũ
+        // hiện vài giây khi đăng nhập tài khoản khác (bug review 2026-08-17).
         setOnboarding(null);
+        setTier(null);
+        setSubscriptionExpiresAt(null);
       }
     });
 

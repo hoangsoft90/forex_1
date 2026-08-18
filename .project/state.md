@@ -15,17 +15,18 @@
 | **Retention Layer (9 module 0–8)** | ✅ Code xong + review | 147 → 224 test, review thêm +2 = 226 |
 | OpenSpec sync đợt Retention | ✅ Archived `2026-08-17-retention-layer` | 22 specs / 91 requirements |
 | `can_lam.md` (việc user cần làm) | ✅ Đã tạo | 12 việc phân ưu tiên |
+| **Đa ngôn ngữ (app-i18n)** | 🔄 Đang triển khai — UI + nội dung động + edge xong, còn verify/docs/review | vi + en (i18next); 242 test |
 
 ## Todo còn lại (theo thứ tự ưu tiên)
 
 > 📋 **Chi tiết đầy đủ + lệnh cụ thể: `can_lam.md` (root) — 12 việc.**
 
 ### Ngay (blocker / bảo mật)
-- [ ] **Chạy SQL mục 13 trên SQL Editor** (bảng `notification_preferences` + `feature_flags` + seed `INSTANT_AUDIT_ENABLED=false`) — phần cuối `supabase/schema.sql`; chưa chạy thì notification + instant-audit không hoạt động.
-- [ ] **Deploy lại edge function `parse-mt4`** (parser đã hardening ở M0 — bản đang deploy là bản cũ).
+- [x] **Chạy SQL mục 13 trên SQL Editor** (bảng `notification_preferences` + `feature_flags` + seed `INSTANT_AUDIT_ENABLED=false`) — ✅ **ĐÃ CHẠY** (verify 2026-08-18: 2 bảng + RLS + policies + seed đầy đủ).
+- [x] **Deploy lại edge function `parse-mt4`** — ✅ **ĐÃ REDEPLOY** (2026-08-18, VERSION 2, smoke test 3 lệnh parse sạch).
 - [ ] **User revoke GH token cũ** đã dán trong chat (`ghp_m31j33...`) — khẩn cấp bảo mật; skill mới đọc token mới từ env/chat.
 - [ ] **Commit + push** toàn bộ diff đang treo (Retention M0–8 + jest.setup + schema mục 13 + openspec + can_lam.md + .project/) — sau đó GH Actions tự build APK kiểm tra native (expo-notifications mới).
-- [ ] **Chạy `supabase/migrations-phase2.sql` trên SQL Editor** (bảng `pro_unlocks`) — chưa chạy thì insert audit fail (quyền Pro vẫn hoạt động, code đã graceful).
+- [x] **Chạy `supabase/migrations-phase2.sql` trên SQL Editor** (bảng `pro_unlocks`) — ✅ **ĐÃ CHẠY** (verify 2026-08-18: bảng + check constraint `method='admob_rewarded'` + FK cascade + RLS 4 policies + index đầy đủ).
 
 ### Chờ user cung cấp / xác nhận
 - [ ] **Cung cấp export MT4/MT5 THẬT** (3–4 mẫu, ≥2 sàn, MT4+MT5) → verify M0 ≥95% → mở gate `INSTANT_AUDIT_ENABLED` (hiện M3 chạy fallback quiz đúng spec, không có deadline ép).
@@ -39,11 +40,11 @@
 - [ ] **Test ads thật trên máy**: build APK (GH Actions) → xem log lấy device ID → đưa vào `TEST_DEVICE_IDS`.
 - [ ] Nguồn giá thật cho ATR + correlation (Phase 3 — hiện là ước lượng tham chiếu, đã ghi rõ trong UI).
 
-### Bug nhỏ chưa fix (từ code review 2026-08-17, user chọn fix 4 chính trước)
-- [ ] `index.tsx` text cũ: "Module 2 sẽ được build ở bước tiếp theo" — gây hiểu nhầm.
-- [ ] `auth-context.tsx`: sau signOut không clear `tier`/`subscriptionExpiresAt` → tier cũ hiện vài giây khi login tài khoản khác.
-- [ ] `execution-widget`: không set `trade_plans.status='executed'` khi link plan → plan bị suggest lại nhiều lần.
-- [ ] `navigation.ts`: `navigateWithFallback` dead code (chỉ push, không ai dùng).
+### Bug nhỏ chưa fix (từ code review 2026-08-17)
+- [x] `index.tsx` text cũ — ✅ **không còn tồn tại** (index.tsx đã rewrite thành Today Dashboard ở Retention, text đã biến mất; verify grep toàn repo 2026-08-18).
+- [x] `auth-context.tsx`: sau signOut không clear `tier`/`subscriptionExpiresAt` — ✅ fix 2026-08-18 (clear trong nhánh session null của onAuthStateChange).
+- [x] `execution-widget`: không set `trade_plans.status='executed'` khi link plan → plan bị suggest lại nhiều lần — ✅ fix 2026-08-18 (update status sau insert execution, fail chỉ warn).
+- [x] `navigation.ts`: `navigateWithFallback` dead code — ✅ xóa 2026-08-18 (verify 0 caller trước khi xóa).
 
 ## Bug đã fix (log)
 
@@ -62,6 +63,9 @@
 | 2026-08-17 | 🔴 `cost-of-indiscipline` CRASH khi import MT4 symbol ngoài 3 cặp (GBPUSD/EURJPY/USDCAD) | Guard `isSupportedSymbol` → trả 0 (không crash, không suy đoán) + 2 test |
 | 2026-08-17 | Danger-zone màn chi tiết hiện biểu đồ cả khi <30 lệnh | Chỉ render biểu đồ khi `totalClosed >= 30` |
 | 2026-08-17 | `configureNotificationHandler` không được gọi → notification không hiển thị khi app foreground | Wire vào `(main)/_layout` useEffect |
+| 2026-08-18 | `auth-context` sau signOut không clear tier/expiry → tier cũ hiện vài giây khi login tài khoản khác | Clear `tier` + `subscriptionExpiresAt` trong nhánh session null của onAuthStateChange |
+| 2026-08-18 | `execution-widget` link plan không set `trade_plans.status='executed'` → plan bị suggest lại nhiều lần | Update status='executed' sau insert execution (fail chỉ warn, không chặn luồng) |
+| 2026-08-18 | `navigation.ts` `navigateWithFallback` dead code | Xóa function (verify 0 caller) |
 
 ## Quyết định quan trọng (decision log)
 
@@ -89,10 +93,15 @@
 | Notification permission hỏi SAU lần đầu thấy Dashboard (markDashboardSeen) | Đúng ngữ cảnh, không hỏi ngay mở app lần đầu, không hỏi lại lần 2 |
 | Evening notification chỉ khi có lệnh đóng trong ngày | Tránh notification rỗng gây khó chịu (AC bắt buộc) |
 | Danger Zone pattern "lệnh thứ N" đếm theo `entry_time` (UTC, chưa theo timezone user) | Phase 8 sẽ thêm timezone cho notification — báo user nếu cần chuyển múi giờ |
+| i18n = **i18next + react-i18next + expo-localization** (đợt này vi + en; kiến trúc mở rộng zh/ja/ko/es bằng thêm file json + 1 dòng SUPPORTED_LANGS) | User chốt: full scope (UI + nội dung động + edge parse-mt4) + auto-detect + Settings picker |
+| Pure lib dùng `i18next.t` trực tiếp — **KHÔNG đổi signature hàm** | Giữ 226 test cũ pass (jest init lng:'vi'); thêm test so khớp key vi↔en + nội dung động en |
+| Preference ngôn ngữ lưu **AsyncStorage local** (không đổi schema DB) | Tránh đụng ràng buộc schema cứng; detect = preference → thiết bị → fallback vi |
+| Edge `parse-mt4` nhận `lang` trong body (mặc định vi) — dictionary message vi/en | Logic parse KHÔNG đổi — chỉ message hiển thị; đã redeploy + smoke test cả 2 ngôn ngữ |
+| i18n chỉ dịch **message hiển thị**, không dịch log dev (console.warn) / comment | Tránh phình file dịch với text không user thấy |
 
 ## Deploy / Môi trường
 
-- **Supabase project**: `ycmuuczwnogybyklzpsa` — schema Phase 1 đã chạy, **mục 13 (notification_preferences + feature_flags) CHƯA**, migrations-phase2 (pro_unlocks) CHƯA.
-- **Edge functions**: 4 functions đã deploy nhưng **`parse-mt4` cần redeploy** (parser hardening M0 chưa lên); `verify_jwt=true`.
+- **Supabase project**: `ycmuuczwnogybyklzpsa` — **18/18 bảng đã chạy đầy đủ** (verify 2026-08-18 qua Management API): mục 13 (notification_preferences + feature_flags) ✓ · migrations-phase2 (pro_unlocks) ✓ · trigger adaptive `trg_adaptive_condition_decrease` ✓ · 7 index ✓ · RLS + policy MỌI bảng ✓.
+- **Edge functions**: 4 functions đã deploy, **`parse-mt4` = VERSION 2** (hardening M0, redeploy 2026-08-18 + smoke test OK); `verify_jwt=true`.
 - **Git**: main trên GitHub (commit `1cd965c`, `41c3261`); toàn bộ diff đợt Retention đang treo chưa commit.
 - **Android SDK local**: `~/Android/Sdk` (platform-36, build-tools 36.0.0) — targetSdk 36 cho Google Play.

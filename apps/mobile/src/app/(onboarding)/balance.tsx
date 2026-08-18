@@ -10,12 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ONBOARDING_EVENTS, trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 
 export default function BalanceScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
   const [balance, setBalance] = useState('');
@@ -25,7 +27,7 @@ export default function BalanceScreen() {
   async function handleContinue() {
     const value = parseFloat(balance);
     if (!balance || Number.isNaN(value) || value <= 0) {
-      setError('Vui lòng nhập số dư tài khoản hợp lệ (lớn hơn 0).');
+      setError(t('balance.error'));
       return;
     }
     if (!user) return;
@@ -46,7 +48,7 @@ export default function BalanceScreen() {
       await refreshProfile();
       router.replace('/(onboarding)/quiz');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi xảy ra khi lưu.');
+      setError(e instanceof Error ? e.message : t('balance.saveError'));
     } finally {
       setLoading(false);
     }
@@ -58,14 +60,12 @@ export default function BalanceScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Số dư tài khoản giao dịch</Text>
-        <Text style={styles.subtitle}>
-          App dùng số này làm baseline để tính % rủi ro (lot size, giới hạn lỗ) cho các bước sau.
-        </Text>
+        <Text style={styles.title}>{t('balance.title')}</Text>
+        <Text style={styles.subtitle}>{t('balance.subtitle')}</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="VD: 10000"
+          placeholder={t('balance.placeholder')}
           placeholderTextColor="#888"
           value={balance}
           onChangeText={setBalance}
@@ -83,7 +83,7 @@ export default function BalanceScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Tiếp tục</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           )}
         </TouchableOpacity>
 

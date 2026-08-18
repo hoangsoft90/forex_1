@@ -25,17 +25,3 @@ export function safeBack(router: SafeRouter, fallback: Href): void {
     router.replace(fallback);
   }
 }
-
-/**
- * Điều hướng tới 1 route, đảm bảo luôn có thể back về fallback.
- * Dùng cho màn hình có thể được mở qua deep-link trực tiếp.
- */
-export function navigateWithFallback(
-  router: SafeRouter,
-  target: Href,
-  fallback: Href,
-): void {
-  router.push(target);
-  // Không cần làm gì thêm — stack tự lưu màn hình trước khi push.
-  // (Helper để sau này nếu cần thêm logic.)
-}

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   ScrollView,
@@ -32,6 +33,7 @@ const SETUP_TAGS = ['breakout', 'rejection', 'trend_continuation', 'other'];
 const DIRECTIONS = ['buy', 'sell'];
 
 export default function NewPlanScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [maxRiskRule, setMaxRiskRule] = useState<number | null>(null);
@@ -201,7 +203,7 @@ export default function NewPlanScreen() {
 
   async function handleSave() {
     if (!hasValidInputs) {
-      setError(validation.ok ? 'Vui lòng nhập đầy đủ Symbol, Direction, Entry, SL, Risk% hợp lệ.' : validation.reason);
+      setError(validation.ok ? t('newPlan.errorInvalid') : validation.reason);
       return;
     }
     if (!user) return;
@@ -210,7 +212,10 @@ export default function NewPlanScreen() {
     // Phase 2: nếu adaptive kích hoạt và user nhập risk > đề xuất → chặn (phải giảm hoặc ghi lý do)
     if (adaptiveSuggestionValue?.active && riskNum > adaptiveSuggestionValue.suggestedRiskPercent) {
       setError(
-        `Adaptive đang kích hoạt: risk đề xuất ${adaptiveSuggestionValue.suggestedRiskPercent}% (giảm theo ATR). Bạn nhập ${riskNum}% — vượt đề xuất. Giảm xuống hoặc quay lại chỉnh.`,
+        t('newPlan.errorAdaptive', {
+          suggested: adaptiveSuggestionValue.suggestedRiskPercent,
+          entered: riskNum,
+        }),
       );
       return;
     }
@@ -275,7 +280,7 @@ export default function NewPlanScreen() {
       await trackEvent(FAST_PLAN_EVENTS.SAVED, { symbol, direction, has_tp: tpNum != null, source: 'fast-plan-screen' });
       safeBack(router, '/(main)');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi khi lưu plan.');
+      setError(e instanceof Error ? e.message : t('newPlan.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -288,15 +293,13 @@ export default function NewPlanScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Fast Plan</Text>
-      <Text style={styles.subtitle}>
-        Chỉ 5 trường bắt buộc — lập kế hoạch nhanh, Risk Engine tự tính lot size.
-      </Text>
+      <Text style={styles.title}>{t('newPlan.title')}</Text>
+      <Text style={styles.subtitle}>{t('newPlan.subtitle')}</Text>
 
       {/* Symbol + Direction — bắt buộc */}
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Symbol *</Text>
+          <Text style={styles.label}>{t('newPlan.symbol')} *</Text>
           {['EURUSD', 'XAUUSD', 'USDJPY'].map((s) => (
             <TouchableOpacity
               key={s}
@@ -307,11 +310,11 @@ export default function NewPlanScreen() {
             </TouchableOpacity>
           ))}
           {!isSupportedSymbol(symbol) && (
-            <Text style={styles.warn}>Symbol chưa có cấu hình pip value.</Text>
+            <Text style={styles.warn}>{t('newPlan.warnSymbol')}</Text>
           )}
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>Direction *</Text>
+          <Text style={styles.label}>{t('newPlan.direction')} *</Text>
           {DIRECTIONS.map((d) => (
             <TouchableOpacity
               key={d}
@@ -329,7 +332,7 @@ export default function NewPlanScreen() {
       {/* Entry / SL — bắt buộc. SL chặn cứng. */}
       <View style={styles.row}>
         <View style={styles.third}>
-          <Text style={styles.label}>Entry *</Text>
+          <Text style={styles.label}>{t('newPlan.entry')} *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -340,7 +343,7 @@ export default function NewPlanScreen() {
           />
         </View>
         <View style={styles.third}>
-          <Text style={styles.label}>SL *</Text>
+          <Text style={styles.label}>{t('newPlan.sl')} *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -351,7 +354,7 @@ export default function NewPlanScreen() {
           />
         </View>
         <View style={styles.third}>
-          <Text style={styles.label}>Risk % *</Text>
+          <Text style={styles.label}>{t('newPlan.riskPercent')} % *</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -363,22 +366,21 @@ export default function NewPlanScreen() {
         </View>
       </View>
       {maxRiskRule != null && (
-        <Text style={styles.hint}>Risk% mặc định theo rule của bạn: {maxRiskRule}% (có thể sửa).</Text>
+        <Text style={styles.hint}>{t('newPlan.riskHint', { rule: maxRiskRule })}</Text>
       )}
       {overLimit && (
-        <Text style={styles.overRisk}>
-          ⚠ Risk {riskNum}% vượt quá giới hạn {maxRiskRule}% — bạn phải giảm xuống hoặc quay lại.
-        </Text>
+        <Text style={styles.overRisk}>{t('newPlan.overRisk', { entered: riskNum, limit: maxRiskRule })}</Text>
       )}
 
       {/* Phase 2: adaptive ATR suggestion */}
       {adaptiveSuggestionValue?.active && (
         <View style={styles.adaptiveBanner}>
-          <Text style={styles.adaptiveBannerTitle}>📉 Adaptive theo ATR đang kích hoạt</Text>
+          <Text style={styles.adaptiveBannerTitle}>{t('newPlan.adaptiveTitle')}</Text>
           <Text style={styles.adaptiveBannerText}>{adaptiveSuggestionValue.reason}</Text>
           <Text style={styles.adaptiveBannerNote}>
-            Risk đề xuất: {adaptiveSuggestionValue.suggestedRiskPercent}% — nếu nhập cao hơn sẽ bị chặn
-            (App không bao giờ tự nới lỏng luật). ATR là giá trị ước lượng tham chiếu.
+            {t('newPlan.adaptiveNote', {
+              suggested: adaptiveSuggestionValue.suggestedRiskPercent,
+            })}
           </Text>
         </View>
       )}
@@ -387,22 +389,22 @@ export default function NewPlanScreen() {
       {hasValidInputs && (
         <View style={styles.resultBox}>
           <Text style={styles.resultTitle}>Risk Engine</Text>
-          <Text style={styles.resultLine}>Khoảng cách: {pips.toFixed(0)} pips</Text>
-          <Text style={styles.resultLine}>Lot size đề xuất: {lotSize.toFixed(2)} lot</Text>
-          <Text style={styles.resultLine}>Số tiền risk: ${riskAmount.toFixed(2)}</Text>
-          {rr != null && <Text style={styles.resultLine}>R:R = 1 : {rr.toFixed(2)}</Text>}
+          <Text style={styles.resultLine}>{t('newPlan.distance', { pips: pips.toFixed(0) })}</Text>
+          <Text style={styles.resultLine}>{t('newPlan.lotSize', { lot: lotSize.toFixed(2) })}</Text>
+          <Text style={styles.resultLine}>{t('newPlan.riskAmount', { amount: riskAmount.toFixed(2) })}</Text>
+          {rr != null && <Text style={styles.resultLine}>{t('newPlan.rr', { rr: rr.toFixed(2) })}</Text>}
         </View>
       )}
 
       {/* Chi tiết thêm — gấp gọn, tùy chọn */}
       <TouchableOpacity style={styles.detailsToggle} onPress={() => setShowDetails((v) => !v)}>
         <Text style={styles.detailsToggleText}>
-          {showDetails ? '▲ Ẩn chi tiết thêm' : '▼ Chi tiết thêm (tùy chọn)'}
+          {showDetails ? t('newPlan.hideDetails') : t('newPlan.showDetails')}
         </Text>
       </TouchableOpacity>
       {showDetails && (
         <View>
-          <Text style={styles.label}>TP (tùy chọn — R:R chỉ hiện khi có TP)</Text>
+          <Text style={styles.label}>{t('newPlan.tpLabel')}</Text>
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
@@ -412,7 +414,7 @@ export default function NewPlanScreen() {
             placeholderTextColor="#888"
           />
 
-          <Text style={styles.label}>Thesis (lý do vào lệnh)</Text>
+          <Text style={styles.label}>{t('newPlan.thesisLabel')}</Text>
           <TextInput
             style={styles.input}
             placeholder="VD: Breakout khỏi vùng tích lũy H4"
@@ -422,7 +424,7 @@ export default function NewPlanScreen() {
             multiline
           />
 
-          <Text style={styles.label}>Setup tag</Text>
+          <Text style={styles.label}>{t('newPlan.setupTagLabel')}</Text>
           <View style={styles.row}>
             {SETUP_TAGS.map((t) => (
               <TouchableOpacity
@@ -435,7 +437,7 @@ export default function NewPlanScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Invalidation condition (điều kiện hủy)</Text>
+          <Text style={styles.label}>{t('newPlan.invalidationLabel')}</Text>
           <TextInput
             style={styles.input}
             placeholder="VD: mất vùng 1.0950"
@@ -444,7 +446,7 @@ export default function NewPlanScreen() {
             onChangeText={setInvalidation}
           />
 
-          <Text style={styles.label}>Confidence level: {confidence}/5</Text>
+          <Text style={styles.label}>{t('newPlan.confidenceLabel', { level: confidence })}</Text>
           <View style={styles.row}>
             {[1, 2, 3, 4, 5].map((n) => (
               <TouchableOpacity
@@ -458,7 +460,7 @@ export default function NewPlanScreen() {
           </View>
 
           {/* TradingView chart — hiển thị giá symbol đang chọn (Phase 2) */}
-          <Text style={styles.label}>Chart {symbol}</Text>
+          <Text style={styles.label}>{t('newPlan.chartLabel', { symbol })}</Text>
           <TradingViewChart symbol={symbol} height={220} />
         </View>
       )}
@@ -470,11 +472,11 @@ export default function NewPlanScreen() {
         onPress={handleSave}
         disabled={saving || overLimit}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Lưu Plan</Text>}
+        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('newPlan.save')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.noPlan} onPress={() => router.push('/(main)/confirm-no-plan')}>
-        <Text style={styles.noPlanText}>Tạo lệnh không có Plan →</Text>
+        <Text style={styles.noPlanText}>{t('newPlan.noPlan')} →</Text>
       </TouchableOpacity>
 
       {/* ---- Module 4: Decision Interruption UI (hiển thị TRƯỚC khi lưu) ---- */}
@@ -482,21 +484,21 @@ export default function NewPlanScreen() {
         <View style={styles.interruptionOverlay}>
           <View style={styles.interruptionCard}>
             <Text style={styles.interruptionBadge}>
-              {interruption.evidenceMode === 'personal' ? 'DỮ LIỆU CỦA BẠN' : 'BENCHMARK CỘNG ĐỒNG'}
+              {interruption.evidenceMode === 'personal' ? t('newPlan.personalData') : t('newPlan.communityBenchmark')}
             </Text>
-            <Text style={styles.interruptionTitle}>Dừng lại 1 giây</Text>
+            <Text style={styles.interruptionTitle}>{t('newPlan.interruptionTitle')}</Text>
             <Text style={styles.interruptionText}>{interruption.evidenceText}</Text>
             <TouchableOpacity
               style={styles.interruptionDanger}
               onPress={handleProceedAfterInterruption}
             >
-              <Text style={styles.interruptionDangerText}>Tiếp tục</Text>
+              <Text style={styles.interruptionDangerText}>{t('newPlan.continue')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.interruptionCancel}
               onPress={() => setInterruption(null)}
             >
-              <Text style={styles.interruptionCancelText}>Quay lại chỉnh Plan</Text>
+              <Text style={styles.interruptionCancelText}>{t('newPlan.backToPlan')}</Text>
             </TouchableOpacity>
           </View>
         </View>

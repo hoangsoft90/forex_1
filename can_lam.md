@@ -7,18 +7,11 @@
 
 ## 🔴 ƯU TIÊN 1 — Bắt buộc trước khi dùng tính năng mới
 
-### 1. Chạy SQL mục 13 trên Supabase thật
-2 bảng mới chưa có trên DB thật → notification sẽ lỗi khi lưu cài đặt.
-```sql
--- Lấy từ supabase/schema.sql (mục 13): notification_preferences + feature_flags + seed INSTANT_AUDIT_ENABLED=false
--- Chạy qua Supabase Dashboard → SQL Editor, hoặc psql
-```
+### 1. ~~Chạy SQL mục 13 trên Supabase thật~~ ✅ ĐÃ XONG (2026-08-18)
+Verify qua Management API: `notification_preferences` (7 cột + RLS + 3 policies) · `feature_flags` (RLS + seed `INSTANT_AUDIT_ENABLED=false`) · `pro_unlocks` (check constraint + FK cascade + RLS 4 policies + index) — **18/18 bảng đầy đủ**, không còn gì thiếu.
 
-### 2. Deploy lại Edge Function parse-mt4
-Parser đã harden ở Module 0 (locale số, deal-based, skip balance) nhưng **chưa deploy**:
-```bash
-cd supabase && supabase functions deploy parse-mt4
-```
+### 2. ~~Deploy lại Edge Function parse-mt4~~ ✅ ĐÃ XONG (2026-08-18)
+`supabase functions deploy parse-mt4` → **VERSION 2 ACTIVE**. Smoke test với user token thật: `{"imported":3,"errorLines":[],"detectedLocale":"periodDecimal"}` — 3 mẫu (EURUSD/USDJPY/XAUUSD) parse sạch.
 
 ### 3. 🔑 REVOKE GitHub token cũ (bảo mật — KHẨN CẤP)
 Token `ghp_m31j33...` đã dán nhiều lần trong chat → **vô hiệu hóa ngay**:

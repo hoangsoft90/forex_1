@@ -7,6 +7,7 @@
 
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { WebView } from 'react-native-webview';
 
 /** Map symbol app → symbol TradingView (Forex: thêm hậu tố chuẩn). */
@@ -29,8 +30,12 @@ type Props = {
 };
 
 export default function TradingViewChart({ symbol, height = 280 }: Props) {
+  const { t, i18n } = useTranslation();
+  const tvLocale = i18n.resolvedLanguage?.startsWith('vi') ? 'vi_VN' : 'en';
   const html = useMemo(() => {
     const tv = tvSymbol(symbol);
+    const loadFailMsg = t('chart.webLoadFail');
+    const loadErrMsg = t('chart.webLoadError');
     // TradingView advanced chart widget — embed script chuẩn (v3).
     return `
 <!DOCTYPE html>
@@ -54,7 +59,7 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
         try {
           if (typeof TradingView === 'undefined') {
             document.getElementById('tradingview_placeholder').innerHTML =
-              '<p style="padding:20px;font-family:sans-serif;color:#888">Không tải được TradingView — kiểm tra kết nối mạng.</p>';
+              '<p style="padding:20px;font-family:sans-serif;color:#888">${loadFailMsg}</p>';
             return;
           }
           new TradingView.widget({
@@ -65,7 +70,7 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
             timezone: 'Asia/Ho_Chi_Minh',
             theme: 'light',
             style: '1',
-            locale: 'vi_VN',
+            locale: '${tvLocale}',
             toolbar_bg: '#f1f3f6',
             enable_publishing: false,
             allow_symbol_change: false,
@@ -74,7 +79,7 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
           });
         } catch (e) {
           document.getElementById('tradingview_placeholder').innerHTML =
-            '<p style="padding:20px;font-family:sans-serif;color:#888">Lỗi tải chart: ' + e.message + '</p>';
+            '<p style="padding:20px;font-family:sans-serif;color:#888">${loadErrMsg}: ' + e.message + '</p>';
         }
       });
     </script>
@@ -83,7 +88,7 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
 </div>
 </body>
 </html>`;
-  }, [symbol]);
+  }, [symbol, t, tvLocale]);
 
   return (
     <View style={[styles.wrap, { height }]}>
@@ -96,14 +101,12 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
         startInLoadingState
         renderLoading={() => (
           <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>Đang tải chart {symbol}…</Text>
+            <Text style={styles.placeholderText}>{t('chart.loading', { symbol })}</Text>
           </View>
         )}
         renderError={() => (
           <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>
-              Không tải được chart — kiểm tra kết nối mạng.
-            </Text>
+            <Text style={styles.placeholderText}>{t('chart.loadError')}</Text>
           </View>
         )}
       />

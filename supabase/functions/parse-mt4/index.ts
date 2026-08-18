@@ -49,6 +49,42 @@ export type ParseMt4Result = {
 /** Locale số: dấu thập phân là chấm (US) hay phẩy (EU). */
 export type NumberLocale = 'periodDecimal' | 'commaDecimal';
 
+/**
+ * Message theo ngôn ngữ (vi/en) — client truyền `lang` trong body (mặc định vi).
+ * Logic parse KHÔNG đổi — chỉ message hiển thị cho user.
+ */
+const MSG: Record<'vi' | 'en', Record<string, (o?: Record<string, string>) => string>> = {
+  vi: {
+    noHeader: () => 'Không tìm thấy dòng tiêu đề cột (Order/Ticket, Type, Symbol...) — format không đúng MT4.',
+    badType: (o) => `Type không nhận diện được: "${o?.type ?? ''}"`,
+    missingFields: () => 'Thiếu Symbol / Volume / Price hợp lệ.',
+    badTime: (o) => `Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): "${o?.time ?? ''}"`,
+    noText: () => 'Thiếu text',
+    dbError: (o) => `Lưu DB thất bại: ${o?.message ?? ''}`,
+    importOk: (o) =>
+      `Import ${o?.count ?? '0'} lệnh thành công. Chú ý: format parser đang là GIẢ ĐỊNH — chưa verify với dữ liệu thật MT4 (Retention Layer Module 0 đang chờ mẫu thật).`,
+    importNone: () => 'Không import được lệnh nào — kiểm tra các dòng lỗi bên dưới.',
+    serverError: (o) => `Lỗi server: ${o?.message ?? ''}`,
+  },
+  en: {
+    noHeader: () => "Couldn't find the column header row (Order/Ticket, Type, Symbol...) — not a valid MT4 format.",
+    badType: (o) => `Unrecognized Type: "${o?.type ?? ''}"`,
+    missingFields: () => 'Missing valid Symbol / Volume / Price.',
+    badTime: (o) => `Invalid open time format (YYYY.MM.DD HH:MM): "${o?.time ?? ''}"`,
+    noText: () => 'Missing text',
+    dbError: (o) => `DB insert failed: ${o?.message ?? ''}`,
+    importOk: (o) =>
+      `Imported ${o?.count ?? '0'} trades. Note: the parser format is ASSUMED — not verified with real MT4 data yet (Retention Layer Module 0 awaits real samples).`,
+    importNone: () => 'No trades imported — check the error lines below.',
+    serverError: (o) => `Server error: ${o?.message ?? ''}`,
+  },
+};
+
+/** Chọn bảng message theo lang (mặc định vi). */
+function msgs(lang: string | undefined) {
+  return lang === 'en' ? MSG.en : MSG.vi;
+}
+
 const COLUMN_ALIASES: Record<string, string[]> = {
   order: ['order', 'ticket', 'deal'],
   position: ['position', 'pos id', 'posid'],
@@ -189,7 +225,8 @@ function entryIs(v: string | undefined, kind: 'in' | 'out'): boolean {
   return e === kind || e === kind + 'deal' || e.startsWith(kind);
 }
 
-function parseMt4History(rawText: string): ParseMt4Result {
+function parseMt4History(rawText: string, lang?: string): ParseMt4Result {
+  const M = msgs(lang);
   const lines = rawText.split(/\r?\n/);
   const result: ParseMt4Result = { trades: [], errorLines: [], skippedNonTrade: 0, detectedLocale: detectNumberLocale(rawText) };
   const locale = result.detectedLocale;
@@ -222,7 +259,7 @@ function parseMt4History(rawText: string): ParseMt4Result {
   if (headerIdx === -1) {
     return {
       trades: [],
-      errorLines: [{ lineNumber: 1, content: rawText.slice(0, 100), reason: 'Không tìm thấy dòng tiêu đề cột (Order/Ticket, Type, Symbol...) — format không đúng MT4.' }],
+      errorLines: [{ lineNumber: 1, content: rawText.slice(0, 100), reason: M.noHeader() }],
       skippedNonTrade: 0,
       detectedLocale: locale,
     };
@@ -256,7 +293,7 @@ function parseMt4History(rawText: string): ParseMt4Result {
       return null;
     }
     if (!isTradeType(typeLow)) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: `Type không nhận diện được: "${typeRaw}"` });
+      result.errorLines.push({ lineNumber: n, content: text, reason: M.badType({ type: typeRaw }) });
       return null;
     }
     const symbol = cols[colSymbol] ?? '';
@@ -264,14 +301,14 @@ function parseMt4History(rawText: string): ParseMt4Result {
     const openPrice = parseNumber(cols[colPrice], locale);
 
     if (!symbol || lotSize == null || openPrice == null) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: 'Thiếu Symbol / Volume / Price hợp lệ.' });
+      result.errorLines.push({ lineNumber: n, content: text, reason: M.missingFields() });
       return null;
     }
 
     const openTimeRaw = cols[colTime] ?? '';
     const openTime = openTimeRaw ? parseMt4Time(openTimeRaw) : null;
     if (!openTime) {
-      result.errorLines.push({ lineNumber: n, content: text, reason: `Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): "${openTimeRaw}"` });
+      result.errorLines.push({ lineNumber: n, content: text, reason: M.badTime({ time: openTimeRaw }) });
       return null;
     }
 
@@ -382,15 +419,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { text } = await req.json();
+    const body = await req.json();
+    const text = body?.text;
+    const lang = typeof body?.lang === 'string' ? body.lang : 'vi';
     if (typeof text !== 'string' || !text.trim()) {
-      return new Response(JSON.stringify({ error: 'Thiếu text' }), {
+      return new Response(JSON.stringify({ error: msgs(lang).noText() }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const parsed = parseMt4History(text);
+    const parsed = parseMt4History(text, lang);
 
     // Lưu executions (chỉ lệnh đóng — có closeTime) kèm raw_import_payload
     let imported = 0;
@@ -421,7 +460,7 @@ Deno.serve(async (req: Request) => {
         parsed.errorLines.push({
           lineNumber: 0,
           content: t.rawLine,
-          reason: `Lưu DB thất bại: ${insertErr.message}`,
+          reason: msgs(lang).dbError({ message: insertErr.message }),
         });
         continue;
       }
@@ -435,14 +474,16 @@ Deno.serve(async (req: Request) => {
         skippedNonTrade: parsed.skippedNonTrade,
         detectedLocale: parsed.detectedLocale,
         message: imported > 0
-          ? `Import ${imported} lệnh thành công. Chú ý: format parser đang là GIẢ ĐỊNH — chưa verify với dữ liệu thật MT4 (Retention Layer Module 0 đang chờ mẫu thật).`
-          : 'Không import được lệnh nào — kiểm tra các dòng lỗi bên dưới.',
+          ? msgs(lang).importOk({ count: String(imported) })
+          : msgs(lang).importNone(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (e) {
     return new Response(
-      JSON.stringify({ error: `Lỗi server: ${e instanceof Error ? e.message : e}` }),
+      JSON.stringify({
+        error: msgs('vi').serverError({ message: e instanceof Error ? e.message : String(e) }),
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import {
-  COST_DISCLAIMER,
   CostResult,
 } from '@/lib/cost-of-indiscipline';
 
@@ -20,12 +20,13 @@ export default function CostOfIndisciplineCard({
   result: CostResult | null;
   isPro?: boolean;
 }) {
+  const { t } = useTranslation();
   if (!result) return null;
 
   if (!result.showable) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Chi phí của sự vô kỷ luật</Text>
+        <Text style={styles.title}>{t('costCard.title')}</Text>
         <Text style={styles.hiddenText}>{result.hiddenReason}</Text>
       </View>
     );
@@ -33,19 +34,23 @@ export default function CostOfIndisciplineCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Chi phí của sự vô kỷ luật</Text>
+      <Text style={styles.title}>{t('costCard.title')}</Text>
       <Text style={styles.costLine}>
         {result.cost >= 0 ? '−' : '+'}${Math.abs(result.cost).toFixed(2)}
       </Text>
       <Text style={styles.detailLine}>
-        {result.deviatedCount} lệnh lệch plan trong {result.totalTrades} lệnh kỳ này
-        (giả định theo plan đạt TP: +${result.hypotheticalPnl.toFixed(0)} vs thực tế ${result.actualPnl.toFixed(0)})
+        {t('costCard.detailLine', {
+          deviated: result.deviatedCount,
+          total: result.totalTrades,
+          hypothetical: result.hypotheticalPnl.toFixed(0),
+          actual: result.actualPnl.toFixed(0),
+        })}
       </Text>
       {isPro && result.skippedIncomplete > 0 && (
-        <Text style={styles.skipNote}>Bỏ qua {result.skippedIncomplete} lệnh thiếu dữ liệu plan (không suy đoán).</Text>
+        <Text style={styles.skipNote}>{t('costCard.skipNote', { count: result.skippedIncomplete })}</Text>
       )}
       {/* Disclaimer CỐ ĐỊNH — bắt buộc, đúng nguyên văn, ngay dưới con số */}
-      <Text style={styles.disclaimer}>{COST_DISCLAIMER}</Text>
+      <Text style={styles.disclaimer}>{t('costCard.disclaimer')}</Text>
     </View>
   );
 }

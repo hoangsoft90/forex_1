@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'login' | 'signup';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,7 @@ export default function LoginScreen() {
 
   async function handleSubmit() {
     if (!email.trim() || !password) {
-      setError('Vui lòng nhập email và mật khẩu.');
+      setError(t('login.fillError'));
       return;
     }
     setLoading(true);
@@ -38,9 +40,7 @@ export default function LoginScreen() {
         if (signUpError) throw signUpError;
         // Nếu Supabase bật "Confirm email", signUp trả về user nhưng chưa có session.
         if (!data.session) {
-          setError(
-            'Đăng ký thành công! Kiểm tra email để xác nhận tài khoản, sau đó đăng nhập lại.',
-          );
+          setError(t('login.signupConfirmEmail'));
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -51,7 +51,7 @@ export default function LoginScreen() {
       }
       // Thành công → useProtectedRoute tự redirect (tạo profile ở bước balance).
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi xảy ra, thử lại.');
+      setError(e instanceof Error ? e.message : t('login.genericError'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export default function LoginScreen() {
       <View style={styles.card}>
         <Text style={styles.title}>Trading Discipline OS</Text>
         <Text style={styles.subtitle}>
-          {mode === 'login' ? 'Đăng nhập để tiếp tục' : 'Tạo tài khoản mới'}
+          {mode === 'login' ? t('login.subtitleLogin') : t('login.subtitleSignup')}
         </Text>
 
         <TextInput
@@ -80,7 +80,7 @@ export default function LoginScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Mật khẩu"
+          placeholder={t('login.passwordPlaceholder')}
           placeholderTextColor="#888"
           value={password}
           onChangeText={setPassword}
@@ -98,7 +98,7 @@ export default function LoginScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+              {mode === 'login' ? t('login.loginButton') : t('login.signupButton')}
             </Text>
           )}
         </TouchableOpacity>
@@ -110,9 +110,7 @@ export default function LoginScreen() {
           }}
         >
           <Text style={styles.switch}>
-            {mode === 'login'
-              ? 'Chưa có tài khoản? Đăng ký'
-              : 'Đã có tài khoản? Đăng nhập'}
+            {mode === 'login' ? t('login.switchToSignup') : t('login.switchToLogin')}
           </Text>
         </TouchableOpacity>
       </View>

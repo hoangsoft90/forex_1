@@ -15,6 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import i18n from '@/i18n';
+
 const HAS_SEEN_DASHBOARD_KEY = 'has_seen_dashboard_v1';
 const NOTIF_PERMISSION_ASKED_KEY = 'notif_permission_asked_v1';
 
@@ -109,8 +111,8 @@ export async function scheduleDailyNotifications(
       await Notifications.scheduleNotificationAsync({
         identifier: MORNING_ID,
         content: {
-          title: 'Chúc một ngày giao dịch tốt lành',
-          body: 'Mở app để xem Discipline Score và rules hôm nay.',
+          title: i18n.t('notification.morningTitle'),
+          body: i18n.t('notification.managerMorningBody'),
         },
         trigger: dailyTrigger(prefs.morning_time),
       });
@@ -120,8 +122,8 @@ export async function scheduleDailyNotifications(
       // AC: không gửi cuối ngày nếu không có lệnh đóng — nội dung được xác định lúc trigger
       const content = hasClosedToday
         ? {
-            title: 'Xem lại hôm nay',
-            body: 'Bạn có lệnh đóng hôm nay. Dành 1 phút review — thông tin, không phán xét.',
+            title: i18n.t('notification.eveningTitle'),
+            body: i18n.t('notification.managerEveningBody'),
           }
         : null;
       if (content) {

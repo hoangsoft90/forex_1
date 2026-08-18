@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import {
   formatCooldown,
@@ -20,6 +21,7 @@ import { unlockProViaAd } from '@/lib/pro-unlock';
 import { formatHoursLeft, getProStatus } from '@/lib/tier';
 
 export default function ProScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { tier, subscriptionExpiresAt, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -54,7 +56,9 @@ export default function ProScreen() {
     const result = await unlockProViaAd();
     setLoading(false);
     if (result.ok) {
-      setMessage(`🎉 Đã mở Pro 24h (đến ${new Date(result.expiresAt).toLocaleString('vi-VN')}).`);
+      setMessage(
+        t('pro.unlocked', { until: new Date(result.expiresAt).toLocaleString() }),
+      );
       await refreshProfile();
     } else {
       setMessage(result.reason);
@@ -66,22 +70,19 @@ export default function ProScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mở Pro</Text>
+      <Text style={styles.title}>{t('pro.title')}</Text>
 
       {status.isPro ? (
         <View style={styles.proCard}>
-          <Text style={styles.proBadge}>● BẠN ĐANG PRO</Text>
+          <Text style={styles.proBadge}>{t('pro.youArePro')}</Text>
           <Text style={styles.proText}>
-            Còn {formatHoursLeft(status.hoursLeft)}. Mở thêm 24h bằng cách xem 1 quảng cáo.
+            {t('pro.hoursLeft', { hours: formatHoursLeft(status.hoursLeft) })}
           </Text>
         </View>
       ) : (
         <View style={styles.freeCard}>
-          <Text style={styles.proBadgeMuted}>● BẠN ĐANG Ở GÓI FREE</Text>
-          <Text style={styles.proText}>
-            Pro mở khóa: biểu đồ xu hướng Discipline Score, ma trận tương quan danh mục,
-            và Adaptive Rules. Xem 1 quảng cáo ngắn để dùng thử 24 giờ.
-          </Text>
+          <Text style={styles.proBadgeMuted}>{t('pro.youAreFree')}</Text>
+          <Text style={styles.proText}>{t('pro.freeText')}</Text>
         </View>
       )}
 
@@ -94,33 +95,27 @@ export default function ProScreen() {
           <ActivityIndicator color="#fff" />
         ) : cooldownActive ? (
           <Text style={styles.buttonText}>
-            ⏳ Thử lại sau {formatCooldown(cooldownMs)}
+            ⏳ {t('pro.cooldown', { time: formatCooldown(cooldownMs) })}
           </Text>
         ) : (
           <Text style={styles.buttonText}>
-            {admobReady ? '▶ Xem quảng cáo — mở Pro 24h' : 'Quảng cáo chưa được cấu hình'}
+            {admobReady ? t('pro.watchAd') : t('pro.adNotConfigured')}
           </Text>
         )}
       </TouchableOpacity>
 
       {cooldownActive ? (
-        <Text style={styles.hint}>
-          Bạn vừa xem quảng cáo. Xem lần tiếp theo sau {formatCooldown(cooldownMs)} để chống spam.
-        </Text>
+        <Text style={styles.hint}>{t('pro.cooldownHint', { time: formatCooldown(cooldownMs) })}</Text>
       ) : null}
 
       {!admobReady ? (
-        <Text style={styles.hint}>
-          App đang chạy chế độ chưa cấu hình AdMob (thiếu App ID / Ad Unit ID). Thêm biến{' '}
-          {'EXPO_PUBLIC_ADMOB_APP_ID'} và {'EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID'} rồi build lại
-          (AdMob cần dev build, không chạy trong Expo Go).
-        </Text>
+        <Text style={styles.hint}>{t('pro.admobHint')}</Text>
       ) : null}
 
       {message ? <Text style={styles.message}>{message}</Text> : null}
 
       <TouchableOpacity onPress={() => safeBack(router, '/(main)')} style={styles.back}>
-        <Text style={styles.backText}>‹ Quay lại</Text>
+        <Text style={styles.backText}>‹ {t('pro.back')}</Text>
       </TouchableOpacity>
     </View>
   );

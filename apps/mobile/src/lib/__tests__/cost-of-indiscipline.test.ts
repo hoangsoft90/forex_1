@@ -23,7 +23,7 @@ describe('Cost of Indiscipline (Module 4)', () => {
   });
 
   it('disclaimer đúng nguyên văn spec (không rút gọn)', () => {
-    expect(COST_DISCLAIMER).toBe(
+    expect(COST_DISCLAIMER()).toBe(
       'Đây là ước tính giả định dựa trên chênh lệch giữa kế hoạch và thực tế — không phải bảo đảm lợi nhuận. Kế hoạch ban đầu vẫn có thể sai.',
     );
   });

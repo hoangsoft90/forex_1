@@ -30,9 +30,9 @@ export type TradingRuleInput = {
 
 export type RuleTemplate = {
   rule_type: TradingRuleType;
-  /** Nhãn tiếng Việt hiển thị */
+  /** i18n key — nhãn hiển thị (dịch khi render) */
   label: string;
-  /** Mô tả ngắn cho user hiểu luật này nghĩa là gì */
+  /** i18n key — mô tả ngắn */
   description: string;
   /** Giá trị gợi ý mặc định */
   default_value: number;
@@ -45,40 +45,40 @@ export type RuleTemplate = {
 export const RULE_TEMPLATES: RuleTemplate[] = [
   {
     rule_type: 'max_risk_per_trade',
-    label: 'Rủi ro tối đa 1 lệnh',
-    description: 'Phần trăm tài khoản tối đa bạn chấp nhận rủi ro cho mỗi lệnh.',
+    label: 'ruleTemplate.maxRiskPerTrade',
+    description: 'ruleTemplate.maxRiskPerTradeDesc',
     default_value: 1,
     unit: 'percent',
     required: true,
   },
   {
     rule_type: 'max_daily_loss',
-    label: 'Lỗ tối đa trong ngày',
-    description: 'Khi lỗ trong ngày chạm mức này, bạn dừng giao dịch.',
+    label: 'ruleTemplate.maxDailyLoss',
+    description: 'ruleTemplate.maxDailyLossDesc',
     default_value: 3,
     unit: 'percent',
     required: true,
   },
   {
     rule_type: 'no_revenge_trade',
-    label: 'Cấm revenge trade',
-    description: 'Không mở lệnh ngược chiều trong X phút sau khi bị dừng lỗ.',
+    label: 'ruleTemplate.noRevengeTrade',
+    description: 'ruleTemplate.noRevengeTradeDesc',
     default_value: 10,
     unit: 'minutes',
     required: false,
   },
   {
     rule_type: 'no_trade_before_news',
-    label: 'Không vào lệnh trước tin lớn',
-    description: 'Không mở lệnh mới trong X phút trước tin kinh tế HIGH IMPACT.',
+    label: 'ruleTemplate.noTradeBeforeNews',
+    description: 'ruleTemplate.noTradeBeforeNewsDesc',
     default_value: 15,
     unit: 'minutes',
     required: false,
   },
   {
     rule_type: 'max_open_positions',
-    label: 'Số lệnh mở tối đa',
-    description: 'Giới hạn số vị thế mở cùng lúc.',
+    label: 'ruleTemplate.maxOpenPositions',
+    description: 'ruleTemplate.maxOpenPositionsDesc',
     default_value: 3,
     unit: 'count',
     required: false,

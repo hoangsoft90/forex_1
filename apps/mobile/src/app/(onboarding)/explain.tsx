@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ONBOARDING_EVENTS, trackEvent } from '@/lib/analytics';
 
 export default function ExplainScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -23,30 +25,20 @@ export default function ExplainScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>2 loại điểm, 2 ý nghĩa khác nhau</Text>
+      <Text style={styles.title}>{t('explain.title')}</Text>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Discipline Score</Text>
-        <Text style={styles.cardBody}>
-          Đo mức độ TUÂN THỦ kế hoạch của chính bạn: vào lệnh đúng plan, không dời
-          SL, không revenge trade...
-        </Text>
+        <Text style={styles.cardBody}>{t('explain.disciplineBody')}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Edge Score</Text>
-        <Text style={styles.cardBody}>
-          Đo hiệu quả của CHIẾN LƯỢC bạn đang dùng: winrate, tỷ lệ risk:reward,
-          tổng PnL.
-        </Text>
+        <Text style={styles.cardBody}>{t('explain.edgeBody')}</Text>
       </View>
 
       <View style={styles.note}>
-        <Text style={styles.noteText}>
-          Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định được đúng
-          nguyên nhân thua lỗ: do chiến lược hay do hành vi. Bạn có thể xem lại lời
-          giải thích này trong Settings.
-        </Text>
+        <Text style={styles.noteText}>{t('explain.note')}</Text>
       </View>
 
       <TouchableOpacity
@@ -57,7 +49,7 @@ export default function ExplainScreen() {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Đã hiểu</Text>
+          <Text style={styles.buttonText}>{t('explain.understood')}</Text>
         )}
       </TouchableOpacity>
 
@@ -65,7 +57,7 @@ export default function ExplainScreen() {
         style={styles.backBtn}
         onPress={() => router.replace('/(onboarding)/quiz')}
       >
-        <Text style={styles.backText}>‹ Quay lại trả lời quiz</Text>
+        <Text style={styles.backText}>{t('weaknessSummary.backToQuiz')}</Text>
       </TouchableOpacity>
     </View>
   );

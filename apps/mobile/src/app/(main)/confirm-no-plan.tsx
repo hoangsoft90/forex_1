@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { safeBack } from '@/lib/navigation';
 
@@ -13,6 +14,7 @@ import { safeBack } from '@/lib/navigation';
  * xác nhận, điều hướng sang Execution Widget để nhập lệnh THẬT (không plan).
  */
 export default function ConfirmNoPlanScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   function handleConfirm() {
@@ -22,24 +24,19 @@ export default function ConfirmNoPlanScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bạn đang tạo lệnh KHÔNG có kế hoạch</Text>
+      <Text style={styles.title}>{t('confirmNoPlan.title')}</Text>
       <View style={styles.warnBox}>
-        <Text style={styles.warnTitle}>⚠ Cảnh báo</Text>
-        <Text style={styles.warnText}>
-          Lệnh ngoài kế hoạch không có Plan để đối chiếu — bạn sẽ không biết mình có đi
-          chệch kế hoạch hay không, và không có lý do rõ ràng để học từ lệnh này.
-        </Text>
-        <Text style={styles.warnText}>
-          Nếu bạn đang giao dịch cảm tính, hãy quay lại tạo Plan trước — mất chưa đầy 1 phút.
-        </Text>
+        <Text style={styles.warnTitle}>{t('confirmNoPlan.warnTitle')}</Text>
+        <Text style={styles.warnText}>{t('confirmNoPlan.warn1')}</Text>
+        <Text style={styles.warnText}>{t('confirmNoPlan.warn2')}</Text>
       </View>
 
       <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-        <Text style={styles.confirmText}>Tôi hiểu, vẫn tạo lệnh không có Plan</Text>
+        <Text style={styles.confirmText}>{t('confirmNoPlan.confirm')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelBtn} onPress={() => safeBack(router, '/(main)/new-plan')}>
-        <Text style={styles.cancelText}>Quay lại tạo Plan</Text>
+        <Text style={styles.cancelText}>{t('confirmNoPlan.cancel')}</Text>
       </TouchableOpacity>
     </View>
   );

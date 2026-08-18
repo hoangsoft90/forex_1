@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
+import i18n from '@/i18n';
 import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 
@@ -27,6 +29,7 @@ type ParseResult = {
  * (MT4 desktop + mobile) trước khi coi module này là Done.
  */
 export default function PasteMt4Screen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +38,7 @@ export default function PasteMt4Screen() {
 
   async function handleParse() {
     if (!text.trim()) {
-      setError('Dán text từ MT4 Account History vào ô trên trước.');
+      setError(t('pasteMt4.emptyError'));
       return;
     }
     setLoading(true);
@@ -43,15 +46,15 @@ export default function PasteMt4Screen() {
     setResult(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('parse-mt4', {
-        body: { text },
+        body: { text, lang: i18n.language },
       });
       if (fnError) throw fnError;
       setResult(data as ParseResult);
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Lỗi khi gọi Edge Function: ${e.message} — đảm bảo đã deploy function parse-mt4`
-          : 'Có lỗi xảy ra.',
+          ? t('pasteMt4.edgeError', { message: e.message })
+          : t('common.error'),
       );
     } finally {
       setLoading(false);
@@ -60,10 +63,8 @@ export default function PasteMt4Screen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Paste từ MT4/MT5</Text>
-      <Text style={styles.subtitle}>
-        Mở MT4/MT5 → Tab &quot;Account History&quot; → chọn toàn bộ → Copy, rồi dán vào đây.
-      </Text>
+      <Text style={styles.title}>{t('pasteMt4.title')}</Text>
+      <Text style={styles.subtitle}>{t('pasteMt4.subtitle')}</Text>
 
       <TextInput
         style={styles.textarea}
@@ -82,21 +83,21 @@ export default function PasteMt4Screen() {
         onPress={handleParse}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.parseText}>Parse & Import</Text>}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.parseText}>{t('pasteMt4.parseImport')}</Text>}
       </TouchableOpacity>
 
       {result && (
         <View style={styles.resultBox}>
-          <Text style={styles.resultTitle}>Kết quả: {result.imported} lệnh</Text>
+          <Text style={styles.resultTitle}>{t('pasteMt4.result', { count: result.imported })}</Text>
           {result.message ? <Text style={styles.resultMsg}>{result.message}</Text> : null}
           {result.errorLines.length > 0 && (
             <>
               <Text style={styles.errorTitle}>
-                ⚠ {result.errorLines.length} dòng không import được — vui lòng sửa tay:
+                {t('pasteMt4.errorCount', { count: result.errorLines.length })}
               </Text>
               {result.errorLines.map((e, i) => (
                 <View key={i} style={styles.errorLine}>
-                  <Text style={styles.errorLineNo}>Dòng {e.lineNumber}:</Text>
+                  <Text style={styles.errorLineNo}>{t('pasteMt4.errorLine', { line: e.lineNumber })}</Text>
                   <Text style={styles.errorLineContent} numberOfLines={2}>{e.content}</Text>
                   <Text style={styles.errorLineReason}>{e.reason}</Text>
                 </View>
@@ -107,7 +108,7 @@ export default function PasteMt4Screen() {
       )}
 
       <TouchableOpacity style={styles.backBtn} onPress={() => safeBack(router, '/(main)')}>
-        <Text style={styles.backText}>Quay lại</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

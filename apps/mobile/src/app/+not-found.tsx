@@ -5,31 +5,31 @@
  */
 import { Link, Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { safeBack } from '@/lib/navigation';
 
 export default function NotFoundScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Không tìm thấy trang' }} />
+      <Stack.Screen options={{ title: t('notFound.title') }} />
       <View style={styles.container}>
         <Text style={styles.code}>404</Text>
-        <Text style={styles.title}>Không tìm thấy trang này</Text>
-        <Text style={styles.subtitle}>
-          Đường dẫn bạn mở không tồn tại trong app. Quay về trang chủ để tiếp tục.
-        </Text>
+        <Text style={styles.title}>{t('notFound.pageTitle')}</Text>
+        <Text style={styles.subtitle}>{t('notFound.subtitle')}</Text>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => safeBack(router, '/(main)')}
         >
-          <Text style={styles.buttonText}>Về trang chủ</Text>
+          <Text style={styles.buttonText}>{t('notFound.home')}</Text>
         </TouchableOpacity>
 
         <Link href="/(main)" style={styles.link}>
-          <Text style={styles.linkText}>hoặc mở trang chủ (link)</Text>
+          <Text style={styles.linkText}>{t('notFound.homeLink')}</Text>
         </Link>
       </View>
     </>

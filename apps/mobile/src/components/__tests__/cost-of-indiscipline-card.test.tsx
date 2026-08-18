@@ -51,7 +51,7 @@ describe('CostOfIndisciplineCard (Module 4 — AC disclaimer ở MỌI nơi hi�
     const t = textOf(tree);
     expect(norm(t)).toContain(norm('Chi phí của sự vô kỷ luật'));
     expect(norm(t)).toContain('$130.00');
-    expect(norm(t)).toContain(norm(COST_DISCLAIMER));
+    expect(norm(t)).toContain(norm(COST_DISCLAIMER()));
     unmount();
   });
 
@@ -75,7 +75,7 @@ describe('CostOfIndisciplineCard (Module 4 — AC disclaimer ở MỌI nơi hi�
   it('disclaimer hiển thị CẢ khi Pro (breakdown mở rộng) — không bao giờ bỏ', () => {
     const { tree, unmount } = renderCard({ result: makeResult({ skippedIncomplete: 3 }), isPro: true });
     const t = textOf(tree);
-    expect(norm(t)).toContain(norm(COST_DISCLAIMER));
+    expect(norm(t)).toContain(norm(COST_DISCLAIMER()));
     expect(norm(t)).toContain(norm('Bỏ qua 3 lệnh thiếu dữ liệu plan'));
     unmount();
   });

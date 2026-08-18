@@ -20,6 +20,7 @@ import {
   RewardedAdEventType,
 } from 'react-native-google-mobile-ads';
 
+import i18n from '@/i18n';
 import { getAdUnitId, isAdmobConfigured, TEST_ADS, TEST_DEVICE_IDS } from '@/lib/ads-config';
 
 /**
@@ -53,7 +54,7 @@ export type RewardResult = {
 export async function showRewardedAd(): Promise<RewardResult> {
   const unitId = getAdUnitId('rewarded');
   if (!unitId || !isAdmobConfigured()) {
-    return { rewarded: false, error: 'AdMob chưa được cấu hình (thiếu Ad Unit ID).' };
+    return { rewarded: false, error: i18n.t('admob.notConfigured') };
   }
 
   const rewardedAd = RewardedAd.createForAdRequest(unitId, {
@@ -64,7 +65,7 @@ export async function showRewardedAd(): Promise<RewardResult> {
     // Timer an toàn: ad quá lâu không load → không treo app.
     const timeout = setTimeout(() => {
       cleanup();
-      resolve({ rewarded: false, error: 'Quảng cáo tải quá lâu, thử lại sau.' });
+      resolve({ rewarded: false, error: i18n.t('admob.timeout') });
     }, 30_000);
 
     const unsubLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
@@ -79,11 +80,11 @@ export async function showRewardedAd(): Promise<RewardResult> {
     );
     const unsubClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
       cleanup();
-      resolve({ rewarded: false, error: 'Bạn đã đóng quảng cáo trước khi xem hết.' });
+      resolve({ rewarded: false, error: i18n.t('admob.closedEarly') });
     });
     const unsubError = rewardedAd.addAdEventListener(AdEventType.ERROR, (err) => {
       cleanup();
-      resolve({ rewarded: false, error: `Lỗi tải quảng cáo: ${err.message}` });
+      resolve({ rewarded: false, error: i18n.t('admob.loadError', { message: err.message }) });
     });
 
     function cleanup() {

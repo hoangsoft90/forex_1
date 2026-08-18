@@ -9,6 +9,8 @@
  * Tách validate ra hàm thuần để test trực tiếp các acceptance criteria.
  */
 
+import i18n from '@/i18n';
+
 export const FAST_PLAN_REQUIRED_FIELDS = ['Symbol', 'Direction', 'Entry', 'SL', 'Risk%'] as const;
 
 export type FastPlanInput = {
@@ -35,19 +37,19 @@ export function validateFastPlan(input: FastPlanInput): FastPlanValidation {
   const risk = parseFloat(input.riskPercent);
 
   if (!input.symbol.trim()) {
-    return { ok: false, reason: 'Vui lòng chọn Symbol.' };
+    return { ok: false, reason: i18n.t('fastPlan.reasonSymbol') };
   }
   if (!(entry > 0)) {
-    return { ok: false, reason: 'Vui lòng nhập Entry hợp lệ (số > 0).' };
+    return { ok: false, reason: i18n.t('fastPlan.reasonEntry') };
   }
   if (!(sl > 0)) {
-    return { ok: false, reason: 'SL là bắt buộc — vui lòng nhập SL (chặn cứng để bảo vệ Risk Engine).' };
+    return { ok: false, reason: i18n.t('fastPlan.reasonSl') };
   }
   if (entry === sl) {
-    return { ok: false, reason: 'Entry và SL phải khác nhau.' };
+    return { ok: false, reason: i18n.t('fastPlan.reasonEntrySlSame') };
   }
   if (!(risk > 0)) {
-    return { ok: false, reason: 'Vui lòng nhập Risk % hợp lệ (số > 0).' };
+    return { ok: false, reason: i18n.t('fastPlan.reasonRisk') };
   }
   return { ok: true };
 }

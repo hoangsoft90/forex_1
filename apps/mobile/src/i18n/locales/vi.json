@@ -1,0 +1,520 @@
+{
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "back": "Quay lại",
+    "close": "Đóng",
+    "retry": "Thử lại",
+    "loading": "Đang tải...",
+    "error": "Có lỗi xảy ra",
+    "skip": "Bỏ qua",
+    "continue": "Tiếp tục",
+    "confirm": "Xác nhận",
+    "settings": "Cài đặt"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "language": "Ngôn ngữ",
+    "languageHint": "Ngôn ngữ hiển thị của app",
+    "signOut": "Đăng xuất",
+    "proRow": "Mở Pro (xem quảng cáo)",
+    "proStatusActive": "Đang Pro — còn {{hours}}",
+    "proStatusFree": "Gói Free — xem ad nhận Pro 24h",
+    "constitutionRow": "Hiến pháp giao dịch (luật của tôi)",
+    "disciplineExplainerRow": "Discipline vs Edge Score",
+    "notificationSection": "Thông báo",
+    "morningBrief": "Brief buổi sáng",
+    "morningBriefSub": "Discipline Score hôm qua + rules hôm nay (mặc định 08:00)",
+    "morningTimeLabel": "Giờ brief sáng",
+    "eveningReview": "Review cuối ngày",
+    "eveningReviewSub": "Nhắc review khi có lệnh đóng trong ngày (mặc định 21:00)",
+    "eveningTimeLabel": "Giờ review tối",
+    "timeError": "Giờ phải đúng định dạng HH:MM (24h), ví dụ 08:00 hoặc 21:30.",
+    "saveError": "Có lỗi khi lưu cài đặt notification.",
+    "saved": "✓ Đã lưu — notification sẽ áp dụng theo giờ bạn chọn.",
+    "saveNotifications": "Lưu cài đặt thông báo"
+  },
+  "login": {
+    "fillError": "Vui lòng nhập email và mật khẩu.",
+    "signupConfirmEmail": "Đăng ký thành công! Kiểm tra email để xác nhận tài khoản, sau đó đăng nhập lại.",
+    "genericError": "Có lỗi xảy ra, thử lại.",
+    "subtitleLogin": "Đăng nhập để tiếp tục",
+    "subtitleSignup": "Tạo tài khoản mới",
+    "passwordPlaceholder": "Mật khẩu",
+    "loginButton": "Đăng nhập",
+    "signupButton": "Đăng ký",
+    "switchToSignup": "Chưa có tài khoản? Đăng ký",
+    "switchToLogin": "Đã có tài khoản? Đăng nhập"
+  },
+  "balance": {
+    "title": "Số dư tài khoản giao dịch",
+    "subtitle": "App dùng số này làm baseline để tính % rủi ro (lot size, giới hạn lỗ) cho các bước sau.",
+    "placeholder": "VD: 10000",
+    "error": "Vui lòng nhập số dư tài khoản hợp lệ (lớn hơn 0).",
+    "saveError": "Có lỗi xảy ra khi lưu."
+  },
+  "quiz": {
+    "title": "Hồ sơ điểm yếu",
+    "subtitle": "Trả lời theo thói quen giao dịch thực tế của bạn — không có câu trả lời đúng/sai.",
+    "error": "Vui lòng trả lời tất cả câu hỏi trước khi tiếp tục.",
+    "backToBalance": "‹ Quay lại nhập số dư",
+    "viewResults": "Xem kết quả",
+    "remaining": "Còn {{count}} câu chưa trả lời",
+    "q1": {
+      "question": "Bạn có hay mở lệnh ngược chiều ngay sau khi vừa bị dừng lỗ (SL) không?"
+    },
+    "q2": {
+      "question": "Bạn có hay dời Stop Loss ra xa hơn khi giá đi ngược dự kiến không?"
+    },
+    "q3": {
+      "question": "Bạn có hay tăng khối lượng (lot) sau khi thua lệnh để \"gỡ\" lại không?"
+    },
+    "q4": {
+      "question": "Bạn có hay vào lệnh ngay trước/trong lúc tin tức kinh tế lớn (NFP, CPI, quyết định lãi suất) không?"
+    },
+    "q5": {
+      "question": "Bạn có hay vào lệnh mà không có kế hoạch (không xác định trước Entry/SL/TP) không?"
+    },
+    "q6": {
+      "question": "Bạn có hay giao dịch quá nhiều lần trong ngày so với kế hoạch ban đầu không?"
+    },
+    "q7": {
+      "question": "Bạn có hay vào lệnh với khối lượng lớn hơn mức rủi ro đã đặt ra không?"
+    },
+    "option": {
+      "never": "Không bao giờ",
+      "sometimes": "Thỉnh thoảng",
+      "often": "Thường xuyên",
+      "always": "Luôn luôn"
+    },
+    "missingAnswer": "Thiếu câu trả lời cho câu hỏi \"{{id}}\" ({{key}})"
+  },
+  "weaknessSummary": {
+    "title": "Dự đoán điểm yếu của bạn",
+    "subtitle": "Từ những câu trả lời vừa rồi, đây là các điểm yếu bạn tự nhận có thể ảnh hưởng đến kết quả giao dịch. Hệ thống sẽ theo dõi và đối chiếu với hành vi thực tế.",
+    "noWeaknessTitle": "✅ Không có điểm yếu nổi bật",
+    "noWeaknessBody": "Bạn không tự nhận bất kỳ thói quen rủi ro nào trong quiz. Nếu kết quả giao dịch không như mong đợi, hãy theo dõi Journal — dữ liệu thật sẽ cho câu trả lời chính xác nhất.",
+    "note": "Lưu ý: đây là dự đoán dựa trên câu trả lời của bạn — khi có dữ liệu lệnh thực tế, hệ thống sẽ đối chiếu để xác định điểm yếu chính xác hơn.",
+    "backToQuiz": "‹ Quay lại trả lời quiz"
+  },
+  "explain": {
+    "title": "2 loại điểm, 2 ý nghĩa khác nhau",
+    "disciplineBody": "Đo mức độ TUÂN THỦ kế hoạch của chính bạn: vào lệnh đúng plan, không dời SL, không revenge trade...",
+    "edgeBody": "Đo hiệu quả của CHIẾN LƯỢC bạn đang dùng: winrate, tỷ lệ risk:reward, tổng PnL.",
+    "note": "Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định được đúng nguyên nhân thua lỗ: do chiến lược hay do hành vi. Bạn có thể xem lại lời giải thích này trong Settings.",
+    "understood": "Đã hiểu"
+  },
+  "constitution": {
+    "title": "Hiến pháp giao dịch của bạn",
+    "subtitle": "Đây là những luật CỦA BẠN — app chỉ giúp bạn giữ lời hứa với chính mình, không áp đặt.",
+    "requiredSection": "Luật bắt buộc",
+    "optionalSection": "Luật tùy chọn (Free tối đa 3 luật)",
+    "added": "✓ Đã thêm",
+    "add": "+ Thêm",
+    "freeLimitError": "Gói Free chỉ cho tối đa {{count}} luật. Nâng cấp Pro để thêm không giới hạn.",
+    "missingRequired": "Bạn cần có 2 luật bắt buộc: Rủi ro tối đa 1 lệnh và Lỗ tối đa trong ngày.",
+    "tierNote": "Bạn đang ở gói Free (tối đa 3 luật). Nâng cấp Pro để thêm không giới hạn.",
+    "done": "Hoàn tất",
+    "needRequired": "Cần thêm 2 luật bắt buộc",
+    "backToExplain": "‹ Quay lại bước giải thích"
+  },
+  "instantAudit": {
+    "pasteError": "Dán lịch sử giao dịch từ MT4/MT5 (Account History → Copy) trước, hoặc bấm Bỏ qua.",
+    "errorLines": "⚠ {{count}} dòng không import được (dòng {{lines}}...) — kết quả dưới đây dựa trên dữ liệu thiếu. Bạn có thể sửa tay trong Journal sau.",
+    "noImported": "Chưa có lệnh nào được import — kiểm tra lại định dạng dán.",
+    "edgeError": "Lỗi khi gọi Edge Function: {{message}} — đảm bảo đã deploy function parse-mt4",
+    "off": "Instant Audit chưa được bật.",
+    "title": "Điểm yếu thực tế của bạn",
+    "subtitle": "Dán lịch sử giao dịch gần đây (MT4/MT5 → Account History → Copy) để xem điểm yếu từ dữ liệu thật. Không bắt buộc — bấm Bỏ qua nếu chưa có.",
+    "analyze": "Phân tích",
+    "skip": "Bỏ qua — tiếp tục",
+    "noViolations": "Trong {{total}} lệnh gần đây, chưa phát hiện vi phạm kỷ luật nào từ dữ liệu này.",
+    "summary": "Trong {{total}} lệnh gần đây, bạn đã {{list}}.",
+    "violationLine": "{{verb}} {{count}} lần (mất khoảng ${{cost}})",
+    "violation": {
+      "hopeTrading": "dời SL",
+      "revengeTrading": "revenge trade",
+      "martingaleNegative": "tăng lot sau thua",
+      "overconfidenceSize": "vào lệnh quá khối lượng"
+    }
+  },
+  "dashboard": {
+    "title": "Hôm nay",
+    "greeting": "Chào {{name}} — giữ kỷ luật, lợi nhuận theo sau.",
+    "quickPlan": "⚡ Quick Plan — lập kế hoạch nhanh",
+    "quickPlanSub": "Chỉ 5 trường bắt buộc, Risk Engine tự tính lot",
+    "deltaLabel": "so với tuần trước",
+    "noScore": "Chưa có điểm số — đóng vài lệnh theo plan để hệ thống tính cho bạn.",
+    "dangerZoneTitle": "Khu vực nguy hiểm",
+    "proDetail": "Pro chi tiết",
+    "dzLink": "Xem chi tiết →",
+    "streakTitle": "🔥 Discipline Streak",
+    "streakValue": "{{count}} lệnh",
+    "streakNoteOk": "lệnh liên tiếp theo plan, không vi phạm — giữ vững!",
+    "streakNoteEmpty": "Chưa có chuỗi tuân thủ — đóng lệnh đúng plan để bắt đầu streak.",
+    "rulesTitle": "Rules hôm nay",
+    "noRules": "Bạn chưa có rule nào — thiết lập hiến pháp giao dịch để bắt đầu.",
+    "unitMinutes": " phút",
+    "openTradesTitle": "Lệnh đang mở ({{count}})",
+    "openNote": "PnL tạm tính cần giá hiện tại — chưa có nguồn giá thật (Phase 3). Đóng lệnh qua Widget để ghi nhận PnL chính xác.",
+    "openWidgetLink": "Vào Widget đóng lệnh →",
+    "guideTitle": "Bắt đầu thế nào?",
+    "guide1": "1. ⚡ Bấm Quick Plan để lập kế hoạch trước khi vào lệnh.",
+    "guide2": "2. 📝 Nhập lệnh nhanh qua Widget hoặc dán lịch sử MT4/MT5.",
+    "guide3": "3. 📊 Hệ thống sẽ tính Discipline Score & phát hiện vi phạm tự động.",
+    "firstTradeBtn": "Nhập lệnh đầu tiên",
+    "navJournal": "📖 Journal",
+    "navPasteMt4": "📋 Paste MT4/5",
+    "navScores": "🎯 Điểm số",
+    "navWeeklyAudit": "📅 Weekly Audit",
+    "navSetupAnalytics": "🧪 Setup Analytics",
+    "navDangerZone": "⚠️ Danger Zone",
+    "navPortfolioRisk": "📊 Rủi ro danh mục",
+    "navPro": "👑 Mở Pro",
+    "navProActive": "👑 Pro (còn {{hours}})",
+    "balanceHint": "Tip: khai báo số dư trong Cài đặt để Risk Engine tính lot chính xác."
+  },
+  "journal": {
+    "title": "Journal",
+    "insightTitle": "Insight của bạn",
+    "insightText": "{{followedPct}}% lệnh theo đúng plan có lời, trong khi chỉ {{deviatedPct}}% lệnh lệch plan có lời. Theo plan giúp bạn tốt hơn!",
+    "insightHint": "Cần ≥ 10 lệnh đã đóng có plan để hiển thị insight thống kê.",
+    "empty": "Chưa có lệnh nào. Nhập lệnh qua Widget để bắt đầu.",
+    "followed": "Theo plan",
+    "deviated": "Lệch plan",
+    "closed": "Đóng {{time}}",
+    "open": "Đang mở"
+  },
+  "confirmNoPlan": {
+    "title": "Bạn đang tạo lệnh KHÔNG có kế hoạch",
+    "warnTitle": "⚠ Cảnh báo",
+    "warn1": "Lệnh ngoài kế hoạch không có Plan để đối chiếu — bạn sẽ không biết mình có đi chệch kế hoạch hay không, và không có lý do rõ ràng để học từ lệnh này.",
+    "warn2": "Nếu bạn đang giao dịch cảm tính, hãy quay lại tạo Plan trước — mất chưa đầy 1 phút.",
+    "confirm": "Tôi hiểu, vẫn tạo lệnh không có Plan",
+    "cancel": "Quay lại tạo Plan"
+  },
+  "tradeDetail": {
+    "notFound": "Không tìm thấy lệnh này.",
+    "backToJournal": "‹ Quay lại Journal",
+    "opened": "mở {{time}}",
+    "closed": "đóng {{time}}",
+    "open": "đang mở",
+    "onPlan": "✓ Theo plan",
+    "offPlan": "✗ Lệch plan",
+    "compareTitle": "Planned vs Actual",
+    "deltaTitle": "Độ lệch (Delta)",
+    "entryDelta": "Entry lệch: {{value}} pips",
+    "slDelta": "SL lệch: {{value}} pips",
+    "riskDelta": "Risk lệch: {{value}}",
+    "thesis": "Thesis: {{value}}",
+    "setup": "Setup: {{value}}",
+    "invalidation": "Điều kiện hủy: {{value}}",
+    "reminder": "💡 Plan này chưa điền: {{fields}} — điền bổ sung giúp bạn nhận phân tích setup chính xác hơn.",
+    "pnl": "PnL",
+    "notClosed": "chưa đóng"
+  },
+  "pasteMt4": {
+    "emptyError": "Dán text từ MT4 Account History vào ô trên trước.",
+    "edgeError": "Lỗi khi gọi Edge Function: {{message}} — đảm bảo đã deploy function parse-mt4",
+    "title": "Paste từ MT4/MT5",
+    "subtitle": "Mở MT4/MT5 → Tab \"Account History\" → chọn toàn bộ → Copy, rồi dán vào đây.",
+    "parseImport": "Parse & Import",
+    "result": "Kết quả: {{count}} lệnh",
+    "errorCount": "⚠ {{count}} dòng không import được — vui lòng sửa tay:",
+    "errorLine": "Dòng {{line}}:"
+  },
+  "executionWidget": {
+    "title": "Ghi lệnh thực tế",
+    "subtitle": "Nhập kết quả lệnh vừa đóng — hệ thống tự đối chiếu với Plan.",
+    "exitPriceLabel": "Giá thoát (Exit)",
+    "tpLabel": "Giá TP",
+    "linkPlan": "Liên kết với Plan",
+    "pasteLink": "Dán ID Plan (không bắt buộc)",
+    "saveTrade": "Lưu lệnh",
+    "fillError": "Có lỗi khi lưu lệnh."
+  },
+  "newPlan": {
+    "title": "Fast Plan",
+    "subtitle": "Chỉ 5 trường bắt buộc — lập kế hoạch nhanh, Risk Engine tự tính lot size.",
+    "symbol": "Symbol",
+    "warnSymbol": "Symbol chưa có cấu hình pip value.",
+    "direction": "Direction",
+    "entry": "Entry",
+    "sl": "SL",
+    "riskPercent": "Risk %",
+    "riskHint": "Risk% mặc định theo rule của bạn: {{rule}}% (có thể sửa).",
+    "overRisk": "⚠ Risk {{entered}}% vượt quá giới hạn {{limit}}% — bạn phải giảm xuống hoặc quay lại.",
+    "adaptiveTitle": "📉 Adaptive theo ATR đang kích hoạt",
+    "adaptiveNote": "Risk đề xuất: {{suggested}}% — nếu nhập cao hơn sẽ bị chặn (App không bao giờ tự nới lỏng luật). ATR là giá trị ước lượng tham chiếu.",
+    "distance": "Khoảng cách: {{pips}} pips",
+    "lotSize": "Lot size đề xuất: {{lot}} lot",
+    "riskAmount": "Số tiền risk: ${{amount}}",
+    "rr": "R:R = 1 : {{rr}}",
+    "hideDetails": "▲ Ẩn chi tiết thêm",
+    "showDetails": "▼ Chi tiết thêm (tùy chọn)",
+    "tpLabel": "TP (tùy chọn — R:R chỉ hiện khi có TP)",
+    "thesisLabel": "Thesis (lý do vào lệnh)",
+    "setupTagLabel": "Setup tag",
+    "invalidationLabel": "Invalidation condition (điều kiện hủy)",
+    "confidenceLabel": "Confidence level: {{level}}/5",
+    "chartLabel": "Chart {{symbol}}",
+    "save": "Lưu Plan",
+    "noPlan": "Tạo lệnh không có Plan",
+    "personalData": "DỮ LIỆU CỦA BẠN",
+    "communityBenchmark": "BENCHMARK CỘNG ĐỒNG",
+    "interruptionTitle": "Dừng lại 1 giây",
+    "continue": "Tiếp tục",
+    "backToPlan": "Quay lại chỉnh Plan",
+    "errorInvalid": "Vui lòng nhập đầy đủ Symbol, Direction, Entry, SL, Risk% hợp lệ.",
+    "errorAdaptive": "Adaptive đang kích hoạt: risk đề xuất {{suggested}}% (giảm theo ATR). Bạn nhập {{entered}}% — vượt đề xuất. Giảm xuống hoặc quay lại chỉnh.",
+    "errorSave": "Có lỗi khi lưu plan."
+  },
+  "scores": {
+    "title": "Điểm số của bạn",
+    "subtitle": "Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định đúng nguyên nhân thua lỗ: do chiến lược hay do hành vi.",
+    "winrate": "winrate",
+    "progressTitle": "📈 Tiến bộ tuần này",
+    "progressText": "{{delta}} điểm so với tuần trước ({{prev}} → {{cur}})",
+    "tierNote": "Gói Free chỉ hiển thị điểm tuần này. Nâng cấp Pro để xem biểu đồ xu hướng 4/12 tuần và số lệnh vi phạm đã được ngăn chặn.",
+    "proTitle": "Gói Pro",
+    "proPrevented": "Lệnh vi phạm được ngăn chặn: {{count}} (từ Decision Interruption)",
+    "proChart": "(Biểu đồ trend 4/12 tuần — Phase 2 hoàn thiện)",
+    "disciplineDetail": "Chi tiết Discipline",
+    "adherence": "Tuân thủ plan: {{pct}}%",
+    "violations": "Vi phạm trong tuần: {{count}}",
+    "edgeDetail": "Chi tiết Edge",
+    "pnlWeek": "PnL tuần: ${{amount}}",
+    "avgRR": "Avg R:R: {{rr}}"
+  },
+  "weeklyAudit": {
+    "title": "Weekly Performance Audit",
+    "subtitle": "Tổng kết tuần này — sinh từ số liệu thật, không dùng AI.",
+    "trades": "lệnh",
+    "followedPlan": "theo plan",
+    "prevented": "App đã giúp bạn tránh {{count}} lệnh vi phạm rule của chính mình.",
+    "opening": "Tuần này bạn thực hiện {{trades}} lệnh, {{pct}}% theo đúng plan.",
+    "noTrades": "Tuần này bạn chưa có lệnh nào được ghi nhận.",
+    "topViolationOne": "Vi phạm phổ biến nhất: {{label}} (1 lần).",
+    "topViolationMany": "Vi phạm phổ biến nhất: {{label}} ({{count}} lần).",
+    "noViolations": "Tuần này bạn không có vi phạm nào được ghi nhận — giữ vững nhé.",
+    "positivePnl": "Kết quả tuần: +${{amount}}. Tiếp tục duy trì kỷ luật như thế này.",
+    "negativePnl": "Kết quả tuần: -${{amount}}. Nhìn vào % theo plan để phân biệt do chiến lược hay do hành vi.",
+    "violation": {
+      "overconfidenceSize": "vào lệnh quá khối lượng",
+      "revengeTrading": "revenge trade",
+      "hopeTrading": "dời Stop Loss",
+      "martingaleNegative": "tăng lot sau lệnh thua",
+      "newsGambling": "vào lệnh trước tin lớn",
+      "maxDailyLoss": "vượt mức lỗ tối đa trong ngày",
+      "checklistSkipped": "bỏ qua checklist"
+    }
+  },
+  "setupAnalytics": {
+    "title": "Setup Analytics",
+    "subtitle": "Winrate, R:R và PnL theo từng loại setup — biết chiến lược nào thực sự có edge.",
+    "insightTitle": "💡 Gợi ý (Pro)",
+    "trades": "Lệnh",
+    "tierNote": "Gói Free xem bảng tổng quan. Nâng cấp Pro để nhận gợi ý dạng câu và biểu đồ xu hướng theo thời gian.",
+    "progress": "Cần thêm {{need}} lệnh nữa (hiện có {{count}}/30) để phân tích đáng tin cậy.",
+    "insightSingle": "Setup \"{{label}}\" là nhóm giao dịch nhiều nhất với {{pnl}}$ PnL.",
+    "insightBestWorst": "Setup \"{{bestLabel}}\" đang có edge tốt nhất (+${{bestPnl}} PnL, winrate {{bestWinrate}}%) — trong khi \"{{worstLabel}}\" thấp nhất ({{worstPnl}}$).",
+    "group": {
+      "breakout": "Breakout",
+      "rejection": "Rejection",
+      "trendContinuation": "Trend Continuation",
+      "uncategorized": "Chưa phân loại"
+    }
+  },
+  "dangerZone": {
+    "title": "Khu vực nguy hiểm của bạn",
+    "subtitle": "Pattern vi phạm lặp lại theo giờ và thứ tự lệnh trong ngày — từ dữ liệu thật.",
+    "notEnoughTrades": "Cần ít nhất 30 lệnh đã đóng để phân tích pattern đáng tin cậy (hiện có {{count}}/30).",
+    "noPattern": "Đã có {{count}} lệnh nhưng chưa có pattern nào lặp lại đủ 5 lần — chưa đủ để kết luận.",
+    "chartTitle": "Phân bố vi phạm theo giờ",
+    "noViolations": "Chưa có vi phạm nào để hiển thị.",
+    "tierNote": "Gói Pro xem chi tiết nhiều pattern + biểu đồ. Gói Free xem tóm tắt 1 dòng trên Today Dashboard khi có đủ dữ liệu.",
+    "summary": "⚠️ Khu vực nguy hiểm: bạn vi phạm kỷ luật thường xuyên nhất vào lúc {{hour}}:00 — {{count}} lần (trong {{total}} lệnh).",
+    "nthOrderSummary": "⚠️ Bạn vi phạm kỷ luật thường xuyên nhất ở lệnh thứ {{nth}} trong ngày — {{count}} lần (trong {{total}} lệnh)."
+  },
+  "portfolioRisk": {
+    "noData": "Chưa có dữ liệu.",
+    "levelDanger": "⚠ RỦI RO DỒN: {{total}}% vượt ngưỡng {{threshold}}%",
+    "levelWarn": "Cảnh báo: tổng risk {{total}}% đang gần ngưỡng {{threshold}}%",
+    "levelOk": "Tổng risk {{total}}% — trong ngưỡng {{threshold}}%",
+    "title": "Rủi ro danh mục",
+    "subtitle": "Tổng rủi ro dồn của các vị thế đang mở. Ngưỡng = min(rule risk/lệnh × 3, max daily loss).",
+    "detail": "{{count}} vị thế mở · ngưỡng {{threshold}}%",
+    "noPositions": "Chưa có vị thế mở nào (execution chưa đóng). Ghi nhận lệnh qua Widget hoặc paste MT4.",
+    "estimated": "ước lượng",
+    "proGateTitle": "Ma trận tương quan — tính năng Pro",
+    "proGateText": "Xem tương quan giữa các vị thế đang mở (EURUSD ↔ XAUUSD ↔ USDJPY) giúp tránh gom rủi ro cùng hướng. Mở Pro 24h bằng cách xem 1 quảng cáo.",
+    "proBtn": "Mở Pro",
+    "corrTitle": "Ma trận tương quan (ước lượng tham chiếu)",
+    "corrNote": "Hệ số ước lượng theo quy ước thị trường — chưa tính từ dữ liệu giá thật của bạn. Dương = cùng hướng (gom rủi ro), âm = bù trừ nhau.",
+    "needTwoSymbols": "Cần ≥ 2 symbol khác nhau để tính tương quan.",
+    "currentSymbols": "Symbol hiện tại: {{symbols}}"
+  },
+  "pro": {
+    "title": "Mở Pro",
+    "youArePro": "● BẠN ĐANG PRO",
+    "hoursLeft": "Còn {{hours}}. Mở thêm 24h bằng cách xem 1 quảng cáo.",
+    "youAreFree": "● BẠN ĐANG Ở GÓI FREE",
+    "freeText": "Pro mở khóa: biểu đồ xu hướng Discipline Score, ma trận tương quan danh mục, và Adaptive Rules. Xem 1 quảng cáo ngắn để dùng thử 24 giờ.",
+    "cooldown": "Thử lại sau {{time}}",
+    "watchAd": "▶ Xem quảng cáo — mở Pro 24h",
+    "adNotConfigured": "Quảng cáo chưa được cấu hình",
+    "cooldownHint": "Bạn vừa xem quảng cáo. Xem lần tiếp theo sau {{time}} để chống spam.",
+    "admobHint": "App đang chạy chế độ chưa cấu hình AdMob (thiếu App ID / Ad Unit ID). Thêm biến EXPO_PUBLIC_ADMOB_APP_ID và EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID rồi build lại (AdMob cần dev build, không chạy trong Expo Go).",
+    "unlocked": "🎉 Đã mở Pro 24h (đến {{until}}).",
+    "back": "Quay lại"
+  },
+  "constitutionSettings": {
+    "title": "Hiến pháp giao dịch",
+    "subtitle": "Luật CỦA BẠN — bạn tự đặt, app chỉ giúp bạn giữ lời hứa. Thay đổi có hiệu lực ngay, lịch sử theo dõi qua thời điểm cập nhật.",
+    "maxRules": "Gói {{tier}} không cho thêm: Free tối đa 3 luật.",
+    "adaptiveInvalid": "Ngưỡng ATR và giá trị giảm phải là số > 0.",
+    "adaptiveOnlyDecrease": "Adaptive chỉ được GIẢM risk: giá trị sau điều chỉnh ({{adjusted}}%) phải ≤ base ({{base}}%). Muốn tăng phải qua Decision Interruption.",
+    "empty": "Chưa có luật nào. Thêm luật bên dưới.",
+    "delete": "Xóa",
+    "updatedAt": "Cập nhật: {{time}}",
+    "adaptiveTitle": "Adaptive theo ATR",
+    "on": "đang bật",
+    "off": "tắt",
+    "adaptiveHint": "Khi ATR vượt ngưỡng, app tự đề xuất GIẢM risk. App không bao giờ tự tăng.",
+    "atrMultiple": "ATR gấp (x lần TB)",
+    "adjustedRisk": "Risk sau điều chỉnh (%)",
+    "saveAdaptive": "Lưu Adaptive",
+    "removeAdaptive": "Bỏ Adaptive",
+    "addRule": "Thêm luật ({{count}}/3 Free · không giới hạn Pro)"
+  },
+  "disciplineExplainer": {
+    "title": "Discipline Score vs Edge Score",
+    "disciplineBody": "Đo mức độ tuân thủ kế hoạch của chính bạn — không đo kết quả tài chính.",
+    "edgeBody": "Đo hiệu quả của chiến lược: winrate, risk:reward, tổng PnL.",
+    "note": "Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định đúng nguyên nhân thua lỗ: do chiến lược hay do hành vi."
+  },
+  "costCard": {
+    "title": "Chi phí của sự vô kỷ luật",
+    "detailLine": "{{deviated}} lệnh lệch plan trong {{total}} lệnh kỳ này (giả định theo plan đạt TP: +${{hypothetical}} vs thực tế ${{actual}})",
+    "skipNote": "Bỏ qua {{count}} lệnh thiếu dữ liệu plan (không suy đoán).",
+    "hiddenNotEnoughTrades": "Cần thêm dữ liệu để tính chỉ số này (hiện có {{count}}/30 lệnh).",
+    "hiddenNotEnoughDeviated": "Cần thêm dữ liệu để tính chỉ số này (hiện có {{count}}/3 lệnh lệch plan).",
+    "disclaimer": "Đây là ước tính giả định dựa trên chênh lệch giữa kế hoạch và thực tế — không phải bảo đảm lợi nhuận. Kế hoạch ban đầu vẫn có thể sai."
+  },
+  "mainLayout": {
+    "settings": "Cài đặt",
+    "constitution": "Hiến pháp giao dịch",
+    "disciplineVsEdge": "Discipline vs Edge",
+    "newPlan": "Tạo Trade Plan",
+    "noPlan": "Lệnh ngoài kế hoạch",
+    "executionWidget": "Nhập lệnh nhanh",
+    "pasteMt4": "Paste MT4/MT5",
+    "journal": "Journal",
+    "tradeDetail": "Chi tiết lệnh",
+    "scores": "Điểm số",
+    "weeklyAudit": "Weekly Audit",
+    "pro": "Mở Pro",
+    "portfolioRisk": "Rủi ro danh mục",
+    "setupAnalytics": "Setup Analytics",
+    "dangerZone": "Khu vực nguy hiểm"
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "pageTitle": "Không tìm thấy trang này",
+    "subtitle": "Đường dẫn bạn mở không tồn tại trong app. Quay về trang chủ để tiếp tục.",
+    "home": "Về trang chủ",
+    "homeLink": "hoặc mở trang chủ (link)"
+  },
+  "chart": {
+    "loading": "Đang tải chart {{symbol}}…",
+    "loadError": "Không tải được chart — kiểm tra kết nối mạng.",
+    "webLoadFail": "Không tải được TradingView — kiểm tra kết nối mạng.",
+    "webLoadError": "Lỗi tải chart"
+  },
+  "weaknessLabels": {
+    "revengeTrading": "Revenge trading",
+    "revengeTradingDesc": "Mở lệnh ngược chiều ngay sau khi bị dừng lỗ.",
+    "movesSl": "Dời Stop Loss",
+    "movesSlDesc": "Dời SL ra xa hơn khi giá đi ngược dự kiến.",
+    "increasesLot": "Tăng lot sau thua",
+    "increasesLotDesc": "Tăng khối lượng để \"gỡ\" lại sau lệnh thua.",
+    "tradesBeforeNews": "Giao dịch trước tin lớn",
+    "tradesBeforeNewsDesc": "Vào lệnh ngay trước/trong tin kinh tế lớn (NFP, CPI...).",
+    "tradesWithoutPlan": "Vào lệnh không plan",
+    "tradesWithoutPlanDesc": "Không xác định trước Entry/SL/TP.",
+    "overtrades": "Giao dịch quá nhiều",
+    "overtradesDesc": "Nhiều lệnh trong ngày hơn kế hoạch ban đầu.",
+    "overconfidentSize": "Khối lượng quá mức",
+    "overconfidentSizeDesc": "Vào lệnh lot lớn hơn mức rủi ro đã đặt ra."
+  },
+  "interruption": {
+    "benchmark": {
+      "overRisk": "73% trader tăng risk sau khi thua lệnh đều thua tiếp lệnh đó. Vượt giới hạn risk của bạn làm tăng rủi ro cháy tài khoản.",
+      "maxDailyLoss": "Hầu hết trader thua tiếp sau khi đã chạm mức lỗ tối đa trong ngày. Dừng lại là quyết định đúng đắn.",
+      "revengePattern": "73% trader tăng lot sau lệnh thua đều thua tiếp lệnh đó. Bạn đang mở lệnh ngược chiều ngay sau lệnh thua."
+    },
+    "personalOverRisk": "Risk {{risk}}% vượt giới hạn {{limit}}% của bạn. Trước đây bạn thường thua nhiều hơn khi tăng risk vượt giới hạn.",
+    "personalMaxDailyLoss": "Bạn đã lỗ ${{loss}} hôm nay, đạt giới hạn ${{limit}}. Trước đây tiếp tục giao dịch sau khi chạm giới hạn thường làm lỗ sâu thêm.",
+    "personalRevenge": "Bạn vừa thua ${{lastLoss}}. Lần trước bạn mở lệnh ngược chiều ngay sau lệnh thua, bạn mất thêm trung bình ${{avgLoss}}. Lần này bạn có chắc muốn tiếp tục?"
+  },
+  "mt4Parser": {
+    "noHeader": "Không tìm thấy dòng tiêu đề cột (Order/Ticket, Type, Symbol...) — format không đúng MT4.",
+    "badType": "Type không nhận diện được: \"{{type}}\"",
+    "missingFields": "Thiếu Symbol / Volume / Price hợp lệ.",
+    "badTime": "Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): \"{{time}}\""
+  },
+  "fastPlan": {
+    "reasonSymbol": "Vui lòng chọn Symbol.",
+    "reasonEntry": "Vui lòng nhập Entry hợp lệ (số > 0).",
+    "reasonSl": "SL là bắt buộc — vui lòng nhập SL (chặn cứng để bảo vệ Risk Engine).",
+    "reasonEntrySlSame": "Entry và SL phải khác nhau.",
+    "reasonRisk": "Vui lòng nhập Risk % hợp lệ (số > 0)."
+  },
+  "atr": {
+    "notActive": "Không kích hoạt adaptive — giữ risk gốc.",
+    "missingData": "Thiếu dữ liệu ATR — giữ risk gốc (không tự ý điều chỉnh).",
+    "activeReason": "ATR hiện tại = {{atrNow}} (gấp {{ratio}}x trung bình {{atrAverage}}) — vượt ngưỡng {{threshold}}x. Adaptive giảm risk {{base}}% → {{suggested}}%."
+  },
+  "ruleTemplate": {
+    "maxRiskPerTrade": "Rủi ro tối đa 1 lệnh",
+    "maxRiskPerTradeDesc": "Phần trăm tài khoản tối đa bạn chấp nhận rủi ro cho mỗi lệnh.",
+    "maxDailyLoss": "Lỗ tối đa trong ngày",
+    "maxDailyLossDesc": "Khi lỗ trong ngày chạm mức này, bạn dừng giao dịch.",
+    "noRevengeTrade": "Cấm revenge trade",
+    "noRevengeTradeDesc": "Không mở lệnh ngược chiều trong X phút sau khi bị dừng lỗ.",
+    "noTradeBeforeNews": "Không vào lệnh trước tin lớn",
+    "noTradeBeforeNewsDesc": "Không mở lệnh mới trong X phút trước tin kinh tế HIGH IMPACT.",
+    "maxOpenPositions": "Số lệnh mở tối đa",
+    "maxOpenPositionsDesc": "Giới hạn số vị thế mở cùng lúc."
+  },
+  "notification": {
+    "morningTitle": "Chúc một ngày giao dịch tốt lành",
+    "morningScore": "Discipline Score hôm qua: {{score}}.",
+    "morningNoScore": "Bắt đầu ghi nhận lệnh để có điểm kỷ luật.",
+    "morningNoRules": "Thiết lập hiến pháp giao dịch để bắt đầu.",
+    "morningRules": "Rules hôm nay: {{rules}}.",
+    "eveningTitle": "Xem lại hôm nay",
+    "eveningBody": "Bạn đã đóng {{count}} lệnh hôm nay. Dành 1 phút review — mọi nhận xét đều là thông tin, không phải phán xét.",
+    "managerMorningBody": "Mở app để xem Discipline Score và rules hôm nay.",
+    "managerEveningBody": "Bạn có lệnh đóng hôm nay. Dành 1 phút review — thông tin, không phán xét."
+  },
+  "admob": {
+    "notConfigured": "AdMob chưa được cấu hình (thiếu Ad Unit ID).",
+    "timeout": "Quảng cáo tải quá lâu, thử lại sau.",
+    "closedEarly": "Bạn đã đóng quảng cáo trước khi xem hết.",
+    "loadError": "Lỗi tải quảng cáo: {{message}}",
+    "webUnsupported": "AdMob không hỗ trợ trên web."
+  },
+  "proUnlock": {
+    "cooldown": "Bạn vừa xem quảng cáo. Thử lại sau {{time}}.",
+    "notCompleted": "Chưa xem hết quảng cáo.",
+    "notLoggedIn": "Chưa đăng nhập.",
+    "saveError": "Lỗi lưu Pro: {{message}}"
+  },
+  "tier": {
+    "expired": "hết hạn",
+    "minutes": "{{count}} phút",
+    "hours": "{{count}} giờ",
+    "hoursMinutes": "{{hours}} giờ {{minutes}} phút"
+  }
+}

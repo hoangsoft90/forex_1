@@ -256,14 +256,14 @@ Phân biệt rõ 2 tình huống:
 4. **Ads**: chỉ sửa cấu hình ở `src/lib/ads-config.ts`; giữ `TEST_ADS=true` trừ khi user yêu cầu ra mắt thật; rewarded phải qua cooldown 5 phút (`ad-cooldown.ts`).
 5. **Navigation**: mọi back dùng `safeBack(router, fallback)`; onboarding dùng `replace` trực tiếp (KHÔNG safeBack — canGoBack về login → loop). Không để màn hình treo spinner vĩnh viễn khi thiếu dữ liệu (deep-link).
 6. **Business logic → `src/lib/*.ts` thuần** (không import react-native) + unit test; package native-only → tách `.native.ts(x)` + web stub.
-7. **Không commit secrets** (`.env`, token) — verify `git status`/dry-run trước commit; git config local là placeholder → commit dùng env vars `GIT_AUTHOR_NAME/EMAIL` (xem skill `build-debug-apk-gh`).
+7. **Không commit secrets** (`.env`, token) — verify `git status`/dry-run trước commit; git config local là placeholder → commit dùng env vars `GIT_AUTHOR_NAME/EMAIL` (xem skill `expo-build-debug-apk-gh`).
 8. **Verify bắt buộc trước khi báo xong**: trong `apps/mobile` — `npx tsc --noEmit` = 0 · `npm run lint` = 0 · `npx jest` pass (147 test) · đụng native → `npx expo export --platform android` + `--platform web`.
 9. Chi tiết thêm: `.project/ai-rules.md` (17 rule) + phần hạ tầng chung đầu file (MCP tools trước grep, test/lint/Code Review trước khi báo xong, vùng loại trừ Ponytail cần xác nhận user).
 
 ## Workflow
 - **Bug fixing**: check logic ở `apps/mobile/src/lib/*.ts` (thuần, test được) → màn hình `src/app/` → query/schema `supabase/`. Log: `console.warn` cho lỗi không chặn luồng (analytics/ads/audit), không log secret.
 - **Feature add**: xác định module thuộc Phase nào → tạo/cập nhật OpenSpec change (`openspec/changes/<tên>/`) nếu chưa có → code theo `patterns.md` → test + lint + typecheck → cập nhật `working.md` → báo cáo user.
-- **Build APK**: theo skill `build-debug-apk-gh` (push main → GH Actions assembleDebug → tải artifact) — build APK mới tìm chính xác lỗi native, `expo export` không đủ.
+- **Build APK**: theo skill `expo-build-debug-apk-gh` (push main → GH Actions assembleDebug → tải artifact) — build APK mới tìm chính xác lỗi native, `expo export` không đủ.
 
 ## Git & Kiểm thử (BẮT BUỘC cho **task lớn** — xem định nghĩa đầu file; tuân theo phương pháp TDD/debugging của Superpowers)
 

@@ -10,6 +10,8 @@
  * (tính theo giờ entry_time của lệnh bị vi phạm — dữ liệu thật, không suy đoán).
  */
 
+import i18n from '@/i18n';
+
 export const MIN_CLOSED_TRADES = 30;
 export const MIN_PATTERN_OCCURRENCE = 5;
 
@@ -61,7 +63,11 @@ export function findDangerZonePattern(input: DangerZoneInput): DangerZonePattern
 
 /** 1 dòng tóm tắt cho Today Dashboard (Free). */
 export function dangerZoneSummary(pattern: DangerZonePattern): string {
-  return `⚠️ Khu vực nguy hiểm: bạn vi phạm kỷ luật thường xuyên nhất vào lúc ${pattern.hour}:00 — ${pattern.count} lần (trong ${pattern.totalClosed} lệnh).`;
+  return i18n.t('dangerZone.summary', {
+    hour: pattern.hour,
+    count: pattern.count,
+    total: pattern.totalClosed,
+  });
 }
 
 /**
@@ -136,5 +142,9 @@ export function findDangerZoneDetail(input: DangerZoneInput): DangerZoneDetail {
 
 /** Câu tóm tắt cho pattern "lệnh thứ N". */
 export function nthOrderSummary(p: NthOrderPattern): string {
-  return `⚠️ Bạn vi phạm kỷ luật thường xuyên nhất ở lệnh thứ ${p.nth} trong ngày — ${p.count} lần (trong ${p.totalClosed} lệnh).`;
+  return i18n.t('dangerZone.nthOrderSummary', {
+    nth: p.nth,
+    count: p.count,
+    total: p.totalClosed,
+  });
 }

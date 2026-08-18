@@ -66,4 +66,4 @@ forex_1/
 ## Kho lưu trữ
 
 - GitHub: `github.com/hoangsoft90/forex_1` (branch `main`), commit đầu `1cd965c`.
-- Git config cục bộ là placeholder → commit cần env vars `GIT_AUTHOR_NAME/EMAIL` (xem skill `build-debug-apk-gh`).
+- Git config cục bộ là placeholder → commit cần env vars `GIT_AUTHOR_NAME/EMAIL` (xem skill `expo-build-debug-apk-gh`).

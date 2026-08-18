@@ -51,4 +51,4 @@
 ## Kiểm chứng đợt
 - 147 → **224 test** (đợt) → **226** (sau review) · TSC 0 · lint 0 · bundle Android + web OK · OpenSpec archive `2026-08-17-retention-layer` (22 specs / 91 requirements).
 - Review tìm 3 bug: 🔴 crash symbol lạ cost-of-indiscipline, 🟡 biểu đồ danger-zone <30 lệnh, 🟡 `configureNotificationHandler` không được gọi.
-- **Còn treo**: SQL mục 13 chưa chạy · deploy lại edge `parse-mt4` · chờ export MT4 thật để mở gate M3.
+- **Còn treo**: chờ export MT4 thật để mở gate M3 (≥95% parse). Đã xong: SQL mục 13 (verify 2026-08-18 — 2 bảng + RLS + seed đầy đủ) · redeploy edge `parse-mt4` V2 (2026-08-18, smoke test 3 lệnh parse sạch).

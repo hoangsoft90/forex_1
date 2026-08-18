@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import CostOfIndisciplineCard from '@/components/cost-of-indiscipline-card';
 import { useAuth } from '@/lib/auth-context';
@@ -44,6 +45,7 @@ type DashboardData = {
 };
 
 export default function TodayDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, signOut, onboarding, tier, subscriptionExpiresAt } = useAuth();
   const pro = getProStatus(tier, subscriptionExpiresAt);
@@ -211,13 +213,15 @@ export default function TodayDashboard() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Hôm nay</Text>
-      <Text style={styles.subtitle}>Chào {user?.email?.split('@')[0] ?? 'trader'} — giữ kỷ luật, lợi nhuận theo sau.</Text>
+      <Text style={styles.title}>{t('dashboard.title')}</Text>
+      <Text style={styles.subtitle}>
+        {t('dashboard.greeting', { name: user?.email?.split('@')[0] ?? 'trader' })}
+      </Text>
 
       {/* Nút Quick Plan nổi bật — dẫn thẳng Fast Plan */}
       <TouchableOpacity style={styles.quickPlanBtn} onPress={() => router.push('/(main)/new-plan')}>
-        <Text style={styles.quickPlanText}>⚡ Quick Plan — lập kế hoạch nhanh</Text>
-        <Text style={styles.quickPlanSub}>Chỉ 5 trường bắt buộc, Risk Engine tự tính lot</Text>
+        <Text style={styles.quickPlanText}>{t('dashboard.quickPlan')}</Text>
+        <Text style={styles.quickPlanSub}>{t('dashboard.quickPlanSub')}</Text>
       </TouchableOpacity>
 
       {/* 1. Discipline Score + delta */}
@@ -228,52 +232,50 @@ export default function TodayDashboard() {
             <Text style={styles.scoreValue}>{d.latestScore.score.toFixed(1)}</Text>
             {scoreDelta != null && (
               <Text style={[styles.scoreDelta, scoreDelta >= 0 ? styles.deltaPos : styles.deltaNeg]}>
-                {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta).toFixed(1)} so với tuần trước
+                {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta).toFixed(1)} {t('dashboard.deltaLabel')}
               </Text>
             )}
           </View>
         ) : (
-          <Text style={styles.emptyText}>
-            Chưa có điểm số — đóng vài lệnh theo plan để hệ thống tính cho bạn.
-          </Text>
+          <Text style={styles.emptyText}>{t('dashboard.noScore')}</Text>
         )}
       </View>
 
       {/* 2. Personal Danger Zone — 1 dòng, ẩn nếu chưa đủ ngưỡng (Module 6) */}
       {d?.dangerZone && (
         <TouchableOpacity style={[styles.card, styles.cardWarn]} onPress={() => router.push('/(main)/danger-zone')}>
-          <Text style={styles.cardTitleWarn}>Khu vực nguy hiểm {pro.isPro ? '' : '(Pro chi tiết)'}</Text>
+          <Text style={styles.cardTitleWarn}>
+            {t('dashboard.dangerZoneTitle')} {pro.isPro ? '' : `(${t('dashboard.proDetail')})`}
+          </Text>
           <Text style={styles.warnText}>{dangerZoneSummary(d.dangerZone)}</Text>
-          <Text style={styles.dzLink}>Xem chi tiết →</Text>
+          <Text style={styles.dzLink}>{t('dashboard.dzLink')}</Text>
         </TouchableOpacity>
       )}
 
       {/* 7. Discipline Streak — Module 7 (Free) */}
       {d && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔥 Discipline Streak</Text>
+          <Text style={styles.cardTitle}>{t('dashboard.streakTitle')}</Text>
           <Text style={styles.streakValue}>
-            {d.streak > 0 ? `${d.streak} lệnh` : '0'}
+            {d.streak > 0 ? t('dashboard.streakValue', { count: d.streak }) : '0'}
           </Text>
           <Text style={styles.streakNote}>
-            {d.streak > 0
-              ? 'lệnh liên tiếp theo plan, không vi phạm — giữ vững!'
-              : 'Chưa có chuỗi tuân thủ — đóng lệnh đúng plan để bắt đầu streak.'}
+            {d.streak > 0 ? t('dashboard.streakNoteOk') : t('dashboard.streakNoteEmpty')}
           </Text>
         </View>
       )}
 
       {/* 3. Rules active hôm nay */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Rules hôm nay</Text>
+        <Text style={styles.cardTitle}>{t('dashboard.rulesTitle')}</Text>
         {d && d.rules.length === 0 ? (
-          <Text style={styles.emptyText}>Bạn chưa có rule nào — thiết lập hiến pháp giao dịch để bắt đầu.</Text>
+          <Text style={styles.emptyText}>{t('dashboard.noRules')}</Text>
         ) : (
           (d?.rules ?? []).map((r) => {
             const tpl = RULE_TEMPLATES.find((t) => t.rule_type === r.rule_type);
             const label = tpl?.label ?? (r.rule_type === 'custom' ? 'Luật tùy chỉnh' : r.rule_type);
             const unitLabel =
-              r.unit === 'percent' ? '%' : r.unit === 'currency' ? ' USD' : r.unit === 'minutes' ? ' phút' : '';
+              r.unit === 'percent' ? '%' : r.unit === 'currency' ? ' USD' : r.unit === 'minutes' ? t('dashboard.unitMinutes') : '';
             return (
               <View key={r.rule_type} style={styles.ruleRow}>
                 <Text style={styles.ruleLabel}>✓ {label}</Text>
@@ -293,7 +295,7 @@ export default function TodayDashboard() {
       {/* 5. Lệnh đang mở — card riêng */}
       {d && d.openExecs.length > 0 && (
         <View style={[styles.card, styles.cardOpen]}>
-          <Text style={styles.cardTitle}>Lệnh đang mở ({d.openExecs.length})</Text>
+          <Text style={styles.cardTitle}>{t('dashboard.openTradesTitle', { count: d.openExecs.length })}</Text>
           {d.openExecs.map((e, i) => (
             <View key={i} style={styles.ruleRow}>
               <Text style={styles.ruleLabel}>
@@ -302,11 +304,9 @@ export default function TodayDashboard() {
               <Text style={styles.ruleValue}>Entry {e.actual_entry}</Text>
             </View>
           ))}
-          <Text style={styles.openNote}>
-            PnL tạm tính cần giá hiện tại — chưa có nguồn giá thật (Phase 3). Đóng lệnh qua Widget để ghi nhận PnL chính xác.
-          </Text>
+          <Text style={styles.openNote}>{t('dashboard.openNote')}</Text>
           <TouchableOpacity style={styles.closeLink} onPress={() => router.push('/(main)/execution-widget')}>
-            <Text style={styles.closeLinkText}>Vào Widget đóng lệnh →</Text>
+            <Text style={styles.closeLinkText}>{t('dashboard.openWidgetLink')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -314,14 +314,14 @@ export default function TodayDashboard() {
       {/* User mới (0 lệnh, chưa có score): hướng dẫn có nghĩa */}
       {d && d.latestScore == null && d.openExecs.length === 0 && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Bắt đầu thế nào?</Text>
+          <Text style={styles.cardTitle}>{t('dashboard.guideTitle')}</Text>
           <Text style={styles.guideText}>
-            1. ⚡ Bấm Quick Plan để lập kế hoạch trước khi vào lệnh.{'\n'}
-            2. 📝 Nhập lệnh nhanh qua Widget hoặc dán lịch sử MT4/MT5.{'\n'}
-            3. 📊 Hệ thống sẽ tính Discipline Score & phát hiện vi phạm tự động.
+            {t('dashboard.guide1')}{'\n'}
+            {t('dashboard.guide2')}{'\n'}
+            {t('dashboard.guide3')}
           </Text>
           <TouchableOpacity style={styles.guideBtn} onPress={() => router.push('/(main)/execution-widget')}>
-            <Text style={styles.guideBtnText}>Nhập lệnh đầu tiên</Text>
+            <Text style={styles.guideBtnText}>{t('dashboard.firstTradeBtn')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -329,45 +329,49 @@ export default function TodayDashboard() {
       {/* Điều hướng nhanh */}
       <View style={styles.navGrid}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/journal')}>
-          <Text style={styles.navBtnText}>📖 Journal</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navJournal')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/paste-mt4')}>
-          <Text style={styles.navBtnText}>📋 Paste MT4/5</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navPasteMt4')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/scores')}>
-          <Text style={styles.navBtnText}>🎯 Điểm số</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navScores')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/weekly-audit')}>
-          <Text style={styles.navBtnText}>📅 Weekly Audit</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navWeeklyAudit')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/setup-analytics')}>
-          <Text style={styles.navBtnText}>🧪 Setup Analytics</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navSetupAnalytics')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/danger-zone')}>
-          <Text style={styles.navBtnText}>⚠️ Danger Zone</Text>
+          <Text style={styles.navBtnText}>{t('dashboard.navDangerZone')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/portfolio-risk')}>
-          <Text style={styles.navBtnText}>📊 Rủi ro danh mục{pro.isPro ? ' (Pro)' : ''}</Text>
+          <Text style={styles.navBtnText}>
+            {t('dashboard.navPortfolioRisk')}{pro.isPro ? ' (Pro)' : ''}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.navBtn, pro.isPro ? styles.navBtnGray : styles.navBtnPro]}
           onPress={() => router.push('/(main)/pro')}
         >
           <Text style={styles.navBtnText}>
-            {pro.isPro ? `👑 Pro (còn ${formatHoursLeft(pro.hoursLeft)})` : '👑 Mở Pro'}
+            {pro.isPro
+              ? t('dashboard.navProActive', { hours: formatHoursLeft(pro.hoursLeft) })
+              : t('dashboard.navPro')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/settings')}>
-          <Text style={styles.navBtnText}>⚙️ Cài đặt</Text>
+          <Text style={styles.navBtnText}>{t('settings.title')}</Text>
         </TouchableOpacity>
       </View>
 
       {onboarding && !onboarding.hasBalance && (
-        <Text style={styles.hint}>Tip: khai báo số dư trong Cài đặt để Risk Engine tính lot chính xác.</Text>
+        <Text style={styles.hint}>{t('dashboard.balanceHint')}</Text>
       )}
 
       <TouchableOpacity onPress={signOut} style={styles.signOut}>
-        <Text style={styles.signOutText}>Đăng xuất</Text>
+        <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

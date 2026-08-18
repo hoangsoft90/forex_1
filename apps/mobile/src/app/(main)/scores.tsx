@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -16,6 +17,7 @@ type WeekData = {
 };
 
 export default function ScoresScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [data, setData] = useState<WeekData | null>(null);
   const [tier, setTier] = useState('free');
@@ -135,11 +137,8 @@ export default function ScoresScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Điểm số của bạn</Text>
-      <Text style={styles.subtitle}>
-        Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định đúng nguyên nhân
-        thua lỗ: do chiến lược hay do hành vi.
-      </Text>
+      <Text style={styles.title}>{t('scores.title')}</Text>
+      <Text style={styles.subtitle}>{t('scores.subtitle')}</Text>
 
       <View style={styles.scoresRow}>
         <View style={[styles.scoreCard, styles.disciplineCard]}>
@@ -150,47 +149,44 @@ export default function ScoresScreen() {
         <View style={[styles.scoreCard, styles.edgeCard]}>
           <Text style={styles.scoreLabel}>Edge</Text>
           <Text style={styles.scoreValue}>{data.edge?.winrate ?? 0}%</Text>
-          <Text style={styles.scoreDetail}>winrate</Text>
+          <Text style={styles.scoreDetail}>{t('scores.winrate')}</Text>
         </View>
       </View>
 
       {/* Tiến bộ tuần này (so với chính user tuần trước, tách riêng) */}
       {progress != null && (
         <View style={styles.progressBox}>
-          <Text style={styles.progressTitle}>📈 Tiến bộ tuần này</Text>
+          <Text style={styles.progressTitle}>{t('scores.progressTitle')}</Text>
           <Text style={styles.progressText}>
-            {progress >= 0 ? `+${progress.toFixed(1)}` : progress.toFixed(1)} điểm so với
-            tuần trước ({data.prevDiscipline?.toFixed(1)} → {data.discipline?.score.toFixed(1)})
+            {t('scores.progressText', {
+              delta: progress >= 0 ? `+${progress.toFixed(1)}` : progress.toFixed(1),
+              prev: data.prevDiscipline?.toFixed(1),
+              cur: data.discipline?.score.toFixed(1),
+            })}
           </Text>
         </View>
       )}
 
       {tier === 'free' ? (
-        <Text style={styles.tierNote}>
-          Gói Free chỉ hiển thị điểm tuần này. Nâng cấp Pro để xem biểu đồ xu hướng 4/12
-          tuần và số lệnh vi phạm đã được ngăn chặn.
-        </Text>
+        <Text style={styles.tierNote}>{t('scores.tierNote')}</Text>
       ) : (
         <View style={styles.proBox}>
-          <Text style={styles.proTitle}>✨ Gói Pro</Text>
-          <Text style={styles.proLine}>
-            Lệnh vi phạm được ngăn chặn: {data.discipline?.prevented ?? 0} (từ Decision
-            Interruption)
-          </Text>
-          <Text style={styles.proLine}>(Biểu đồ trend 4/12 tuần — Phase 2 hoàn thiện)</Text>
+          <Text style={styles.proTitle}>✨ {t('scores.proTitle')}</Text>
+          <Text style={styles.proLine}>{t('scores.proPrevented', { count: data.discipline?.prevented ?? 0 })}</Text>
+          <Text style={styles.proLine}>{t('scores.proChart')}</Text>
         </View>
       )}
 
       <View style={styles.detailBox}>
-        <Text style={styles.detailTitle}>Chi tiết Discipline</Text>
-        <Text style={styles.detailLine}>Tuân thủ plan: {data.discipline?.adherence ?? 0}%</Text>
-        <Text style={styles.detailLine}>Vi phạm trong tuần: {data.discipline?.violations ?? 0}</Text>
+        <Text style={styles.detailTitle}>{t('scores.disciplineDetail')}</Text>
+        <Text style={styles.detailLine}>{t('scores.adherence', { pct: data.discipline?.adherence ?? 0 })}</Text>
+        <Text style={styles.detailLine}>{t('scores.violations', { count: data.discipline?.violations ?? 0 })}</Text>
       </View>
 
       <View style={styles.detailBox}>
-        <Text style={styles.detailTitle}>Chi tiết Edge</Text>
-        <Text style={styles.detailLine}>PnL tuần: ${data.edge?.totalPnl.toFixed(2) ?? '0.00'}</Text>
-        <Text style={styles.detailLine}>Avg R:R: {data.edge?.avgRR != null ? data.edge.avgRR.toFixed(2) : '—'}</Text>
+        <Text style={styles.detailTitle}>{t('scores.edgeDetail')}</Text>
+        <Text style={styles.detailLine}>{t('scores.pnlWeek', { amount: data.edge?.totalPnl.toFixed(2) ?? '0.00' })}</Text>
+        <Text style={styles.detailLine}>{t('scores.avgRR', { rr: data.edge?.avgRR != null ? data.edge.avgRR.toFixed(2) : '—' })}</Text>
       </View>
     </ScrollView>
   );

@@ -9,6 +9,8 @@
  * Nếu tier='pro' nhưng hết hạn → coi như Free (không cần job xóa, check lúc đọc).
  */
 
+import i18n from '@/i18n';
+
 export type ProStatus = {
   isPro: boolean;
   /** ISO string hoặc null */
@@ -48,10 +50,10 @@ export function proExpiry24h(from: Date = new Date()): string {
 
 /** Format "còn X giờ Y phút" cho UI. */
 export function formatHoursLeft(hours: number | null): string {
-  if (hours == null || hours <= 0) return 'hết hạn';
+  if (hours == null || hours <= 0) return i18n.t('tier.expired');
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
-  if (h <= 0) return `${m} phút`;
-  if (m === 0) return `${h} giờ`;
-  return `${h} giờ ${m} phút`;
+  if (h <= 0) return i18n.t('tier.minutes', { count: m });
+  if (m === 0) return i18n.t('tier.hours', { count: h });
+  return i18n.t('tier.hoursMinutes', { hours: h, minutes: m });
 }

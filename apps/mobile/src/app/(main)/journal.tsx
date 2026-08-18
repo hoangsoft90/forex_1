@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -29,6 +30,7 @@ type JournalRow = {
 type Insight = { followedGood: number; followedTotal: number; deviatedGood: number; deviatedTotal: number } | null;
 
 export default function JournalScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [rows, setRows] = useState<JournalRow[]>([]);
@@ -93,29 +95,25 @@ export default function JournalScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Journal</Text>
+      <Text style={styles.title}>{t('journal.title')}</Text>
 
       {insight && insight.followedTotal > 0 && insight.deviatedTotal > 0 && (
         <View style={styles.insightBox}>
-          <Text style={styles.insightTitle}>Insight của bạn</Text>
+          <Text style={styles.insightTitle}>{t('journal.insightTitle')}</Text>
           <Text style={styles.insightText}>
-            {Math.round((insight.followedGood / insight.followedTotal) * 100)}% lệnh theo
-            đúng plan có lời, trong khi chỉ{' '}
-            {Math.round((insight.deviatedGood / insight.deviatedTotal) * 100)}% lệnh lệch
-            plan có lời. Theo plan giúp bạn tốt hơn!
+            {t('journal.insightText', {
+              followedPct: Math.round((insight.followedGood / insight.followedTotal) * 100),
+              deviatedPct: Math.round((insight.deviatedGood / insight.deviatedTotal) * 100),
+            })}
           </Text>
         </View>
       )}
-      {!insight && (
-        <Text style={styles.hint}>
-          Cần ≥ 10 lệnh đã đóng có plan để hiển thị insight thống kê.
-        </Text>
-      )}
+      {!insight && <Text style={styles.hint}>{t('journal.insightHint')}</Text>}
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : rows.length === 0 ? (
-        <Text style={styles.empty}>Chưa có lệnh nào. Nhập lệnh qua Widget để bắt đầu.</Text>
+        <Text style={styles.empty}>{t('journal.empty')}</Text>
       ) : (
         rows.map((r) => (
           <TouchableOpacity
@@ -129,13 +127,15 @@ export default function JournalScreen() {
               </Text>
               {r.followed_plan != null && (
                 <Text style={[styles.badge, r.followed_plan ? styles.badgeOk : styles.badgeBad]}>
-                  {r.followed_plan ? 'Theo plan' : 'Lệch plan'}
+                  {r.followed_plan ? t('journal.followed') : t('journal.deviated')}
                 </Text>
               )}
             </View>
             <Text style={styles.rowMeta}>
               {r.lot_size.toFixed(2)} lot · Entry {fmt(r.actual_entry, r.symbol === 'USDJPY' ? 3 : 5)} ·{' '}
-              {r.exit_time ? `Đóng ${new Date(r.exit_time).toLocaleString()}` : 'Đang mở'}
+              {r.exit_time
+                ? t('journal.closed', { time: new Date(r.exit_time).toLocaleString() })
+                : t('journal.open')}
             </Text>
             <Text style={[styles.rowPnl, (r.pnl_amount ?? 0) >= 0 ? styles.pnlPos : styles.pnlNeg]}>
               {r.pnl_amount != null ? `$${r.pnl_amount >= 0 ? '+' : ''}${fmt(r.pnl_amount)}` : '—'}

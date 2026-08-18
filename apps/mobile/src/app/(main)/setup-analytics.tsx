@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { bestSetupInsight, computeSetupAnalytics, SetupAnalyticsResult } from '@/lib/setup-analytics';
 import { supabase } from '@/lib/supabase';
 
 export default function SetupAnalyticsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [data, setData] = useState<SetupAnalyticsResult | null>(null);
   const [isPro, setIsPro] = useState(false);
@@ -70,10 +72,8 @@ export default function SetupAnalyticsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Setup Analytics</Text>
-      <Text style={styles.subtitle}>
-        Winrate, R:R và PnL theo từng loại setup — biết chiến lược nào thực sự có edge.
-      </Text>
+      <Text style={styles.title}>{t('setupAnalytics.title')}</Text>
+      <Text style={styles.subtitle}>{t('setupAnalytics.subtitle')}</Text>
 
       {!data.showable ? (
         <View style={styles.progressBox}>
@@ -83,7 +83,7 @@ export default function SetupAnalyticsScreen() {
         <>
           {insight && (
             <View style={styles.insightBox}>
-              <Text style={styles.insightTitle}>💡 Gợi ý (Pro)</Text>
+              <Text style={styles.insightTitle}>{t('setupAnalytics.insightTitle')}</Text>
               <Text style={styles.insightText}>{insight}</Text>
             </View>
           )}
@@ -91,7 +91,7 @@ export default function SetupAnalyticsScreen() {
           <View style={styles.tableBox}>
             <View style={styles.tableHeader}>
               <Text style={[styles.headerCell, styles.colSetup]}>Setup</Text>
-              <Text style={[styles.headerCell, styles.colNum]}>Lệnh</Text>
+              <Text style={[styles.headerCell, styles.colNum]}>{t('setupAnalytics.trades')}</Text>
               <Text style={[styles.headerCell, styles.colNum]}>Winrate</Text>
               <Text style={[styles.headerCell, styles.colNum]}>Avg R:R</Text>
               <Text style={[styles.headerCell, styles.colNum]}>PnL</Text>
@@ -118,10 +118,7 @@ export default function SetupAnalyticsScreen() {
           </View>
 
           {!isPro && (
-            <Text style={styles.tierNote}>
-              Gói Free xem bảng tổng quan. Nâng cấp Pro để nhận gợi ý dạng câu và biểu đồ xu hướng
-              theo thời gian.
-            </Text>
+            <Text style={styles.tierNote}>{t('setupAnalytics.tierNote')}</Text>
           )}
         </>
       )}

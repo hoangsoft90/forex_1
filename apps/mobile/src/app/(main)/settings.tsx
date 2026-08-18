@@ -10,13 +10,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
+import i18n, { changeAppLanguage, LANG_NAMES, SUPPORTED_LANGS } from '@/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { formatHoursLeft, getProStatus } from '@/lib/tier';
 import { NotificationPrefs, scheduleDailyNotifications } from '@/lib/notification-manager';
 import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, signOut, tier, subscriptionExpiresAt } = useAuth();
   const pro = getProStatus(tier, subscriptionExpiresAt);
@@ -60,7 +63,7 @@ export default function SettingsScreen() {
   async function handleSave() {
     if (!user) return;
     if (!isTimeValid(prefs.morning_time) || !isTimeValid(prefs.evening_time)) {
-      setError('Giờ phải đúng định dạng HH:MM (24h), ví dụ 08:00 hoặc 21:30.');
+      setError(t('settings.timeError'));
       return;
     }
     setSaving(true);
@@ -88,7 +91,7 @@ export default function SettingsScreen() {
       await scheduleDailyNotifications(prefs, (closedToday ?? []).length > 0);
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi khi lưu cài đặt notification.');
+      setError(e instanceof Error ? e.message : t('settings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -96,40 +99,64 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Cài đặt</Text>
+      <Text style={styles.title}>{t('settings.title')}</Text>
       <Text style={styles.email}>{user?.email}</Text>
 
       <View style={styles.menu}>
         <TouchableOpacity style={styles.row} onPress={() => router.push('/(main)/pro')}>
           <View style={styles.rowLeft}>
-            <Text style={styles.rowText}>Mở Pro (xem quảng cáo)</Text>
+            <Text style={styles.rowText}>{t('settings.proRow')}</Text>
             <Text style={styles.rowSub}>
               {pro.isPro
-                ? `Đang Pro — còn ${formatHoursLeft(pro.hoursLeft)}`
-                : 'Gói Free — xem ad nhận Pro 24h'}
+                ? t('settings.proStatusActive', { hours: formatHoursLeft(pro.hoursLeft) })
+                : t('settings.proStatusFree')}
             </Text>
           </View>
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.row} onPress={() => router.push('/(main)/constitution-settings')}>
-          <Text style={styles.rowText}>Hiến pháp giao dịch (luật của tôi)</Text>
+          <Text style={styles.rowText}>{t('settings.constitutionRow')}</Text>
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.row} onPress={() => router.push('/(main)/discipline-explainer')}>
-          <Text style={styles.rowText}>Discipline vs Edge Score</Text>
+          <Text style={styles.rowText}>{t('settings.disciplineExplainerRow')}</Text>
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
       </View>
 
+      {/* ---- Ngôn ngữ (i18n): chọn ngôn ngữ hiển thị, lưu preference ---- */}
+      <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+      <Text style={styles.sectionHint}>{t('settings.languageHint')}</Text>
+      <View style={styles.menu}>
+        {SUPPORTED_LANGS.map((lang) => {
+          const active = i18n.language === lang;
+          return (
+            <TouchableOpacity
+              key={lang}
+              style={styles.row}
+              onPress={() => changeAppLanguage(lang).catch(() => {})}
+            >
+              <View style={styles.rowLeft}>
+                <Text style={styles.rowText}>{LANG_NAMES[lang]}</Text>
+                <Text style={styles.rowSub}>{lang}</Text>
+              </View>
+              <Text style={active ? styles.activeLang : styles.chevron}>
+                {active ? '✓' : '›'}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {/* ---- Module 8: Notification settings — bật/tắt TỪNG loại riêng biệt ---- */}
-      <Text style={styles.sectionTitle}>Thông báo</Text>
+      <Text style={styles.sectionTitle}>{t('settings.notificationSection')}</Text>
       <View style={styles.menu}>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <Text style={styles.rowText}>Brief buổi sáng</Text>
-            <Text style={styles.rowSub}>Discipline Score hôm qua + rules hôm nay (mặc định 08:00)</Text>
+            <Text style={styles.rowText}>{t('settings.morningBrief')}</Text>
+            <Text style={styles.rowSub}>{t('settings.morningBriefSub')}</Text>
           </View>
           <Switch
             value={prefs.morning_enabled}
@@ -137,7 +164,7 @@ export default function SettingsScreen() {
           />
         </View>
         <View style={styles.row}>
-          <Text style={styles.rowText}>Giờ brief sáng</Text>
+          <Text style={styles.rowText}>{t('settings.morningTimeLabel')}</Text>
           <TextInput
             style={styles.timeInput}
             value={prefs.morning_time}
@@ -149,8 +176,8 @@ export default function SettingsScreen() {
         </View>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <Text style={styles.rowText}>Review cuối ngày</Text>
-            <Text style={styles.rowSub}>Nhắc review khi có lệnh đóng trong ngày (mặc định 21:00)</Text>
+            <Text style={styles.rowText}>{t('settings.eveningReview')}</Text>
+            <Text style={styles.rowSub}>{t('settings.eveningReviewSub')}</Text>
           </View>
           <Switch
             value={prefs.evening_enabled}
@@ -158,7 +185,7 @@ export default function SettingsScreen() {
           />
         </View>
         <View style={styles.row}>
-          <Text style={styles.rowText}>Giờ review tối</Text>
+          <Text style={styles.rowText}>{t('settings.eveningTimeLabel')}</Text>
           <TextInput
             style={styles.timeInput}
             value={prefs.evening_time}
@@ -171,18 +198,18 @@ export default function SettingsScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {saved ? <Text style={styles.saved}>✓ Đã lưu — notification sẽ áp dụng theo giờ bạn chọn.</Text> : null}
+      {saved ? <Text style={styles.saved}>{t('settings.saved')}</Text> : null}
 
       <TouchableOpacity
         style={[styles.saveBtn, (saving || loading) && styles.disabled]}
         onPress={handleSave}
         disabled={saving || loading}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Lưu cài đặt thông báo</Text>}
+        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('settings.saveNotifications')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={signOut} style={styles.signOut}>
-        <Text style={styles.signOutText}>Đăng xuất</Text>
+        <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -194,6 +221,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '700' },
   email: { fontSize: 14, opacity: 0.6 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginTop: 18, marginBottom: 6 },
+  sectionHint: { fontSize: 12, opacity: 0.6, marginBottom: 2 },
+  activeLang: { color: '#208AEF', fontSize: 16, fontWeight: '700' },
   menu: {
     borderWidth: 1,
     borderColor: '#ddd',

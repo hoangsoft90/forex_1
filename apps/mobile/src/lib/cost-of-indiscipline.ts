@@ -18,14 +18,17 @@
  *   Đây là chi phí cơ hội của việc KHÔNG giữ kỷ luật. Cần user xác nhận — đừng coi là chốt.
  */
 
+import i18n from '@/i18n';
 import { isSupportedSymbol, pipValuePerLot } from '@/lib/risk-engine';
 
 export const MIN_TRADES_FOR_COST = 30;
 export const MIN_DEVIATED_FOR_COST = 3;
 
-/** Disclaimer CỐ ĐỊNH — bắt buộc hiển thị ngay dưới con số ở MỌI nơi, không rút gọn. */
-export const COST_DISCLAIMER =
-  'Đây là ước tính giả định dựa trên chênh lệch giữa kế hoạch và thực tế — không phải bảo đảm lợi nhuận. Kế hoạch ban đầu vẫn có thể sai.';
+/**
+ * Disclaimer CỐ ĐỊNH — bắt buộc hiển thị ngay dưới con số ở MỌI nơi, không rút gọn.
+ * Trả theo ngôn ngữ đang dùng (jest mặc định vi → test cũ giữ pass).
+ */
+export const COST_DISCLAIMER = (): string => i18n.t('costCard.disclaimer');
 
 export type CostInput = {
   executions: {
@@ -126,8 +129,8 @@ export function computeCostOfIndiscipline(input: CostInput): CostResult {
     input.executions.length >= MIN_TRADES_FOR_COST && deviatedCount >= MIN_DEVIATED_FOR_COST;
   const hiddenReason = !showable
     ? input.executions.length < MIN_TRADES_FOR_COST
-      ? `Cần thêm dữ liệu để tính chỉ số này (hiện có ${input.executions.length}/30 lệnh).`
-      : `Cần thêm dữ liệu để tính chỉ số này (hiện có ${deviatedCount}/3 lệnh lệch plan).`
+      ? i18n.t('costCard.hiddenNotEnoughTrades', { count: input.executions.length })
+      : i18n.t('costCard.hiddenNotEnoughDeviated', { count: deviatedCount })
     : null;
 
   return {

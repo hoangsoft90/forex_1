@@ -8,12 +8,12 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.trademind.trading"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0D2B52",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -48,17 +48,29 @@
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ], [
-  "expo-build-properties",
-  {
-   "android": {
-    "usesCleartextTraffic": true,
-    "compileSdkVersion": 36,
-    "targetSdkVersion": 36,
-    "buildToolsVersion": "36.0.0"
-   }
-  }     ],["./plugins/pin-gradle-dependency",{"dependency":"com.google.android.gms:play-services-ads","version":"24.2.0"}],"expo-notifications","./plugins/embed-js-in-debug"
-],
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
+          }
+        }
+      ],
+      [
+        "./plugins/pin-gradle-dependency",
+        {
+          "dependency": "com.google.android.gms:play-services-ads",
+          "version": "24.2.0"
+        }
+      ],
+      "expo-notifications",
+      "./plugins/embed-js-in-debug",
+      "expo-localization"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

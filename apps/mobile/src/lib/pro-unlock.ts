@@ -10,6 +10,7 @@
  * (payment_provider check constraint không có 'admob').
  */
 
+import i18n from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import {
   formatCooldown,
@@ -37,13 +38,13 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
   if (remaining > 0) {
     return {
       ok: false,
-      reason: `Bạn vừa xem quảng cáo. Thử lại sau ${formatCooldown(remaining)}.`,
+      reason: i18n.t('proUnlock.cooldown', { time: formatCooldown(remaining) }),
     };
   }
 
   const ad = await showRewardedAd();
   if (!ad.rewarded) {
-    return { ok: false, reason: ad.error ?? 'Chưa xem hết quảng cáo.' };
+    return { ok: false, reason: ad.error ?? i18n.t('proUnlock.notCompleted') };
   }
 
   // Ghi nhận lượt xem thành công → bắt đầu cooldown cho lần sau.
@@ -53,7 +54,7 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { ok: false, reason: 'Chưa đăng nhập.' };
+    return { ok: false, reason: i18n.t('proUnlock.notLoggedIn') };
   }
 
   const expiresAt = proExpiry24h();
@@ -83,7 +84,7 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
     { onConflict: 'id' },
   );
   if (upsertErr) {
-    return { ok: false, reason: `Lỗi lưu Pro: ${upsertErr.message}` };
+    return { ok: false, reason: i18n.t('proUnlock.saveError', { message: upsertErr.message }) };
   }
 
   const { error: unlockErr } = await supabase.from('pro_unlocks').insert({

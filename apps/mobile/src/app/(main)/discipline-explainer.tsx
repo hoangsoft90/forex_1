@@ -1,29 +1,24 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function DisciplineExplainerScreen() {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Discipline Score vs Edge Score</Text>
+      <Text style={styles.title}>{t('disciplineExplainer.title')}</Text>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Discipline Score</Text>
-        <Text style={styles.cardBody}>
-          Đo mức độ tuân thủ kế hoạch của chính bạn — không đo kết quả tài chính.
-        </Text>
+        <Text style={styles.cardBody}>{t('disciplineExplainer.disciplineBody')}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Edge Score</Text>
-        <Text style={styles.cardBody}>
-          Đo hiệu quả của chiến lược: winrate, risk:reward, tổng PnL.
-        </Text>
+        <Text style={styles.cardBody}>{t('disciplineExplainer.edgeBody')}</Text>
       </View>
 
       <View style={styles.note}>
-        <Text style={styles.noteText}>
-          Điểm kỷ luật cao không đảm bảo lời — nó đảm bảo bạn xác định đúng nguyên
-          nhân thua lỗ: do chiến lược hay do hành vi.
-        </Text>
+        <Text style={styles.noteText}>{t('disciplineExplainer.note')}</Text>
       </View>
     </View>
   );

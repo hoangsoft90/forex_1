@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +31,7 @@ type ActiveRule = {
 type DraftValue = Record<string, string>; // rule_type -> giá trị đang nhập (text)
 
 export default function ConstitutionScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
   const [rules, setRules] = useState<ActiveRule[]>([]);
@@ -74,7 +76,7 @@ export default function ConstitutionScreen() {
     // ⚠️ KHÔNG dùng activeCount + 1 — canAddRule(n) = n < 3; cộng 1 sẽ chặn
     // luôn lần thứ 3 (Free: 2 bắt buộc + 1 tùy chọn, tổng 3 là hợp lệ).
     if (!canAddRule(activeCount, 'free')) {
-      setError(`Gói Free chỉ cho tối đa ${3} luật. Nâng cấp Pro để thêm không giới hạn.`);
+      setError(t('constitution.freeLimitError', { count: 3 }));
       return;
     }
     const { data, error: e } = await supabase
@@ -113,7 +115,7 @@ export default function ConstitutionScreen() {
 
   async function handleContinue() {
     if (!hasRequiredRules(rules.filter((r) => r.is_active).map((r) => r.rule_type))) {
-      setError('Bạn cần có 2 luật bắt buộc: Rủi ro tối đa 1 lệnh và Lỗ tối đa trong ngày.');
+      setError(t('constitution.missingRequired'));
       return;
     }
     setSaving(true);
@@ -134,75 +136,73 @@ export default function ConstitutionScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Hiến pháp giao dịch của bạn</Text>
-      <Text style={styles.subtitle}>
-        Đây là những luật CỦA BẠN — app chỉ giúp bạn giữ lời hứa với chính mình, không áp đặt.
-      </Text>
+      <Text style={styles.title}>{t('constitution.title')}</Text>
+      <Text style={styles.subtitle}>{t('constitution.subtitle')}</Text>
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : (
         <>
-          <Text style={styles.sectionTitle}>Luật bắt buộc</Text>
-          {RULE_TEMPLATES.filter((t) => t.required).map((t) => {
-            const existing = rules.find((r) => r.rule_type === t.rule_type);
+          <Text style={styles.sectionTitle}>{t('constitution.requiredSection')}</Text>
+          {RULE_TEMPLATES.filter((tpl) => tpl.required).map((tpl) => {
+            const existing = rules.find((r) => r.rule_type === tpl.rule_type);
             return (
-              <View key={t.rule_type} style={styles.ruleCard}>
+              <View key={tpl.rule_type} style={styles.ruleCard}>
                 <View style={styles.ruleHeader}>
-                  <Text style={styles.ruleLabel}>{t.label}</Text>
+                  <Text style={styles.ruleLabel}>{t(tpl.label)}</Text>
                   {existing ? (
-                    <Text style={styles.badge}>✓ Đã thêm</Text>
+                    <Text style={styles.badge}>{t('constitution.added')}</Text>
                   ) : (
-                    <TouchableOpacity style={styles.addBtn} onPress={() => addRule(t)}>
-                      <Text style={styles.addBtnText}>+ Thêm</Text>
+                    <TouchableOpacity style={styles.addBtn} onPress={() => addRule(tpl)}>
+                      <Text style={styles.addBtnText}>{t('constitution.add')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
-                <Text style={styles.ruleDesc}>{t.description}</Text>
+                <Text style={styles.ruleDesc}>{t(tpl.description)}</Text>
                 {existing && (
                   <TextInput
                     style={styles.valueInput}
                     keyboardType="decimal-pad"
-                    value={drafts[t.rule_type] ?? ''}
+                    value={drafts[tpl.rule_type] ?? ''}
                     onChangeText={(v) =>
-                      setDrafts((prev) => ({ ...prev, [t.rule_type]: v }))
+                      setDrafts((prev) => ({ ...prev, [tpl.rule_type]: v }))
                     }
-                    onEndEditing={() => saveValue(t.rule_type, drafts[t.rule_type] ?? '')}
+                    onEndEditing={() => saveValue(tpl.rule_type, drafts[tpl.rule_type] ?? '')}
                   />
                 )}
               </View>
             );
           })}
 
-          <Text style={styles.sectionTitle}>Luật tùy chọn (Free tối đa 3 luật)</Text>
-          {RULE_TEMPLATES.filter((t) => !t.required).map((t) => {
-            const existing = rules.find((r) => r.rule_type === t.rule_type);
+          <Text style={styles.sectionTitle}>{t('constitution.optionalSection')}</Text>
+          {RULE_TEMPLATES.filter((tpl) => !tpl.required).map((tpl) => {
+            const existing = rules.find((r) => r.rule_type === tpl.rule_type);
             return (
-              <View key={t.rule_type} style={styles.ruleCard}>
+              <View key={tpl.rule_type} style={styles.ruleCard}>
                 <View style={styles.ruleHeader}>
-                  <Text style={styles.ruleLabel}>{t.label}</Text>
+                  <Text style={styles.ruleLabel}>{t(tpl.label)}</Text>
                   {existing ? (
-                    <Text style={styles.badge}>✓ Đã thêm</Text>
+                    <Text style={styles.badge}>{t('constitution.added')}</Text>
                   ) : (
                     <TouchableOpacity
                       style={[styles.addBtn, !canAdd && styles.addBtnDisabled]}
-                      onPress={() => addRule(t)}
+                      onPress={() => addRule(tpl)}
                       disabled={!canAdd}
                     >
-                      <Text style={styles.addBtnText}>+ Thêm</Text>
+                      <Text style={styles.addBtnText}>{t('constitution.add')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
-                <Text style={styles.ruleDesc}>{t.description}</Text>
+                <Text style={styles.ruleDesc}>{t(tpl.description)}</Text>
                 {existing && (
                   <TextInput
                     style={styles.valueInput}
                     keyboardType="decimal-pad"
-                    value={drafts[t.rule_type] ?? ''}
+                    value={drafts[tpl.rule_type] ?? ''}
                     onChangeText={(v) =>
-                      setDrafts((prev) => ({ ...prev, [t.rule_type]: v }))
+                      setDrafts((prev) => ({ ...prev, [tpl.rule_type]: v }))
                     }
-                    onEndEditing={() => saveValue(t.rule_type, drafts[t.rule_type] ?? '')}
+                    onEndEditing={() => saveValue(tpl.rule_type, drafts[tpl.rule_type] ?? '')}
                   />
                 )}
               </View>
@@ -210,9 +210,7 @@ export default function ConstitutionScreen() {
           })}
 
           {activeCount >= 3 && (
-            <Text style={styles.tierNote}>
-              Bạn đang ở gói Free (tối đa 3 luật). Nâng cấp Pro để thêm không giới hạn.
-            </Text>
+            <Text style={styles.tierNote}>{t('constitution.tierNote')}</Text>
           )}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -226,7 +224,7 @@ export default function ConstitutionScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.continueText}>
-                {ready ? 'Hoàn tất' : 'Cần thêm 2 luật bắt buộc'}
+                {ready ? t('constitution.done') : t('constitution.needRequired')}
               </Text>
             )}
           </TouchableOpacity>
@@ -235,7 +233,7 @@ export default function ConstitutionScreen() {
             style={styles.backBtn}
             onPress={() => router.replace('/(onboarding)/explain')}
           >
-            <Text style={styles.backText}>‹ Quay lại bước giải thích</Text>
+            <Text style={styles.backText}>{t('constitution.backToExplain')}</Text>
           </TouchableOpacity>
         </>
       )}

@@ -6,9 +6,11 @@ import {
   useRouter,
   useSegments,
 } from 'expo-router';
-import { useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { I18nextProvider } from 'react-i18next';
 
+import i18n, { resolveInitialLanguage } from '@/i18n';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 
 function useProtectedRoute() {
@@ -71,10 +73,38 @@ function RootNavigator() {
   );
 }
 
+/** Gate i18n: resolve ngôn ngữ khởi động (preference → thiết bị → vi) trước khi render màn hình. */
+function I18nGate({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    resolveInitialLanguage().then((lang) => {
+      if (!mounted) return;
+      i18n.changeLanguage(lang).then(() => setReady(true));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <I18nGate>
+        <RootNavigator />
+      </I18nGate>
     </AuthProvider>
   );
 }

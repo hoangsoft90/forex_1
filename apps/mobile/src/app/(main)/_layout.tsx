@@ -1,12 +1,14 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import AdBanner from '@/components/ad-banner';
 import { initAdMob } from '@/lib/admob';
 import { configureNotificationHandler } from '@/lib/notification-manager';
 
 export default function MainLayout() {
+  const { t } = useTranslation();
   useEffect(() => {
     // Khởi tạo AdMob 1 lần (register test device) khi nhóm main mount.
     initAdMob();
@@ -16,67 +18,67 @@ export default function MainLayout() {
   return (
     <View style={styles.container}>
       <View style={styles.stack}>
-        <Stack>
+        <Stack screenOptions={{ headerTitle: t('mainLayout.settings') }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen
             name="settings"
-            options={{ headerShown: true, title: 'Cài đặt' }}
+            options={{ headerShown: true, title: t('mainLayout.settings') }}
           />
           <Stack.Screen
             name="constitution-settings"
-            options={{ headerShown: true, title: 'Hiến pháp giao dịch' }}
+            options={{ headerShown: true, title: t('mainLayout.constitution') }}
           />
           <Stack.Screen
             name="discipline-explainer"
-            options={{ headerShown: true, title: 'Discipline vs Edge' }}
+            options={{ headerShown: true, title: t('mainLayout.disciplineVsEdge') }}
           />
           <Stack.Screen
             name="new-plan"
-            options={{ headerShown: true, title: 'Tạo Trade Plan' }}
+            options={{ headerShown: true, title: t('mainLayout.newPlan') }}
           />
           <Stack.Screen
             name="confirm-no-plan"
-            options={{ headerShown: true, title: 'Lệnh ngoài kế hoạch' }}
+            options={{ headerShown: true, title: t('mainLayout.noPlan') }}
           />
           <Stack.Screen
             name="execution-widget"
-            options={{ headerShown: true, title: 'Nhập lệnh nhanh' }}
+            options={{ headerShown: true, title: t('mainLayout.executionWidget') }}
           />
           <Stack.Screen
             name="paste-mt4"
-            options={{ headerShown: true, title: 'Paste MT4/MT5' }}
+            options={{ headerShown: true, title: t('mainLayout.pasteMt4') }}
           />
           <Stack.Screen
             name="journal"
-            options={{ headerShown: true, title: 'Journal' }}
+            options={{ headerShown: true, title: t('mainLayout.journal') }}
           />
           <Stack.Screen
             name="trade-detail"
-            options={{ headerShown: true, title: 'Chi tiết lệnh' }}
+            options={{ headerShown: true, title: t('mainLayout.tradeDetail') }}
           />
           <Stack.Screen
             name="scores"
-            options={{ headerShown: true, title: 'Điểm số' }}
+            options={{ headerShown: true, title: t('mainLayout.scores') }}
           />
           <Stack.Screen
             name="weekly-audit"
-            options={{ headerShown: true, title: 'Weekly Audit' }}
+            options={{ headerShown: true, title: t('mainLayout.weeklyAudit') }}
           />
           <Stack.Screen
             name="pro"
-            options={{ headerShown: true, title: 'Mở Pro' }}
+            options={{ headerShown: true, title: t('mainLayout.pro') }}
           />
           <Stack.Screen
             name="portfolio-risk"
-            options={{ headerShown: true, title: 'Rủi ro danh mục' }}
+            options={{ headerShown: true, title: t('mainLayout.portfolioRisk') }}
           />
           <Stack.Screen
             name="setup-analytics"
-            options={{ headerShown: true, title: 'Setup Analytics' }}
+            options={{ headerShown: true, title: t('mainLayout.setupAnalytics') }}
           />
           <Stack.Screen
             name="danger-zone"
-            options={{ headerShown: true, title: 'Khu vực nguy hiểm' }}
+            options={{ headerShown: true, title: t('mainLayout.dangerZone') }}
           />
         </Stack>
       </View>

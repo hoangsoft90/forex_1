@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import TradingViewChart from '@/components/tradingview-chart';
 import { useAuth } from '@/lib/auth-context';
@@ -44,6 +45,7 @@ type Detail = {
 };
 
 export default function TradeDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
@@ -107,12 +109,12 @@ export default function TradeDetailScreen() {
     // Deep-link edge: id không tồn tại hoặc không thuộc user → luôn có lối thoát.
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>Không tìm thấy lệnh này.</Text>
+        <Text style={styles.empty}>{t('tradeDetail.notFound')}</Text>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => safeBack(router, '/(main)/journal')}
         >
-          <Text style={styles.backBtnText}>‹ Quay lại Journal</Text>
+          <Text style={styles.backBtnText}>{t('tradeDetail.backToJournal')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -127,8 +129,10 @@ export default function TradeDetailScreen() {
         {exec.symbol} {exec.direction.toUpperCase()} · {exec.lot_size.toFixed(2)} lot
       </Text>
       <Text style={styles.subtitle}>
-        {exec.source} · mở {new Date(exec.entry_time).toLocaleString()}
-        {exec.exit_time ? ` · đóng ${new Date(exec.exit_time).toLocaleString()}` : ' · đang mở'}
+        {exec.source} · {t('tradeDetail.opened', { time: new Date(exec.entry_time).toLocaleString() })}
+        {exec.exit_time
+          ? ` · ${t('tradeDetail.closed', { time: new Date(exec.exit_time).toLocaleString() })}`
+          : ` · ${t('tradeDetail.open')}`}
       </Text>
 
       <TradingViewChart symbol={exec.symbol} height={220} />
@@ -136,13 +140,13 @@ export default function TradeDetailScreen() {
       {delta?.followed_plan != null && (
         <View style={[styles.badgeRow, delta.followed_plan ? styles.bgOk : styles.bgBad]}>
           <Text style={[styles.badgeText, delta.followed_plan ? styles.textOk : styles.textBad]}>
-            {delta.followed_plan ? '✓ Theo plan' : '✗ Lệch plan'}
+            {delta.followed_plan ? t('tradeDetail.onPlan') : t('tradeDetail.offPlan')}
           </Text>
         </View>
       )}
 
       <View style={styles.compareBox}>
-        <Text style={styles.compareTitle}>Planned vs Actual</Text>
+        <Text style={styles.compareTitle}>{t('tradeDetail.compareTitle')}</Text>
         <View style={styles.compareRow}>
           <Text style={styles.compareCol}>Entry</Text>
           <Text style={styles.comparePlanned}>{fmt(plan?.planned_entry)}</Text>
@@ -167,33 +171,45 @@ export default function TradeDetailScreen() {
 
       {delta && (
         <View style={styles.deltaBox}>
-          <Text style={styles.deltaTitle}>Độ lệch (Delta)</Text>
-          <Text style={styles.deltaLine}>Entry lệch: {fmt(delta.entry_deviation_pips, 2)} pips</Text>
-          <Text style={styles.deltaLine}>SL lệch: {fmt(delta.sl_deviation_pips, 2)} pips</Text>
+          <Text style={styles.deltaTitle}>{t('tradeDetail.deltaTitle')}</Text>
           <Text style={styles.deltaLine}>
-            Risk lệch: {delta.risk_deviation_percent != null ? `${delta.risk_deviation_percent >= 0 ? '+' : ''}${delta.risk_deviation_percent.toFixed(2)}%` : '—'}
+            {t('tradeDetail.entryDelta', { value: fmt(delta.entry_deviation_pips, 2) })}
+          </Text>
+          <Text style={styles.deltaLine}>
+            {t('tradeDetail.slDelta', { value: fmt(delta.sl_deviation_pips, 2) })}
+          </Text>
+          <Text style={styles.deltaLine}>
+            {t('tradeDetail.riskDelta', {
+              value:
+                delta.risk_deviation_percent != null
+                  ? `${delta.risk_deviation_percent >= 0 ? '+' : ''}${delta.risk_deviation_percent.toFixed(2)}%`
+                  : '—',
+            })}
           </Text>
         </View>
       )}
 
-      {plan?.thesis && <Text style={styles.thesis}>Thesis: {plan.thesis}</Text>}
-      {plan?.setup_tag && <Text style={styles.thesis}>Setup: {plan.setup_tag}</Text>}
+      {plan?.thesis && <Text style={styles.thesis}>{t('tradeDetail.thesis', { value: plan.thesis })}</Text>}
+      {plan?.setup_tag && <Text style={styles.thesis}>{t('tradeDetail.setup', { value: plan.setup_tag })}</Text>}
       {plan?.invalidation_condition && (
-        <Text style={styles.thesis}>Điều kiện hủy: {plan.invalidation_condition}</Text>
+        <Text style={styles.thesis}>
+          {t('tradeDetail.invalidation', { value: plan.invalidation_condition })}
+        </Text>
       )}
 
       {/* Retention Module 1: nhắc nhẹ (không chặn) điền bổ sung khi plan thiếu chi tiết */}
       {plan && missingOptionalDetails(plan).length > 0 && (
         <View style={styles.reminderBox}>
           <Text style={styles.reminderText}>
-            💡 Plan này chưa điền: {missingOptionalDetails(plan).join(', ')} — điền bổ sung giúp bạn
-            nhận phân tích setup chính xác hơn.
+            {t('tradeDetail.reminder', { fields: missingOptionalDetails(plan).join(', ') })}
           </Text>
         </View>
       )}
 
       <Text style={[styles.pnl, (exec.pnl_amount ?? 0) >= 0 ? styles.pnlPos : styles.pnlNeg]}>
-        {exec.pnl_amount != null ? `PnL: ${exec.pnl_amount >= 0 ? '+' : ''}$${exec.pnl_amount.toFixed(2)}` : 'PnL: chưa đóng'}
+        {exec.pnl_amount != null
+          ? `${t('tradeDetail.pnl')}: ${exec.pnl_amount >= 0 ? '+' : ''}$${exec.pnl_amount.toFixed(2)}`
+          : `${t('tradeDetail.pnl')}: ${t('tradeDetail.notClosed')}`}
       </Text>
     </ScrollView>
   );

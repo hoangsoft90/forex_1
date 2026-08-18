@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -19,6 +20,7 @@ type HourBar = { hour: number; count: number };
  * Free: xem 1 dòng tóm tắt ở Today Dashboard (đã có ở Module 2).
  */
 export default function DangerZoneScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [detail, setDetail] = useState<DangerZoneDetail | null>(null);
   const [hourBars, setHourBars] = useState<HourBar[]>([]);
@@ -83,22 +85,16 @@ export default function DangerZoneScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Khu vực nguy hiểm của bạn</Text>
-      <Text style={styles.subtitle}>
-        Pattern vi phạm lặp lại theo giờ và thứ tự lệnh trong ngày — từ dữ liệu thật.
-      </Text>
+      <Text style={styles.title}>{t('dangerZone.title')}</Text>
+      <Text style={styles.subtitle}>{t('dangerZone.subtitle')}</Text>
 
       {totalClosed < 30 ? (
         <View style={styles.progressBox}>
-          <Text style={styles.progressText}>
-            Cần ít nhất 30 lệnh đã đóng để phân tích pattern đáng tin cậy (hiện có {totalClosed}/30).
-          </Text>
+          <Text style={styles.progressText}>{t('dangerZone.notEnoughTrades', { count: totalClosed })}</Text>
         </View>
       ) : !hasAnyPattern ? (
         <View style={styles.progressBox}>
-          <Text style={styles.progressText}>
-            Đã có {totalClosed} lệnh nhưng chưa có pattern nào lặp lại đủ 5 lần — chưa đủ để kết luận.
-          </Text>
+          <Text style={styles.progressText}>{t('dangerZone.noPattern', { count: totalClosed })}</Text>
         </View>
       ) : (
         <>
@@ -119,9 +115,9 @@ export default function DangerZoneScreen() {
           (tránh gây hiểu lầm như "kết luận" từ dữ liệu ít — đúng tinh thần AC M6) */}
       {totalClosed >= 30 && (
         <>
-          <Text style={styles.chartTitle}>Phân bố vi phạm theo giờ</Text>
+          <Text style={styles.chartTitle}>{t('dangerZone.chartTitle')}</Text>
           {hourBars.length === 0 ? (
-            <Text style={styles.emptyNote}>Chưa có vi phạm nào để hiển thị.</Text>
+            <Text style={styles.emptyNote}>{t('dangerZone.noViolations')}</Text>
           ) : (
             <View style={styles.chartBox}>
               {hourBars.slice(0, 8).map((b) => {
@@ -142,10 +138,7 @@ export default function DangerZoneScreen() {
         </>
       )}
 
-      <Text style={styles.note}>
-        Gói Pro xem chi tiết nhiều pattern + biểu đồ. Gói Free xem tóm tắt 1 dòng trên Today
-        Dashboard khi có đủ dữ liệu.
-      </Text>
+      <Text style={styles.note}>{t('dangerZone.tierNote')}</Text>
     </ScrollView>
   );
 }

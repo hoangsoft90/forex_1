@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { safeBack } from '@/lib/navigation';
@@ -36,6 +37,7 @@ type AdaptiveDraft = {
 };
 
 export default function ConstitutionSettingsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
   const [rules, setRules] = useState<ActiveRule[]>([]);
@@ -116,7 +118,7 @@ export default function ConstitutionSettingsScreen() {
     // ⚠️ KHÔNG dùng activeCount + 1 — canAddRule(n) = n < 3; cộng 1 sẽ chặn
     // luôn lần thứ 3 (Free: 2 bắt buộc + 1 tùy chọn, tổng 3 là hợp lệ).
     if (!canAddRule(activeCount, tier)) {
-      setError(`Gói ${tier === 'pro' ? 'Pro' : 'Free'} không cho thêm: Free tối đa 3 luật.`);
+      setError(t('constitutionSettings.maxRules', { tier: tier === 'pro' ? 'Pro' : 'Free' }));
       return;
     }
     const { data, error: e } = await supabase
@@ -150,12 +152,15 @@ export default function ConstitutionSettingsScreen() {
     const threshold = parseFloat(adaptive.threshold);
     const adjusted = parseFloat(adaptive.adjustedValue);
     if (Number.isNaN(threshold) || threshold <= 0 || Number.isNaN(adjusted) || adjusted <= 0) {
-      setError('Ngưỡng ATR và giá trị giảm phải là số > 0.');
+      setError(t('constitutionSettings.adaptiveInvalid'));
       return;
     }
     if (adjusted > rule.base_value) {
       setError(
-        `Adaptive chỉ được GIẢM risk: giá trị sau điều chỉnh (${adjusted}%) phải ≤ base (${rule.base_value}%). Muốn tăng phải qua Decision Interruption.`,
+        t('constitutionSettings.adaptiveOnlyDecrease', {
+          adjusted,
+          base: rule.base_value,
+        }),
       );
       return;
     }
@@ -208,11 +213,8 @@ export default function ConstitutionSettingsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Hiến pháp giao dịch</Text>
-        <Text style={styles.subtitle}>
-          Luật CỦA BẠN — bạn tự đặt, app chỉ giúp bạn giữ lời hứa. Thay đổi có hiệu lực
-          ngay, lịch sử theo dõi qua thời điểm cập nhật.
-        </Text>
+        <Text style={styles.title}>{t('constitutionSettings.title')}</Text>
+        <Text style={styles.subtitle}>{t('constitutionSettings.subtitle')}</Text>
       </View>
 
       {loading ? (
@@ -220,7 +222,7 @@ export default function ConstitutionSettingsScreen() {
       ) : (
         <>
           {rules.length === 0 && (
-            <Text style={styles.empty}>Chưa có luật nào. Thêm luật bên dưới.</Text>
+            <Text style={styles.empty}>{t('constitutionSettings.empty')}</Text>
           )}
 
           {rules.map((r) => (
@@ -229,13 +231,15 @@ export default function ConstitutionSettingsScreen() {
                 <Text style={styles.ruleLabel}>{r.rule_type}</Text>
                 {!['max_risk_per_trade', 'max_daily_loss'].includes(r.rule_type) && (
                   <TouchableOpacity onPress={() => deleteRule(r.id)}>
-                    <Text style={styles.deleteBtn}>Xóa</Text>
+                    <Text style={styles.deleteBtn}>{t('constitutionSettings.delete')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
               {r.updated_at && (
                 <Text style={styles.updatedAt}>
-                  Cập nhật: {new Date(r.updated_at).toLocaleString()}
+                  {t('constitutionSettings.updatedAt', {
+                    time: new Date(r.updated_at).toLocaleString(),
+                  })}
                 </Text>
               )}
               <TextInput
@@ -250,14 +254,13 @@ export default function ConstitutionSettingsScreen() {
               {r.rule_type === 'max_risk_per_trade' && (
                 <View style={styles.adaptiveBox}>
                   <Text style={styles.adaptiveTitle}>
-                    Adaptive theo ATR {adaptive ? '(đang bật)' : '(tắt)'}
+                    {t('constitutionSettings.adaptiveTitle')}{' '}
+                    {adaptive ? `(${t('constitutionSettings.on')})` : `(${t('constitutionSettings.off')})`}
                   </Text>
-                  <Text style={styles.adaptiveHint}>
-                    Khi ATR vượt ngưỡng, app tự đề xuất GIẢM risk. App không bao giờ tự tăng.
-                  </Text>
+                  <Text style={styles.adaptiveHint}>{t('constitutionSettings.adaptiveHint')}</Text>
                   <View style={styles.row}>
                     <View style={styles.half}>
-                      <Text style={styles.adaptiveLabel}>ATR gấp (x lần TB)</Text>
+                      <Text style={styles.adaptiveLabel}>{t('constitutionSettings.atrMultiple')}</Text>
                       <TextInput
                         style={styles.valueInput}
                         keyboardType="decimal-pad"
@@ -268,7 +271,7 @@ export default function ConstitutionSettingsScreen() {
                       />
                     </View>
                     <View style={styles.half}>
-                      <Text style={styles.adaptiveLabel}>Risk sau điều chỉnh (%)</Text>
+                      <Text style={styles.adaptiveLabel}>{t('constitutionSettings.adjustedRisk')}</Text>
                       <TextInput
                         style={styles.valueInput}
                         keyboardType="decimal-pad"
@@ -281,11 +284,11 @@ export default function ConstitutionSettingsScreen() {
                   </View>
                   <View style={styles.adaptiveActions}>
                     <TouchableOpacity style={styles.adaptiveSave} onPress={saveAdaptive}>
-                      <Text style={styles.adaptiveSaveText}>Lưu Adaptive</Text>
+                      <Text style={styles.adaptiveSaveText}>{t('constitutionSettings.saveAdaptive')}</Text>
                     </TouchableOpacity>
                     {adaptive?.id ? (
                       <TouchableOpacity onPress={deleteAdaptive}>
-                        <Text style={styles.adaptiveDelete}>Bỏ Adaptive</Text>
+                        <Text style={styles.adaptiveDelete}>{t('constitutionSettings.removeAdaptive')}</Text>
                       </TouchableOpacity>
                     ) : null}
                   </View>
@@ -294,11 +297,13 @@ export default function ConstitutionSettingsScreen() {
             </View>
           ))}
 
-          <Text style={styles.sectionTitle}>Thêm luật ({activeCount}/3 Free · không giới hạn Pro)</Text>
-          {RULE_TEMPLATES.filter((t) => !rules.some((r) => r.rule_type === t.rule_type)).map(
-            (t) => (
-              <TouchableOpacity key={t.rule_type} style={styles.addRow} onPress={() => addRule(t)}>
-                <Text style={styles.addLabel}>{t.label}</Text>
+          <Text style={styles.sectionTitle}>
+            {t('constitutionSettings.addRule', { count: activeCount })}
+          </Text>
+          {RULE_TEMPLATES.filter((tpl) => !rules.some((r) => r.rule_type === tpl.rule_type)).map(
+            (tpl) => (
+              <TouchableOpacity key={tpl.rule_type} style={styles.addRow} onPress={() => addRule(tpl)}>
+                <Text style={styles.addLabel}>{t(tpl.label)}</Text>
                 <Text style={styles.addPlus}>+</Text>
               </TouchableOpacity>
             ),
@@ -307,7 +312,7 @@ export default function ConstitutionSettingsScreen() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <TouchableOpacity style={styles.backBtn} onPress={() => safeBack(router, '/(main)')}>
-            <Text style={styles.backText}>Quay lại</Text>
+            <Text style={styles.backText}>{t('common.back')}</Text>
           </TouchableOpacity>
         </>
       )}

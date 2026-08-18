@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -12,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { getProStatus } from '@/lib/tier';
 
 export default function PortfolioRiskScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, tier, subscriptionExpiresAt } = useAuth();
   const pro = getProStatus(tier, subscriptionExpiresAt);
@@ -82,7 +84,7 @@ export default function PortfolioRiskScreen() {
   if (!totalRisk) {
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>Chưa có dữ liệu.</Text>
+        <Text style={styles.empty}>{t('portfolioRisk.noData')}</Text>
       </View>
     );
   }
@@ -91,29 +93,37 @@ export default function PortfolioRiskScreen() {
     totalRisk.level === 'danger' ? '#d33' : totalRisk.level === 'warn' ? '#b8860b' : '#28a745';
   const levelText =
     totalRisk.level === 'danger'
-      ? `⚠ RỦI RO DỒN: ${totalRisk.totalRiskPercent.toFixed(1)}% vượt ngưỡng ${totalRisk.thresholdPercent.toFixed(1)}%`
+      ? t('portfolioRisk.levelDanger', {
+          total: totalRisk.totalRiskPercent.toFixed(1),
+          threshold: totalRisk.thresholdPercent.toFixed(1),
+        })
       : totalRisk.level === 'warn'
-        ? `Cảnh báo: tổng risk ${totalRisk.totalRiskPercent.toFixed(1)}% đang gần ngưỡng ${totalRisk.thresholdPercent.toFixed(1)}%`
-        : `Tổng risk ${totalRisk.totalRiskPercent.toFixed(1)}% — trong ngưỡng ${totalRisk.thresholdPercent.toFixed(1)}%`;
+        ? t('portfolioRisk.levelWarn', {
+            total: totalRisk.totalRiskPercent.toFixed(1),
+            threshold: totalRisk.thresholdPercent.toFixed(1),
+          })
+        : t('portfolioRisk.levelOk', {
+            total: totalRisk.totalRiskPercent.toFixed(1),
+            threshold: totalRisk.thresholdPercent.toFixed(1),
+          });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Rủi ro danh mục</Text>
-      <Text style={styles.subtitle}>
-        Tổng rủi ro dồn của các vị thế đang mở. Ngưỡng = min(rule risk/lệnh × 3, max daily loss).
-      </Text>
+      <Text style={styles.title}>{t('portfolioRisk.title')}</Text>
+      <Text style={styles.subtitle}>{t('portfolioRisk.subtitle')}</Text>
 
       <View style={[styles.totalBox, { borderColor: levelColor }]}>
         <Text style={[styles.totalText, { color: levelColor }]}>{levelText}</Text>
         <Text style={styles.detail}>
-          {totalRisk.positions.length} vị thế mở · ngưỡng {totalRisk.thresholdPercent.toFixed(1)}%
+          {t('portfolioRisk.detail', {
+            count: totalRisk.positions.length,
+            threshold: totalRisk.thresholdPercent.toFixed(1),
+          })}
         </Text>
       </View>
 
       {totalRisk.positions.length === 0 ? (
-        <Text style={styles.emptyText}>
-          Chưa có vị thế mở nào (execution chưa đóng). Ghi nhận lệnh qua Widget hoặc paste MT4.
-        </Text>
+        <Text style={styles.emptyText}>{t('portfolioRisk.noPositions')}</Text>
       ) : (
         <View style={styles.posList}>
           {totalRisk.positions.map((p, i) => (
@@ -126,7 +136,7 @@ export default function PortfolioRiskScreen() {
               </View>
               <Text style={styles.posRisk}>
                 {p.riskPercentEffective.toFixed(2)}%
-                {p.riskPercent == null ? ' (ước lượng)' : ''}
+                {p.riskPercent == null ? ` (${t('portfolioRisk.estimated')})` : ''}
               </Text>
             </View>
           ))}
@@ -136,18 +146,15 @@ export default function PortfolioRiskScreen() {
       {/* Tier gating: correlation chỉ Pro */}
       {!pro.isPro ? (
         <View style={styles.proGate}>
-          <Text style={styles.proGateTitle}>Ma trận tương quan — tính năng Pro</Text>
-          <Text style={styles.proGateText}>
-            Xem tương quan giữa các vị thế đang mở (EURUSD ↔ XAUUSD ↔ USDJPY) giúp tránh
-            gom rủi ro cùng hướng. Mở Pro 24h bằng cách xem 1 quảng cáo.
-          </Text>
+          <Text style={styles.proGateTitle}>{t('portfolioRisk.proGateTitle')}</Text>
+          <Text style={styles.proGateText}>{t('portfolioRisk.proGateText')}</Text>
           <TouchableOpacity style={styles.proBtn} onPress={() => router.push('/(main)/pro')}>
-            <Text style={styles.proBtnText}>Mở Pro →</Text>
+            <Text style={styles.proBtnText}>{t('portfolioRisk.proBtn')} →</Text>
           </TouchableOpacity>
         </View>
       ) : corrPairs.length > 0 ? (
         <View style={styles.corrBox}>
-          <Text style={styles.corrTitle}>Ma trận tương quan (ước lượng tham chiếu)</Text>
+          <Text style={styles.corrTitle}>{t('portfolioRisk.corrTitle')}</Text>
           {corrPairs.map((p, i) => (
             <View key={i} style={styles.corrRow}>
               <Text style={styles.corrPair}>
@@ -164,17 +171,16 @@ export default function PortfolioRiskScreen() {
               </Text>
             </View>
           ))}
-          <Text style={styles.corrNote}>
-            Hệ số ước lượng theo quy ước thị trường — chưa tính từ dữ liệu giá thật của bạn.
-            Dương = cùng hướng (gom rủi ro), âm = bù trừ nhau.
-          </Text>
+          <Text style={styles.corrNote}>{t('portfolioRisk.corrNote')}</Text>
         </View>
       ) : (
-        <Text style={styles.emptyText}>Cần ≥ 2 symbol khác nhau để tính tương quan.</Text>
+        <Text style={styles.emptyText}>{t('portfolioRisk.needTwoSymbols')}</Text>
       )}
 
       {symbols.length === 0 && (
-        <Text style={styles.hint}>Symbol hiện tại: {symbols.join(', ') || '—'}</Text>
+        <Text style={styles.hint}>
+          {t('portfolioRisk.currentSymbols', { symbols: symbols.join(', ') || '—' })}
+        </Text>
       )}
     </ScrollView>
   );

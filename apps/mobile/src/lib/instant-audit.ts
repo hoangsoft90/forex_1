@@ -11,6 +11,7 @@
  *     dùng `weakness_profile` jsonb từ Quiz → màn hình "Dự đoán điểm yếu của bạn".
  */
 
+import i18n from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { detectViolations } from '@/lib/violations';
 
@@ -36,37 +37,38 @@ export async function isInstantAuditEnabled(): Promise<boolean> {
 }
 
 /**
- * Nhãn tiếng Việt cho từng key trong weakness_profile (khớp quiz trong weakness-quiz.ts).
+ * Nhãn cho từng key trong weakness_profile (khớp quiz trong weakness-quiz.ts) —
+ * lưu i18n key, dịch khi render (jest lng vi → test cũ giữ pass).
  * Dùng cho màn hình fallback 3.3 — liệt kê lại điểm user tự nhận dưới dạng cá nhân hóa.
  */
-export const WEAKNESS_LABELS: Record<string, { label: string; description: string }> = {
+export const WEAKNESS_LABELS: Record<string, { labelKey: string; descriptionKey: string }> = {
   revenge_trading: {
-    label: 'Revenge trading',
-    description: 'Mở lệnh ngược chiều ngay sau khi bị dừng lỗ.',
+    labelKey: 'weaknessLabels.revengeTrading',
+    descriptionKey: 'weaknessLabels.revengeTradingDesc',
   },
   moves_sl: {
-    label: 'Dời Stop Loss',
-    description: 'Dời SL ra xa hơn khi giá đi ngược dự kiến.',
+    labelKey: 'weaknessLabels.movesSl',
+    descriptionKey: 'weaknessLabels.movesSlDesc',
   },
   increases_lot_after_loss: {
-    label: 'Tăng lot sau thua',
-    description: 'Tăng khối lượng để "gỡ" lại sau lệnh thua.',
+    labelKey: 'weaknessLabels.increasesLot',
+    descriptionKey: 'weaknessLabels.increasesLotDesc',
   },
   trades_before_news: {
-    label: 'Giao dịch trước tin lớn',
-    description: 'Vào lệnh ngay trước/trong tin kinh tế lớn (NFP, CPI...).',
+    labelKey: 'weaknessLabels.tradesBeforeNews',
+    descriptionKey: 'weaknessLabels.tradesBeforeNewsDesc',
   },
   trades_without_plan: {
-    label: 'Vào lệnh không plan',
-    description: 'Không xác định trước Entry/SL/TP.',
+    labelKey: 'weaknessLabels.tradesWithoutPlan',
+    descriptionKey: 'weaknessLabels.tradesWithoutPlanDesc',
   },
   overtrades: {
-    label: 'Giao dịch quá nhiều',
-    description: 'Nhiều lệnh trong ngày hơn kế hoạch ban đầu.',
+    labelKey: 'weaknessLabels.overtrades',
+    descriptionKey: 'weaknessLabels.overtradesDesc',
   },
   overconfident_size: {
-    label: 'Khối lượng quá mức',
-    description: 'Vào lệnh lot lớn hơn mức rủi ro đã đặt ra.',
+    labelKey: 'weaknessLabels.overconfidentSize',
+    descriptionKey: 'weaknessLabels.overconfidentSizeDesc',
   },
 };
 
@@ -82,7 +84,11 @@ export function listWeaknesses(profile: Record<string, boolean> | null): {
     .map(([key]) => {
       const meta = WEAKNESS_LABELS[key];
       return meta
-        ? { key, label: meta.label, description: meta.description }
+        ? {
+            key,
+            label: i18n.t(meta.labelKey),
+            description: i18n.t(meta.descriptionKey),
+          }
         : { key, label: key, description: '' };
     });
 }
@@ -165,19 +171,24 @@ function detectViolationsForAudit(
 export function formatInstantAudit(result: InstantAuditResult): string {
   const parts: string[] = [];
   const order: Record<string, string> = {
-    hope_trading: 'dời SL',
-    revenge_trading: 'revenge trade',
-    martingale_negative: 'tăng lot sau thua',
-    overconfidence_size: 'vào lệnh quá khối lượng',
+    hope_trading: 'instantAudit.violation.hopeTrading',
+    revenge_trading: 'instantAudit.violation.revengeTrading',
+    martingale_negative: 'instantAudit.violation.martingaleNegative',
+    overconfidence_size: 'instantAudit.violation.overconfidenceSize',
   };
   for (const [type, meta] of Object.entries(result.violations)) {
-    const verb = order[type] ?? type;
+    const verbKey = order[type] ?? type;
+    const verb = i18n.exists(verbKey) ? i18n.t(verbKey) : verbKey;
     parts.push(
-      `${verb} ${meta.count} lần (mất khoảng $${meta.estimatedCost.toFixed(2)})`,
+      i18n.t('instantAudit.violationLine', {
+        verb,
+        count: meta.count,
+        cost: meta.estimatedCost.toFixed(2),
+      }),
     );
   }
   if (parts.length === 0) {
-    return `Trong ${result.totalTrades} lệnh gần đây, chưa phát hiện vi phạm kỷ luật nào từ dữ liệu này.`;
+    return i18n.t('instantAudit.noViolations', { total: result.totalTrades });
   }
-  return `Trong ${result.totalTrades} lệnh gần đây, bạn đã ${parts.join(', ')}.`;
+  return i18n.t('instantAudit.summary', { total: result.totalTrades, list: parts.join(', ') });
 }

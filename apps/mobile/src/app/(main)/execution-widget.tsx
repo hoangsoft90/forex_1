@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { EXECUTION_EVENTS, trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth-context';
@@ -19,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 type LinkedPlan = { id: string; symbol: string; direction: 'buy' | 'sell' };
 
 export default function ExecutionWidgetScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [symbol, setSymbol] = useState('EURUSD');
@@ -64,7 +66,7 @@ export default function ExecutionWidgetScreen() {
     const lotNum = parseFloat(lot);
     const entryNum = parseFloat(entry);
     if (!isSupportedSymbol(symbol) || !(lotNum > 0) || !(entryNum > 0)) {
-      setError('Nhập đủ: Symbol, Lot (>0), Entry (>0). SL/TP tùy chọn.');
+      setError(t('executionWidget.fillError'));
       return;
     }
     if (!user) return;
@@ -100,6 +102,19 @@ export default function ExecutionWidgetScreen() {
           // Không chặn luồng chính nếu edge function chưa deploy
         });
       }
+
+      // Đánh dấu plan đã được thực hiện — nếu không, plan vẫn status='planned'
+      // và bị widget suggest lại nhiều lần (bug review 2026-08-17).
+      if (inserted?.trade_plan_id) {
+        const { error: planErr } = await supabase
+          .from('trade_plans')
+          .update({ status: 'executed' })
+          .eq('id', inserted.trade_plan_id);
+        if (planErr) {
+          // Không chặn luồng chính — chỉ warn (plan có thể bị suggest lại lần sau)
+          console.warn('Không cập nhật được trade_plans.status:', planErr.message);
+        }
+      }
       // Đo thời gian mở→lưu (AC ≤ 20 giây)
       await trackEvent(EXECUTION_EVENTS.SAVED, {
         opened_at: openedAt,
@@ -108,7 +123,7 @@ export default function ExecutionWidgetScreen() {
       });
       safeBack(router, '/(main)');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Có lỗi khi lưu lệnh.');
+      setError(e instanceof Error ? e.message : t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -116,8 +131,8 @@ export default function ExecutionWidgetScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Nhập lệnh nhanh</Text>
-      <Text style={styles.subtitle}>Mục tiêu: dưới 20 giây từ lúc mở đến lúc lưu.</Text>
+      <Text style={styles.title}>{t('executionWidget.title')}</Text>
+      <Text style={styles.subtitle}>{t('executionWidget.subtitle')}</Text>
 
       <Text style={styles.label}>Symbol</Text>
       <View style={styles.row}>
@@ -183,7 +198,7 @@ export default function ExecutionWidgetScreen() {
         </View>
       </View>
 
-      <Text style={styles.label}>TP (tùy chọn)</Text>
+      <Text style={styles.label}>{t('executionWidget.tpLabel')}</Text>
       <TextInput
         style={styles.input}
         keyboardType="decimal-pad"
@@ -193,7 +208,7 @@ export default function ExecutionWidgetScreen() {
         placeholderTextColor="#888"
       />
 
-      <Text style={styles.label}>Giá đóng lệnh (tùy chọn — để trống nếu lệnh còn mở)</Text>
+      <Text style={styles.label}>{t('executionWidget.exitPriceLabel')}</Text>
       <TextInput
         style={styles.input}
         keyboardType="decimal-pad"
@@ -209,8 +224,11 @@ export default function ExecutionWidgetScreen() {
           onPress={() => setLinkPlan((v) => !v)}
         >
           <Text style={styles.linkText}>
-            {linkPlan ? '✓ ' : ''}Liên kết với plan: {suggestedPlan.symbol}{' '}
-            {suggestedPlan.direction.toUpperCase()}
+            {linkPlan ? '✓ ' : ''}
+            {t('executionWidget.linkPlan', {
+              symbol: suggestedPlan.symbol,
+              direction: suggestedPlan.direction.toUpperCase(),
+            })}
           </Text>
         </TouchableOpacity>
       )}
@@ -222,11 +240,11 @@ export default function ExecutionWidgetScreen() {
         onPress={handleSave}
         disabled={saving}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Lưu lệnh</Text>}
+        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('executionWidget.saveTrade')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.pasteLink} onPress={() => router.push('/(main)/paste-mt4')}>
-        <Text style={styles.pasteText}>Paste từ MT4/MT5 Account History →</Text>
+        <Text style={styles.pasteText}>{t('executionWidget.pasteLink')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

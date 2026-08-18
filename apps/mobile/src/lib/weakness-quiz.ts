@@ -7,7 +7,12 @@
  *
  * Ngưỡng chuyển boolean: trả lời "Thường xuyên" hoặc "Luôn luôn" → true
  * (có biểu hiện điểm yếu), còn lại → false.
+ *
+ * ⚠️ Nội dung câu hỏi/lựa chọn lưu dưới dạng i18n key — dịch khi render
+ * (màn hình gọi `t(q.question)` / `t(opt.label)`; jest lng vi → test cũ giữ pass).
  */
+
+import i18n from '@/i18n';
 
 export type QuizOption = {
   label: string;
@@ -28,81 +33,89 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 'q1',
     profileKey: 'revenge_trading',
-    question: 'Bạn có hay mở lệnh ngược chiều ngay sau khi vừa bị dừng lỗ (SL) không?',
+    question: 'quiz.q1.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q2',
     profileKey: 'moves_sl',
-    question: 'Bạn có hay dời Stop Loss ra xa hơn khi giá đi ngược dự kiến không?',
+    question: 'quiz.q2.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q3',
     profileKey: 'increases_lot_after_loss',
-    question: 'Bạn có hay tăng khối lượng (lot) sau khi thua lệnh để "gỡ" lại không?',
+    question: 'quiz.q3.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q4',
     profileKey: 'trades_before_news',
-    question: 'Bạn có hay vào lệnh ngay trước/trong lúc tin tức kinh tế lớn (NFP, CPI, quyết định lãi suất) không?',
+    question: 'quiz.q4.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q5',
     profileKey: 'trades_without_plan',
-    question: 'Bạn có hay vào lệnh mà không có kế hoạch (không xác định trước Entry/SL/TP) không?',
+    question: 'quiz.q5.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q6',
     profileKey: 'overtrades',
-    question: 'Bạn có hay giao dịch quá nhiều lần trong ngày so với kế hoạch ban đầu không?',
+    question: 'quiz.q6.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
   {
     id: 'q7',
     profileKey: 'overconfident_size',
-    question: 'Bạn có hay vào lệnh với khối lượng lớn hơn mức rủi ro đã đặt ra không?',
+    question: 'quiz.q7.question',
     options: [
-      { label: 'Không bao giờ', weight: 0 },
-      { label: 'Thỉnh thoảng', weight: 1 },
-      { label: 'Thường xuyên', weight: 2 },
-      { label: 'Luôn luôn', weight: 3 },
+      { label: 'quiz.option.never', weight: 0 },
+      { label: 'quiz.option.sometimes', weight: 1 },
+      { label: 'quiz.option.often', weight: 2 },
+      { label: 'quiz.option.always', weight: 3 },
     ],
   },
 ];
+
+/** Dịch câu hỏi theo ngôn ngữ hiện tại (màn hình gọi để render). */
+export function localizeQuestion(q: QuizQuestion): { question: string; options: QuizOption[] } {
+  return {
+    question: i18n.t(q.question),
+    options: q.options.map((opt) => ({ ...opt, label: i18n.t(opt.label) })),
+  };
+}
 
 /** Ngưỡng trọng số để coi là "có điểm yếu" (>=2 = Thường xuyên/Luôn luôn). */
 export const WEAK_POINT_THRESHOLD = 2;
@@ -115,7 +128,7 @@ export function buildWeaknessProfile(answers: QuizAnswerMap): Record<string, boo
   for (const q of QUIZ_QUESTIONS) {
     const weight = answers[q.id];
     if (weight === undefined) {
-      throw new Error(`Thiếu câu trả lời cho câu hỏi "${q.id}" (${q.profileKey})`);
+      throw new Error(i18n.t('quiz.missingAnswer', { id: q.id, key: q.profileKey }));
     }
     profile[q.profileKey] = weight >= WEAK_POINT_THRESHOLD;
   }

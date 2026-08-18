@@ -1,0 +1,522 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "close": "Close",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "skip": "Skip",
+    "continue": "Continue",
+    "confirm": "Confirm",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageHint": "App display language",
+    "signOut": "Sign out",
+    "proRow": "Get Pro (watch ads)",
+    "proStatusActive": "Pro active — {{hours}} left",
+    "proStatusFree": "Free plan — watch an ad to get Pro for 24h",
+    "constitutionRow": "Trading constitution (my rules)",
+    "disciplineExplainerRow": "Discipline vs Edge Score",
+    "notificationSection": "Notifications",
+    "morningBrief": "Morning brief",
+    "morningBriefSub": "Yesterday's Discipline Score + today's rules (default 08:00)",
+    "morningTimeLabel": "Morning brief time",
+    "eveningReview": "Evening review",
+    "eveningReviewSub": "Remind to review when there are closed trades today (default 21:00)",
+    "eveningTimeLabel": "Evening review time",
+    "timeError": "Time must be HH:MM (24h), e.g. 08:00 or 21:30.",
+    "saveError": "Error saving notification settings.",
+    "saved": "✓ Saved — notifications will apply at the times you chose.",
+    "saveNotifications": "Save notification settings"
+  },
+  "login": {
+    "fillError": "Please enter email and password.",
+    "signupConfirmEmail": "Sign up successful! Check your email to confirm your account, then sign in again.",
+    "genericError": "Something went wrong, please try again.",
+    "subtitleLogin": "Sign in to continue",
+    "subtitleSignup": "Create a new account",
+    "passwordPlaceholder": "Password",
+    "loginButton": "Sign in",
+    "signupButton": "Sign up",
+    "switchToSignup": "No account? Sign up",
+    "switchToLogin": "Have an account? Sign in"
+  },
+  "balance": {
+    "title": "Trading account balance",
+    "subtitle": "The app uses this as a baseline to calculate % risk (lot size, loss limits) for the next steps.",
+    "placeholder": "e.g. 10000",
+    "error": "Please enter a valid account balance (greater than 0).",
+    "saveError": "Something went wrong while saving."
+  },
+  "quiz": {
+    "title": "Weakness profile",
+    "subtitle": "Answer based on your real trading habits — there are no right or wrong answers.",
+    "error": "Please answer all questions before continuing.",
+    "backToBalance": "‹ Back to balance",
+    "viewResults": "View results",
+    "remaining_one": "{{count}} question left",
+    "remaining_other": "{{count}} questions left",
+    "q1": {
+      "question": "Do you often open a trade against the trend right after being stopped out (SL)?"
+    },
+    "q2": {
+      "question": "Do you often move your Stop Loss further away when price moves against your expectations?"
+    },
+    "q3": {
+      "question": "Do you often increase your lot size after a losing trade to \"win it back\"?"
+    },
+    "q4": {
+      "question": "Do you often enter right before/during major economic news (NFP, CPI, rate decisions)?"
+    },
+    "q5": {
+      "question": "Do you often enter trades without a plan (no predefined Entry/SL/TP)?"
+    },
+    "q6": {
+      "question": "Do you often trade more times in a day than originally planned?"
+    },
+    "q7": {
+      "question": "Do you often enter with a larger size than your set risk level?"
+    },
+    "option": {
+      "never": "Never",
+      "sometimes": "Sometimes",
+      "often": "Often",
+      "always": "Always"
+    },
+    "missingAnswer": "Missing answer for question \"{{id}}\" ({{key}})"
+  },
+  "weaknessSummary": {
+    "title": "Your predicted weaknesses",
+    "subtitle": "Based on your answers, these are the weaknesses you recognize that could affect your trading results. The system will track and compare against your real behavior.",
+    "noWeaknessTitle": "✅ No prominent weaknesses",
+    "noWeaknessBody": "You didn't recognize any risky habits in the quiz. If your trading results aren't what you expect, follow the Journal — real data gives the most accurate answer.",
+    "note": "Note: this is a prediction based on your answers — once real trade data is available, the system will compare to identify weaknesses more accurately.",
+    "backToQuiz": "‹ Back to quiz"
+  },
+  "explain": {
+    "title": "2 scores, 2 different meanings",
+    "disciplineBody": "Measures how well you FOLLOW your own plan: enter trades as planned, don't move SL, no revenge trading...",
+    "edgeBody": "Measures how effective your STRATEGY is: winrate, risk:reward ratio, total PnL.",
+    "note": "A high discipline score doesn't guarantee profit — it ensures you identify the right cause of losses: strategy or behavior. You can review this explanation in Settings.",
+    "understood": "Got it"
+  },
+  "constitution": {
+    "title": "Your trading constitution",
+    "subtitle": "These are YOUR rules — the app only helps you keep your promise to yourself, it doesn't impose.",
+    "requiredSection": "Required rules",
+    "optionalSection": "Optional rules (Free: max 3 rules)",
+    "added": "✓ Added",
+    "add": "+ Add",
+    "freeLimitError": "Free plan allows up to {{count}} rules. Upgrade to Pro for unlimited.",
+    "missingRequired": "You need the 2 required rules: Max risk per trade and Max daily loss.",
+    "tierNote": "You're on the Free plan (max 3 rules). Upgrade to Pro for unlimited.",
+    "done": "Finish",
+    "needRequired": "Add the 2 required rules",
+    "backToExplain": "‹ Back to explanation"
+  },
+  "instantAudit": {
+    "pasteError": "Paste your trading history from MT4/MT5 (Account History → Copy) first, or tap Skip.",
+    "errorLines": "⚠ {{count}} lines could not be imported (lines {{lines}}...) — results below are based on incomplete data. You can fix them manually in the Journal later.",
+    "noImported": "No trades were imported — check the pasted format.",
+    "edgeError": "Error calling Edge Function: {{message}} — make sure the parse-mt4 function is deployed",
+    "off": "Instant Audit is not enabled.",
+    "title": "Your actual weaknesses",
+    "subtitle": "Paste your recent trading history (MT4/MT5 → Account History → Copy) to see weaknesses from real data. Optional — tap Skip if you don't have any.",
+    "analyze": "Analyze",
+    "skip": "Skip — continue",
+    "noViolations": "In the last {{total}} trades, no discipline violations were detected from this data.",
+    "summary": "In the last {{total}} trades, you {{list}}.",
+    "violationLine": "{{verb}} {{count}} times (lost ~${{cost}})",
+    "violation": {
+      "hopeTrading": "moved the SL",
+      "revengeTrading": "revenge traded",
+      "martingaleNegative": "increased lot after losses",
+      "overconfidenceSize": "entered oversized"
+    }
+  },
+  "dashboard": {
+    "title": "Today",
+    "greeting": "Hi {{name}} — stay disciplined, profits follow.",
+    "quickPlan": "⚡ Quick Plan — plan fast",
+    "quickPlanSub": "Only 5 required fields — Risk Engine calculates lot size",
+    "deltaLabel": "vs last week",
+    "noScore": "No score yet — close a few trades following a plan and the system will calculate it for you.",
+    "dangerZoneTitle": "Danger zone",
+    "proDetail": "Pro details",
+    "dzLink": "View details →",
+    "streakTitle": "🔥 Discipline Streak",
+    "streakValue_one": "{{count}} trade",
+    "streakValue_other": "{{count}} trades",
+    "streakNoteOk": "consecutive trades following the plan, no violations — keep it up!",
+    "streakNoteEmpty": "No streak yet — close trades following the plan to start one.",
+    "rulesTitle": "Today's rules",
+    "noRules": "You have no rules yet — set up your trading constitution to begin.",
+    "unitMinutes": " min",
+    "openTradesTitle": "Open trades ({{count}})",
+    "openNote": "Estimated PnL needs live prices — not available yet (Phase 3). Close trades via the Widget to record accurate PnL.",
+    "openWidgetLink": "Open Widget to close →",
+    "guideTitle": "How to start?",
+    "guide1": "1. ⚡ Tap Quick Plan to plan before entering a trade.",
+    "guide2": "2. 📝 Enter trades fast via the Widget or paste MT4/MT5 history.",
+    "guide3": "3. 📊 The system calculates Discipline Score & detects violations automatically.",
+    "firstTradeBtn": "Enter first trade",
+    "navJournal": "📖 Journal",
+    "navPasteMt4": "📋 Paste MT4/5",
+    "navScores": "🎯 Scores",
+    "navWeeklyAudit": "📅 Weekly Audit",
+    "navSetupAnalytics": "🧪 Setup Analytics",
+    "navDangerZone": "⚠️ Danger Zone",
+    "navPortfolioRisk": "📊 Portfolio risk",
+    "navPro": "👑 Get Pro",
+    "navProActive": "👑 Pro ({{hours}} left)",
+    "balanceHint": "Tip: set your balance in Settings so the Risk Engine calculates lot size accurately."
+  },
+  "journal": {
+    "title": "Journal",
+    "insightTitle": "Your insight",
+    "insightText": "{{followedPct}}% of trades following the plan were profitable, while only {{deviatedPct}}% of deviated trades were. Following the plan helps!",
+    "insightHint": "Need ≥ 10 closed trades with a plan to show statistical insight.",
+    "empty": "No trades yet. Enter a trade via the Widget to start.",
+    "followed": "On plan",
+    "deviated": "Off plan",
+    "closed": "Closed {{time}}",
+    "open": "Open"
+  },
+  "confirmNoPlan": {
+    "title": "You're creating a trade WITHOUT a plan",
+    "warnTitle": "⚠ Warning",
+    "warn1": "An off-plan trade has no plan to compare against — you won't know if you deviated, and there's no clear reason to learn from this trade.",
+    "warn2": "If you're trading emotionally, go back and create a plan first — it takes less than a minute.",
+    "confirm": "I understand, still create trade without a plan",
+    "cancel": "Back to plan"
+  },
+  "tradeDetail": {
+    "notFound": "Trade not found.",
+    "backToJournal": "‹ Back to Journal",
+    "opened": "opened {{time}}",
+    "closed": "closed {{time}}",
+    "open": "open",
+    "onPlan": "✓ On plan",
+    "offPlan": "✗ Off plan",
+    "compareTitle": "Planned vs Actual",
+    "deltaTitle": "Deviation (Delta)",
+    "entryDelta": "Entry deviation: {{value}} pips",
+    "slDelta": "SL deviation: {{value}} pips",
+    "riskDelta": "Risk deviation: {{value}}",
+    "thesis": "Thesis: {{value}}",
+    "setup": "Setup: {{value}}",
+    "invalidation": "Invalidation condition: {{value}}",
+    "reminder": "💡 This plan is missing: {{fields}} — filling them in helps you get more accurate setup analysis.",
+    "pnl": "PnL",
+    "notClosed": "not closed"
+  },
+  "pasteMt4": {
+    "emptyError": "Paste text from MT4 Account History into the field above first.",
+    "edgeError": "Error calling Edge Function: {{message}} — make sure the parse-mt4 function is deployed",
+    "title": "Paste from MT4/MT5",
+    "subtitle": "Open MT4/MT5 → \"Account History\" tab → select all → Copy, then paste here.",
+    "parseImport": "Parse & Import",
+    "result": "Result: {{count}} trades",
+    "errorCount": "⚠ {{count}} lines could not be imported — please fix them manually:",
+    "errorLine": "Line {{line}}:"
+  },
+  "executionWidget": {
+    "title": "Record execution",
+    "subtitle": "Enter the result of the closed trade — the system checks it against your Plan.",
+    "exitPriceLabel": "Exit price",
+    "tpLabel": "TP price",
+    "linkPlan": "Link to Plan",
+    "pasteLink": "Paste Plan ID (optional)",
+    "saveTrade": "Save trade",
+    "fillError": "Failed to save the trade."
+  },
+  "newPlan": {
+    "title": "Fast Plan",
+    "subtitle": "Only 5 required fields — plan fast, the Risk Engine calculates lot size for you.",
+    "symbol": "Symbol",
+    "warnSymbol": "This symbol has no pip value config yet.",
+    "direction": "Direction",
+    "entry": "Entry",
+    "sl": "SL",
+    "riskPercent": "Risk %",
+    "riskHint": "Default Risk% from your rule: {{rule}}% (editable).",
+    "overRisk": "⚠ Risk {{entered}}% exceeds your limit {{limit}}% — reduce it or go back.",
+    "adaptiveTitle": "📉 Adaptive ATR is active",
+    "adaptiveNote": "Suggested risk: {{suggested}}% — entering more will be blocked (the app never loosens your rules). ATR is an estimated reference value.",
+    "distance": "Distance: {{pips}} pips",
+    "lotSize": "Suggested lot size: {{lot}} lot",
+    "riskAmount": "Amount at risk: ${{amount}}",
+    "rr": "R:R = 1 : {{rr}}",
+    "hideDetails": "▲ Hide extra details",
+    "showDetails": "▼ Extra details (optional)",
+    "tpLabel": "TP (optional — R:R only shows with TP)",
+    "thesisLabel": "Thesis (reason for the trade)",
+    "setupTagLabel": "Setup tag",
+    "invalidationLabel": "Invalidation condition",
+    "confidenceLabel": "Confidence level: {{level}}/5",
+    "chartLabel": "Chart {{symbol}}",
+    "save": "Save Plan",
+    "noPlan": "Trade without a Plan",
+    "personalData": "YOUR DATA",
+    "communityBenchmark": "COMMUNITY BENCHMARK",
+    "interruptionTitle": "Hold on a second",
+    "continue": "Continue",
+    "backToPlan": "Back to editing the Plan",
+    "errorInvalid": "Please enter valid Symbol, Direction, Entry, SL, Risk%.",
+    "errorAdaptive": "Adaptive is active: suggested risk {{suggested}}% (lowered by ATR). You entered {{entered}}% — above the suggestion. Reduce it or go back.",
+    "errorSave": "Failed to save the plan."
+  },
+  "scores": {
+    "title": "Your scores",
+    "subtitle": "A high discipline score doesn't guarantee profit — it guarantees you identify the real cause of losses: strategy or behavior.",
+    "winrate": "winrate",
+    "progressTitle": "📈 Progress this week",
+    "progressText": "{{delta}} points vs last week ({{prev}} → {{cur}})",
+    "tierNote": "The Free plan only shows this week's score. Upgrade to Pro for 4/12-week trend charts and prevented violations.",
+    "proTitle": "Pro plan",
+    "proPrevented": "Violations prevented: {{count}} (from Decision Interruption)",
+    "proChart": "(4/12-week trend chart — completed in Phase 2)",
+    "disciplineDetail": "Discipline details",
+    "adherence": "Plan adherence: {{pct}}%",
+    "violations": "Violations this week: {{count}}",
+    "edgeDetail": "Edge details",
+    "pnlWeek": "Weekly PnL: ${{amount}}",
+    "avgRR": "Avg R:R: {{rr}}"
+  },
+  "weeklyAudit": {
+    "title": "Weekly Performance Audit",
+    "subtitle": "This week's summary — generated from real data, not AI.",
+    "trades": "trades",
+    "followedPlan": "followed plan",
+    "prevented": "The app helped you avoid {{count}} trades that would have broken your own rules.",
+    "opening": "This week you placed {{trades}} trades, {{pct}}% followed your plan.",
+    "noTrades": "No trades were recorded this week.",
+    "topViolationOne": "Most common violation: {{label}} (1 time).",
+    "topViolationMany": "Most common violation: {{label}} ({{count}} times).",
+    "noViolations": "No violations were recorded this week — keep it up.",
+    "positivePnl": "Weekly result: +${{amount}}. Keep maintaining this discipline.",
+    "negativePnl": "Weekly result: -${{amount}}. Check the plan-following % to tell whether it was strategy or behavior.",
+    "violation": {
+      "overconfidenceSize": "oversized entries",
+      "revengeTrading": "revenge trading",
+      "hopeTrading": "moving the Stop Loss",
+      "martingaleNegative": "increasing lot size after a loss",
+      "newsGambling": "trading before major news",
+      "maxDailyLoss": "exceeding the maximum daily loss",
+      "checklistSkipped": "skipping the checklist"
+    }
+  },
+  "setupAnalytics": {
+    "title": "Setup Analytics",
+    "subtitle": "Winrate, R:R and PnL by setup type — find out which strategy actually has an edge.",
+    "insightTitle": "💡 Insight (Pro)",
+    "trades": "Trades",
+    "tierNote": "The Free plan shows the overview table. Upgrade to Pro for written insights and trend charts over time.",
+    "progress": "Need {{need}} more trades (currently {{count}}/30) for a reliable analysis.",
+    "insightSingle": "Setup \"{{label}}\" is your most traded group with {{pnl}}$ PnL.",
+    "insightBestWorst": "Setup \"{{bestLabel}}\" has the best edge (+${{bestPnl}} PnL, {{bestWinrate}}% winrate) — while \"{{worstLabel}}\" is lowest ({{worstPnl}}$).",
+    "group": {
+      "breakout": "Breakout",
+      "rejection": "Rejection",
+      "trendContinuation": "Trend Continuation",
+      "uncategorized": "Uncategorized"
+    }
+  },
+  "dangerZone": {
+    "title": "Your danger zone",
+    "subtitle": "Repeated violation patterns by hour and trade order of the day — from real data.",
+    "notEnoughTrades": "You need at least 30 closed trades for a reliable pattern analysis (currently {{count}}/30).",
+    "noPattern": "You have {{count}} trades but no pattern repeated 5+ times yet — not enough to conclude.",
+    "chartTitle": "Violations by hour",
+    "noViolations": "No violations to display yet.",
+    "tierNote": "Pro sees detailed patterns + charts. Free sees a one-line summary on the Today Dashboard when enough data is available.",
+    "summary": "⚠️ Danger zone: you most often break discipline at {{hour}}:00 — {{count}} times (out of {{total}} trades).",
+    "nthOrderSummary": "⚠️ You most often break discipline on trade #{{nth}} of the day — {{count}} times (out of {{total}} trades)."
+  },
+  "portfolioRisk": {
+    "noData": "No data yet.",
+    "levelDanger": "⚠ ACCUMULATED RISK: {{total}}% exceeds the {{threshold}}% threshold",
+    "levelWarn": "Warning: total risk {{total}}% is approaching the {{threshold}}% threshold",
+    "levelOk": "Total risk {{total}}% — within the {{threshold}}% threshold",
+    "title": "Portfolio risk",
+    "subtitle": "Accumulated risk of open positions. Threshold = min(rule risk/trade × 3, max daily loss).",
+    "detail": "{{count}} open positions · threshold {{threshold}}%",
+    "noPositions": "No open positions yet (no closed executions). Record trades via the Widget or paste MT4.",
+    "estimated": "estimated",
+    "proGateTitle": "Correlation matrix — Pro feature",
+    "proGateText": "See correlations between your open positions (EURUSD ↔ XAUUSD ↔ USDJPY) to avoid stacking risk in the same direction. Unlock 24h of Pro by watching 1 ad.",
+    "proBtn": "Unlock Pro",
+    "corrTitle": "Correlation matrix (reference estimate)",
+    "corrNote": "Coefficients are market-convention estimates — not calculated from your real price data. Positive = same direction (stacked risk), negative = offsetting.",
+    "needTwoSymbols": "Need ≥ 2 different symbols to compute correlation.",
+    "currentSymbols": "Current symbols: {{symbols}}"
+  },
+  "pro": {
+    "title": "Unlock Pro",
+    "youArePro": "● YOU ARE PRO",
+    "hoursLeft": "{{hours}} left. Add 24h more by watching 1 ad.",
+    "youAreFree": "● YOU ARE ON THE FREE PLAN",
+    "freeText": "Pro unlocks: Discipline Score trend charts, portfolio correlation matrix, and Adaptive Rules. Watch 1 short ad to try it for 24 hours.",
+    "cooldown": "Try again in {{time}}",
+    "watchAd": "▶ Watch ad — unlock Pro for 24h",
+    "adNotConfigured": "Ads are not configured",
+    "cooldownHint": "You just watched an ad. Next watch is available in {{time}} to prevent spam.",
+    "admobHint": "The app is running without AdMob configured (missing App ID / Ad Unit ID). Add EXPO_PUBLIC_ADMOB_APP_ID and EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID and rebuild (AdMob needs a dev build, not Expo Go).",
+    "unlocked": "🎉 Pro unlocked for 24h (until {{until}}).",
+    "back": "Back"
+  },
+  "constitutionSettings": {
+    "title": "Trading constitution",
+    "subtitle": "YOUR rules — you set them, the app just helps you keep your promises. Changes take effect immediately, tracked by update time.",
+    "maxRules": "The {{tier}} plan can't add more: Free allows up to 3 rules.",
+    "adaptiveInvalid": "ATR threshold and reduced value must be numbers > 0.",
+    "adaptiveOnlyDecrease": "Adaptive can only DECREASE risk: adjusted value ({{adjusted}}%) must be ≤ base ({{base}}%). To increase, go through Decision Interruption.",
+    "empty": "No rules yet. Add one below.",
+    "delete": "Delete",
+    "updatedAt": "Updated: {{time}}",
+    "adaptiveTitle": "Adaptive by ATR",
+    "on": "on",
+    "off": "off",
+    "adaptiveHint": "When ATR exceeds the threshold, the app suggests DECREASING risk. The app never increases it on its own.",
+    "atrMultiple": "ATR multiple (x avg)",
+    "adjustedRisk": "Adjusted risk (%)",
+    "saveAdaptive": "Save Adaptive",
+    "removeAdaptive": "Remove Adaptive",
+    "addRule": "Add rule ({{count}}/3 Free · unlimited Pro)"
+  },
+  "disciplineExplainer": {
+    "title": "Discipline Score vs Edge Score",
+    "disciplineBody": "Measures how well you followed your own plan — not financial results.",
+    "edgeBody": "Measures strategy effectiveness: winrate, risk:reward, total PnL.",
+    "note": "A high discipline score doesn't guarantee profit — it guarantees you identify the real cause of losses: strategy or behavior."
+  },
+  "costCard": {
+    "title": "Cost of indiscipline",
+    "detailLine": "{{deviated}} trades deviated from plan out of {{total}} this period (assuming plan hit TP: +${{hypothetical}} vs actual ${{actual}})",
+    "skipNote": "Skipped {{count}} trades missing plan data (no guessing).",
+    "hiddenNotEnoughTrades": "Need more data to compute this metric (currently {{count}}/30 trades).",
+    "hiddenNotEnoughDeviated": "Need more data to compute this metric (currently {{count}}/3 deviated trades).",
+    "disclaimer": "This is a hypothetical estimate based on the difference between your plan and reality — not a profit guarantee. The original plan could still be wrong."
+  },
+  "mainLayout": {
+    "settings": "Settings",
+    "constitution": "Trading constitution",
+    "disciplineVsEdge": "Discipline vs Edge",
+    "newPlan": "Create Trade Plan",
+    "noPlan": "Trade outside plan",
+    "executionWidget": "Quick trade entry",
+    "pasteMt4": "Paste MT4/MT5",
+    "journal": "Journal",
+    "tradeDetail": "Trade details",
+    "scores": "Scores",
+    "weeklyAudit": "Weekly Audit",
+    "pro": "Unlock Pro",
+    "portfolioRisk": "Portfolio risk",
+    "setupAnalytics": "Setup Analytics",
+    "dangerZone": "Danger zone"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "pageTitle": "This page doesn't exist",
+    "subtitle": "The link you opened doesn't exist in the app. Go back to the home page to continue.",
+    "home": "Go to home",
+    "homeLink": "or open home (link)"
+  },
+  "chart": {
+    "loading": "Loading chart {{symbol}}…",
+    "loadError": "Couldn't load the chart — check your connection.",
+    "webLoadFail": "Couldn't load TradingView — check your connection.",
+    "webLoadError": "Chart load error"
+  },
+  "weaknessLabels": {
+    "revengeTrading": "Revenge trading",
+    "revengeTradingDesc": "Opening trades against the trend right after a stop loss.",
+    "movesSl": "Moving the Stop Loss",
+    "movesSlDesc": "Moving SL further away when price goes against expectations.",
+    "increasesLot": "Increasing lot after a loss",
+    "increasesLotDesc": "Increasing size to \"win back\" after a losing trade.",
+    "tradesBeforeNews": "Trading before major news",
+    "tradesBeforeNewsDesc": "Entering right before/during major economic news (NFP, CPI...).",
+    "tradesWithoutPlan": "Trading without a plan",
+    "tradesWithoutPlanDesc": "Not defining Entry/SL/TP in advance.",
+    "overtrades": "Overtrading",
+    "overtradesDesc": "More trades in a day than the original plan.",
+    "overconfidentSize": "Oversized entries",
+    "overconfidentSizeDesc": "Entering with a lot size larger than your set risk."
+  },
+  "interruption": {
+    "benchmark": {
+      "overRisk": "73% of traders who increase risk after a loss lose the next trade too. Exceeding your risk limit increases your blow-up risk.",
+      "maxDailyLoss": "Most traders lose more after hitting their maximum daily loss. Stopping is the right decision.",
+      "revengePattern": "73% of traders who increase lot size after a loss lose the next trade too. You are opening a counter-trend trade right after a loss."
+    },
+    "personalOverRisk": "Risk {{risk}}% exceeds your {{limit}}% limit. In the past you usually lost more when going above your risk limit.",
+    "personalMaxDailyLoss": "You lost ${{loss}} today, reaching your ${{limit}} limit. In the past, continuing after hitting the limit usually deepened the loss.",
+    "personalRevenge": "You just lost ${{lastLoss}}. Last time you opened a counter-trend trade right after a loss, you lost an average of ${{avgLoss}} more. Are you sure you want to continue?"
+  },
+  "mt4Parser": {
+    "noHeader": "Couldn't find the column header row (Order/Ticket, Type, Symbol...) — not a valid MT4 format.",
+    "badType": "Unrecognized Type: \"{{type}}\"",
+    "missingFields": "Missing valid Symbol / Volume / Price.",
+    "badTime": "Invalid open time format (YYYY.MM.DD HH:MM): \"{{time}}\""
+  },
+  "fastPlan": {
+    "reasonSymbol": "Please choose a Symbol.",
+    "reasonEntry": "Please enter a valid Entry (number > 0).",
+    "reasonSl": "SL is required — please enter SL (hard block to protect the Risk Engine).",
+    "reasonEntrySlSame": "Entry and SL must be different.",
+    "reasonRisk": "Please enter a valid Risk % (number > 0)."
+  },
+  "atr": {
+    "notActive": "Adaptive not triggered — keeping original risk.",
+    "missingData": "Missing ATR data — keeping original risk (no self-adjustment).",
+    "activeReason": "Current ATR = {{atrNow}} ({{ratio}}x the {{atrAverage}} average) — above the {{threshold}}x threshold. Adaptive lowers risk {{base}}% → {{suggested}}%."
+  },
+  "ruleTemplate": {
+    "maxRiskPerTrade": "Max risk per trade",
+    "maxRiskPerTradeDesc": "Maximum percentage of your account you accept to risk on each trade.",
+    "maxDailyLoss": "Max daily loss",
+    "maxDailyLossDesc": "When daily losses hit this level, you stop trading.",
+    "noRevengeTrade": "No revenge trading",
+    "noRevengeTradeDesc": "Don't open counter-trend trades within X minutes of a stop loss.",
+    "noTradeBeforeNews": "No trades before major news",
+    "noTradeBeforeNewsDesc": "Don't open new trades within X minutes before HIGH IMPACT economic news.",
+    "maxOpenPositions": "Max open positions",
+    "maxOpenPositionsDesc": "Limit on simultaneously open positions."
+  },
+  "notification": {
+    "morningTitle": "Have a great trading day",
+    "morningScore": "Yesterday's Discipline Score: {{score}}.",
+    "morningNoScore": "Start recording trades to get a discipline score.",
+    "morningNoRules": "Set up your trading constitution to begin.",
+    "morningRules": "Today's rules: {{rules}}.",
+    "eveningTitle": "Review today",
+    "eveningBody": "You closed {{count}} trades today. Spend 1 minute reviewing — every observation is information, not judgment.",
+    "managerMorningBody": "Open the app to see today's Discipline Score and rules.",
+    "managerEveningBody": "You have closed trades today. Spend 1 minute reviewing — information, not judgment."
+  },
+  "admob": {
+    "notConfigured": "AdMob is not configured (missing Ad Unit ID).",
+    "timeout": "The ad took too long to load, try again later.",
+    "closedEarly": "You closed the ad before it finished.",
+    "loadError": "Ad load error: {{message}}",
+    "webUnsupported": "AdMob is not supported on web."
+  },
+  "proUnlock": {
+    "cooldown": "You just watched an ad. Try again in {{time}}.",
+    "notCompleted": "Ad not fully watched.",
+    "notLoggedIn": "Not logged in.",
+    "saveError": "Failed to save Pro: {{message}}"
+  },
+  "tier": {
+    "expired": "expired",
+    "minutes": "{{count}} minutes",
+    "hours": "{{count}} hours",
+    "hoursMinutes": "{{hours}} hours {{minutes}} minutes"
+  }
+}

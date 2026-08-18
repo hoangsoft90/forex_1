@@ -17,3 +17,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     }),
   },
 }));
+
+// expo-localization: mock ổn định cho test (i18n detect locale)
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'vi', languageTag: 'vi-VN' }]),
+}));
+
+// Khởi tạo i18n (lng mặc định 'vi') — mọi component dùng useTranslation()
+// trong test đều lấy được translation thật thay vì raw key.
+require('@/i18n');
