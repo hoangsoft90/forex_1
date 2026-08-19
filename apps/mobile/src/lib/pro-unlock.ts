@@ -50,11 +50,9 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
     return { ok: false, reason: ad.error ?? i18n.t('proUnlock.notCompleted') };
   }
 
-  // Ghi nhận client-side để hiện cooldown/đếm ngược ngay — nhưng nguồn chân lý
-  // là SERVER (edge unlock-pro check pro_unlocks.granted_at, đồng hồ server).
-  await recordRewardedAt();
-
   // Server-side grant: cooldown thật + upsert profile + insert pro_unlocks.
+  // KHÔNG recordRewardedAt() ở đây — chỉ ghi SAU khi server confirm thành công
+  // để tránh trường hợp server fail → user bị cooldown 5 phút mà không có Pro.
   const { data, error: invokeErr } = await supabase.functions.invoke('unlock-pro', {});
   if (invokeErr) {
     // invokeErr.functionsHttpError chứa response body lỗi (VD 429 cooldown từ server).
@@ -75,5 +73,9 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
   if (result?.ok !== true || !result.expiresAt) {
     return { ok: false, reason: result?.error ?? i18n.t('proUnlock.saveError', { message: 'unknown' }) };
   }
+
+  // Server confirm thành công → giờ mới ghi client-side cooldown.
+  await recordRewardedAt();
+
   return { ok: true, expiresAt: result.expiresAt };
 }

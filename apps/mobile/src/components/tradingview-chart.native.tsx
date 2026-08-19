@@ -35,8 +35,9 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
   const html = useMemo(() => {
     const tv = tvSymbol(symbol);
     const loadFailMsg = t('chart.webLoadFail');
-    const loadErrMsg = t('chart.webLoadError');
-    // TradingView advanced chart widget — embed script chuẩn (v3).
+    // TradingView iframe embed — ổn định hơn JS widget trên Android WebView
+    // (tránh lỗi load event timing + script S3).*
+    const iframeSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(tv)}&interval=15&timezone=Asia%2FHo_Chi_Minh&theme=light&style=1&locale=${tvLocale}&hide_side_toolbar=0&allow_symbol_change=0&autosize=1`;
     return `
 <!DOCTYPE html>
 <html>
@@ -44,48 +45,22 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
-  html, body { margin: 0; padding: 0; background: #fff; }
-  #tv-wrap { width: 100%; height: 100%; }
+  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+  iframe { width: 100%; height: 100%; border: none; }
+  .error-msg { padding: 20px; font-family: sans-serif; color: #888; text-align: center; }
 </style>
 </head>
 <body>
-<div id="tv-wrap">
-  <!-- TradingView Widget BEGIN -->
-  <div class="tradingview-widget-container" style="width:100%;height:100%">
-    <div id="tradingview_placeholder" style="width:100%;height:100%"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script type="text/javascript">
-      window.addEventListener('load', function () {
-        try {
-          if (typeof TradingView === 'undefined') {
-            document.getElementById('tradingview_placeholder').innerHTML =
-              '<p style="padding:20px;font-family:sans-serif;color:#888">${loadFailMsg}</p>';
-            return;
-          }
-          new TradingView.widget({
-            container_id: 'tradingview_placeholder',
-            autosize: true,
-            symbol: '${tv}',
-            interval: '15',
-            timezone: 'Asia/Ho_Chi_Minh',
-            theme: 'light',
-            style: '1',
-            locale: '${tvLocale}',
-            toolbar_bg: '#f1f3f6',
-            enable_publishing: false,
-            allow_symbol_change: false,
-            hide_side_toolbar: false,
-            studies: [],
-          });
-        } catch (e) {
-          document.getElementById('tradingview_placeholder').innerHTML =
-            '<p style="padding:20px;font-family:sans-serif;color:#888">${loadErrMsg}: ' + e.message + '</p>';
-        }
-      });
-    </script>
+  <iframe
+    src="${iframeSrc}"
+    title="TradingView ${tv}"
+    allowfullscreen
+    onload="document.getElementById('tv-loading').style.display='none'"
+    onerror="document.getElementById('tv-loading').innerHTML='<p class=\'error-msg\'>${loadFailMsg}</p>'"
+  ></iframe>
+  <div id="tv-loading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#f8f8f8">
+    <p class="error-msg">${t('chart.loading', { symbol })}</p>
   </div>
-  <!-- TradingView Widget END -->
-</div>
 </body>
 </html>`;
   }, [symbol, t, tvLocale]);
