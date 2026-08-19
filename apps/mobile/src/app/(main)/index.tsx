@@ -11,11 +11,12 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import CostOfIndisciplineCard from '@/components/cost-of-indiscipline-card';
+import { useGuidance } from '@/components/guidance-context';
 import { useAuth } from '@/lib/auth-context';
 import { computeCostOfIndiscipline, CostResult } from '@/lib/cost-of-indiscipline';
 import { computeDisciplineStreak } from '@/lib/discipline-streak';
 import { dangerZoneSummary, findDangerZonePattern, DangerZonePattern } from '@/lib/danger-zone';
-import { markDashboardSeen, requestNotificationPermissionIfEligible } from '@/lib/notification-manager';
+import { markDashboardSeen, requestNotificationPermissionIfEligible, syncEveningNotification } from '@/lib/notification-manager';
 import { formatHoursLeft, getProStatus } from '@/lib/tier';
 import { RULE_TEMPLATES } from '@/lib/trading-rules';
 import { supabase } from '@/lib/supabase';
@@ -49,6 +50,11 @@ export default function TodayDashboard() {
   const router = useRouter();
   const { user, signOut, onboarding, tier, subscriptionExpiresAt } = useAuth();
   const pro = getProStatus(tier, subscriptionExpiresAt);
+
+  // In-app Guidance: refs cho element target của tour user mới (Quick Plan + Journal)
+  const { registerTarget, startTour, isTourActive } = useGuidance();
+  const quickPlanRef = registerTarget('dashboard.quickPlan');
+  const journalRef = registerTarget('dashboard.journal');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,8 +62,13 @@ export default function TodayDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const [{ data: snapshots }, { data: rules }, { data: open }, { data: closed }, { data: violations }, { data: closedFull }, { data: deltas }, { data: plans }] =
+      const [{ data: profile }, { data: snapshots }, { data: rules }, { data: open }, { data: closed }, { data: violations }, { data: closedFull }, { data: deltas }, { data: plans }] =
         await Promise.all([
+          supabase
+            .from('user_profiles')
+            .select('timezone')
+            .eq('id', user.id)
+            .maybeSingle(),
           supabase
             .from('discipline_score_snapshots')
             .select('score, period_start, period_end')
@@ -99,16 +110,21 @@ export default function TodayDashboard() {
       const closedList = (closed ?? []) as { id: string; entry_time: string }[];
 
       // ---- Danger zone: cần lệnh ĐÃ ĐÓNG (≥30) + violation gắn lệnh đóng ----
+      // Module 6: giờ pattern tính theo user_profiles.timezone (fallback device-local)
+      const userTimezone = (profile?.timezone as string | undefined) ?? undefined;
       let dangerZone: DangerZonePattern | null = null;
       if (closedList.length >= 30) {
         const violList = (violations ?? []) as {
           trade_execution_id: string | null;
           is_negative: boolean;
         }[];
-        dangerZone = findDangerZonePattern({
-          closedExecutions: closedList,
-          violations: violList,
-        });
+        dangerZone = findDangerZonePattern(
+          {
+            closedExecutions: closedList,
+            violations: violList,
+          },
+          userTimezone,
+        );
       }
 
       // ---- Cost of Indiscipline (Module 4) — công thức spec, ngưỡng 30/3 ----
@@ -197,7 +213,37 @@ export default function TodayDashboard() {
     // Module 8 (Retention): opt-in đúng ngữ cảnh — chỉ hỏi permission SAU lần đầu thấy Dashboard,
     // không phải ngay lúc mở app lần đầu.
     markDashboardSeen().then(() => requestNotificationPermissionIfEligible());
+    // Re-sync evening review mỗi khi mở app: nếu hôm nay có lệnh đóng → schedule one-shot,
+    // không có → im lặng (không spam ngày trống — AC Module 8).
+    syncEveningNotification().catch(() => {});
   }, [loadDashboard]);
+
+  // Tour chào mừng cho USER MỚI (chưa có lệnh/score — cùng điều kiện card "How to start?"):
+  // hiện 1 lần duy nhất (trigger show-once trong startTour), spotlight Quick Plan → Journal.
+  const isNewUser = !!data && data.latestScore == null && data.openExecs.length === 0;
+  useEffect(() => {
+    if (!isNewUser || isTourActive) return;
+    void startTour({
+      tourId: 'dashboard-welcome',
+      newUsersOnly: true,
+      isNewUser,
+      steps: [
+        {
+          id: 'step1-quickPlan',
+          targetKey: 'dashboard.quickPlan',
+          title: t('guidance.dashboardTour.step1.title'),
+          body: t('guidance.dashboardTour.step1.body'),
+        },
+        {
+          id: 'step2-journal',
+          targetKey: 'dashboard.journal',
+          title: t('guidance.dashboardTour.step2.title'),
+          body: t('guidance.dashboardTour.step2.body'),
+          placement: 'bottom',
+        },
+      ],
+    });
+  }, [isNewUser, isTourActive, startTour, t]);
 
   if (loading && !data) {
     return (
@@ -218,8 +264,8 @@ export default function TodayDashboard() {
         {t('dashboard.greeting', { name: user?.email?.split('@')[0] ?? 'trader' })}
       </Text>
 
-      {/* Nút Quick Plan nổi bật — dẫn thẳng Fast Plan */}
-      <TouchableOpacity style={styles.quickPlanBtn} onPress={() => router.push('/(main)/new-plan')}>
+      {/* Nút Quick Plan nổi bật — dẫn thẳng Fast Plan (target tour user mới) */}
+      <TouchableOpacity ref={quickPlanRef} style={styles.quickPlanBtn} onPress={() => router.push('/(main)/new-plan')}>
         <Text style={styles.quickPlanText}>{t('dashboard.quickPlan')}</Text>
         <Text style={styles.quickPlanSub}>{t('dashboard.quickPlanSub')}</Text>
       </TouchableOpacity>
@@ -328,7 +374,7 @@ export default function TodayDashboard() {
 
       {/* Điều hướng nhanh */}
       <View style={styles.navGrid}>
-        <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/journal')}>
+        <TouchableOpacity ref={journalRef} style={styles.navBtn} onPress={() => router.push('/(main)/journal')}>
           <Text style={styles.navBtnText}>{t('dashboard.navJournal')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/(main)/paste-mt4')}>

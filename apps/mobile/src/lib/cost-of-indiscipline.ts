@@ -88,6 +88,47 @@ function pipStep(symbol: string): number {
   return 0.0001;
 }
 
+/** 1 lệnh lệch plan — breakdown chi tiết cho màn Pro (Module 4 gating). */
+export type DeviatedTradeRow = {
+  execId: string;
+  symbol: string;
+  direction: 'buy' | 'sell';
+  actualPnl: number;
+  /** PnL giả định nếu theo plan (null nếu thiếu planned_tp — không suy đoán) */
+  hypotheticalPnl: number | null;
+};
+
+/**
+ * Breakdown từng lệnh lệch plan (Pro): lệnh có đủ planned_entry/sl/tp → hypothetical
+ * tính được; thiếu → hypotheticalPnl null (loại khỏi hypothetical nhưng vẫn liệt kê).
+ */
+export function deviatedTradesBreakdown(input: CostInput): DeviatedTradeRow[] {
+  const rows: DeviatedTradeRow[] = [];
+  for (const e of input.executions) {
+    const followed = input.followedByExec[e.id];
+    if (followed !== false) continue; // chỉ lệnh lệch plan
+    const plan = input.plansByExec[e.id];
+    const complete =
+      plan && plan.planned_tp != null && plan.planned_entry > 0 && plan.planned_sl > 0;
+    rows.push({
+      execId: e.id,
+      symbol: e.symbol,
+      direction: e.direction,
+      actualPnl: e.pnl_amount ?? 0,
+      hypotheticalPnl: complete
+        ? hypotheticalPnlAtTp(
+            e.symbol,
+            e.direction,
+            e.lot_size,
+            plan!.planned_entry,
+            plan!.planned_tp as number,
+          )
+        : null,
+    });
+  }
+  return rows;
+}
+
 /**
  * Tính cost_of_indiscipline theo công thức spec.
  * Bỏ qua lệnh lệch plan thiếu planned_entry/sl/tp (không gán giá trị suy đoán).

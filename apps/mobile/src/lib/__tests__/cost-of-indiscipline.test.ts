@@ -1,6 +1,7 @@
 import {
   computeCostOfIndiscipline,
   COST_DISCLAIMER,
+  deviatedTradesBreakdown,
   hypotheticalPnlAtTp,
   MIN_DEVIATED_FOR_COST,
   MIN_TRADES_FOR_COST,
@@ -112,6 +113,29 @@ describe('Cost of Indiscipline (Module 4)', () => {
     const r = computeCostOfIndiscipline({ executions, followedByExec, plansByExec: {} });
     expect(r.showable).toBe(false);
     expect(r.hiddenReason).toContain('2/3');
+  });
+
+  it('MODULE 4 FIX (Pro breakdown): liệt kê đúng lệnh lệch plan, hypothetical null khi thiếu TP', () => {
+    const executions = [
+      ...Array.from({ length: 28 }, (_, i) => exec(`p${i}`, 5)),
+      exec('d1', -25, 'EURUSD', 'buy', 0.1),
+      exec('d2', -40, 'EURUSD', 'buy', 0.1),
+      exec('d3', -15, 'EURUSD', 'buy', 0.1),
+    ];
+    const followedByExec: Record<string, boolean> = {};
+    executions.forEach((e) => (followedByExec[e.id] = !e.id.startsWith('d')));
+    const plansByExec = {
+      d1: plan(1.1, 1.095, 1.11), // đủ TP → hypothetical tính được
+      d2: plan(1.1, 1.095, null), // thiếu TP → hypothetical null
+      d3: plan(1.1, 1.095, 1.105), // đủ TP
+    };
+    const rows = deviatedTradesBreakdown({ executions, followedByExec, plansByExec });
+    expect(rows).toHaveLength(3);
+    const d1 = rows.find((r) => r.execId === 'd1')!;
+    const d2 = rows.find((r) => r.execId === 'd2')!;
+    expect(d1.actualPnl).toBe(-25);
+    expect(d1.hypotheticalPnl).toBeCloseTo(100, 4); // buy 1.1→1.11 = +100 pips × $1/pip
+    expect(d2.hypotheticalPnl).toBeNull(); // không suy đoán
   });
 
   it('followed_plan=null (không có delta) giữ nguyên PnL thật như lệnh theo plan', () => {

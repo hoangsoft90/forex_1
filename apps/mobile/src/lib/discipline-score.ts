@@ -72,8 +72,8 @@ export function computeEdgeScore(input: EdgeScoreInput): EdgeScoreResult {
   };
 }
 
-/** Lấy period_start/period_end (date string) của tuần chứa một ngày (thứ 2 → Chủ nhật). */
-export function weekBounds(day: Date): { start: string; end: string } {
+/** weekBounds với timezone device-local (fallback khi không có timezone IANA). */
+function deviceLocalBounds(day: Date): { start: string; end: string } {
   const d = new Date(day);
   const dow = (d.getDay() + 6) % 7; // 0 = Thứ 2
   const start = new Date(d);
@@ -83,6 +83,45 @@ export function weekBounds(day: Date): { start: string; end: string } {
   end.setDate(start.getDate() + 6);
   end.setHours(23, 59, 59, 999);
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
+/**
+ * Lấy period_start/period_end (date string) của tuần chứa một ngày (thứ 2 → Chủ nhật).
+ *
+ * P1-4: truyền `timezone` (IANA, VD 'Asia/Ho_Chi_Minh' từ user_profiles.timezone) để
+ * ngày thứ 2/Chủ nhật tính theo CALENDAR DATE trong timezone đó — trước đây dùng
+ * `toISOString()` đổi sang UTC nên user tz+ (VN) bị lệch 1 ngày (period_start = Chủ
+ * nhật thay vì thứ 2 → snapshot key + cửa sổ query sai).
+ */
+export function weekBounds(day: Date, timezone?: string): { start: string; end: string } {
+  const tz = timezone && timezone.trim() ? timezone : undefined;
+  if (!tz) return deviceLocalBounds(day);
+  try {
+    const ymd = (d: Date) => {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(d);
+      const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+      return { y: get('year'), m: get('month'), d: get('day') };
+    };
+    const fmt = (v: { y: number; m: number; d: number }) =>
+      `${v.y}-${String(v.m).padStart(2, '0')}-${String(v.d).padStart(2, '0')}`;
+    const today = ymd(day);
+    // Weekday của 1 ngày dương lịch là cố định (không phụ thuộc timezone).
+    const dow = (new Date(Date.UTC(today.y, today.m - 1, today.d)).getUTCDay() + 6) % 7; // 0 = Thứ 2
+    const startNaive = new Date(Date.UTC(today.y, today.m - 1, today.d - dow));
+    const endNaive = new Date(Date.UTC(today.y, today.m - 1, today.d - dow + 6));
+    return {
+      start: fmt({ y: startNaive.getUTCFullYear(), m: startNaive.getUTCMonth() + 1, d: startNaive.getUTCDate() }),
+      end: fmt({ y: endNaive.getUTCFullYear(), m: endNaive.getUTCMonth() + 1, d: endNaive.getUTCDate() }),
+    };
+  } catch {
+    // timezone không hợp lệ (không phải IANA) → fallback device-local
+    return deviceLocalBounds(day);
+  }
 }
 
 function clamp(n: number, min: number, max: number): number {

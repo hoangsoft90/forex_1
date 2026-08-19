@@ -26,7 +26,13 @@ export default function WeeklyAuditScreen() {
   const loadAudit = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { start, end } = weekBounds(new Date());
+    // Timezone user (P1-4): tuần tính theo calendar date trong user_profiles.timezone.
+    const { data: tzRow } = await supabase
+      .from('user_profiles')
+      .select('timezone')
+      .eq('id', user.id)
+      .maybeSingle();
+    const { start, end } = weekBounds(new Date(), tzRow?.timezone as string | undefined);
 
     const [{ data: executions }, { data: deltas }, { data: violations }, { data: interruptions }, { data: plans }] =
       await Promise.all([

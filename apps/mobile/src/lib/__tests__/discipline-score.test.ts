@@ -87,4 +87,27 @@ describe('weekBounds — snapshot 1 lần/tuần', () => {
     const { end } = weekBounds(new Date('2026-08-23T10:00:00'));
     expect(end).toBe('2026-08-23');
   });
+
+  it('P1-4: tz +7 — local thứ 2 00:00 (UTC Chủ nhật 17:00) KHÔNG bị lệch 1 ngày', () => {
+    // 2026-08-17T17:00Z = 2026-08-18 00:00 giờ VN (thứ 3) → tuần vẫn bắt đầu thứ 2 17/08
+    const { start, end } = weekBounds(new Date('2026-08-17T17:00:00Z'), 'Asia/Ho_Chi_Minh');
+    expect(start).toBe('2026-08-17');
+    expect(end).toBe('2026-08-23');
+  });
+
+  it('P1-4: tz −7 — Chủ nhật 23:59 local (UTC thứ 2 06:59) thuộc tuần TRƯỚC', () => {
+    // 2026-08-17 là thứ 2. 2026-08-17T06:59Z = 2026-08-16 23:59 giờ LA (Chủ nhật) → tuần 10/08
+    const { start } = weekBounds(new Date('2026-08-17T06:59:00Z'), 'America/Los_Angeles');
+    expect(start).toBe('2026-08-10');
+    // 1 phút sau: 2026-08-17 00:00 giờ LA (thứ 2) → tuần 17/08
+    const { start: nextStart } = weekBounds(new Date('2026-08-17T07:00:00Z'), 'America/Los_Angeles');
+    expect(nextStart).toBe('2026-08-17');
+  });
+
+  it('P1-4: timezone không hợp lệ → fallback device-local, không throw', () => {
+    expect(() => weekBounds(new Date('2026-08-19T12:00:00'), 'Not/AZone')).not.toThrow();
+    const r = weekBounds(new Date('2026-08-19T12:00:00'), 'Not/AZone');
+    expect(r.start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(r.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 });

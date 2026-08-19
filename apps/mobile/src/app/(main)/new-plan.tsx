@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -18,6 +18,7 @@ import { checkInterruption, ClosedExecution, Interruption } from '@/lib/interrup
 import { useAuth } from '@/lib/auth-context';
 import { validateFastPlan } from '@/lib/fast-plan';
 import { safeBack } from '@/lib/navigation';
+import { parseDecimalInput } from '@/lib/parse-number';
 import {
   calculateLotSize,
   calculateRiskAmount,
@@ -56,6 +57,9 @@ export default function NewPlanScreen() {
   const [confidence, setConfidence] = useState(3);
 
   const [saving, setSaving] = useState(false);
+  // Chống double-submit: state update bất đồng bộ nên disabled={saving} chưa đủ —
+  // tap nhanh 2 lần trong cùng frame sẽ lọt qua. Ref đồng bộ chặn ngay lần 2.
+  const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [interruption, setInterruption] = useState<Interruption | null>(null);
   // Phase 2: adaptive condition + kết quả đề xuất ATR
@@ -124,10 +128,10 @@ export default function NewPlanScreen() {
     trackEvent(FAST_PLAN_EVENTS.OPENED, { source: 'fast-plan-screen' });
   }, [loadConfig]);
 
-  const entryNum = parseFloat(entry);
-  const slNum = parseFloat(sl);
-  const tpNum = tp ? parseFloat(tp) : null;
-  const riskNum = parseFloat(riskPercent);
+  const entryNum = parseDecimalInput(entry) ?? 0;
+  const slNum = parseDecimalInput(sl) ?? 0;
+  const tpNum = tp ? parseDecimalInput(tp) : null;
+  const riskNum = parseDecimalInput(riskPercent) ?? 0;
 
   // Validate chặn cứng 5 trường (SL bắt buộc — bảo vệ Risk Engine, không thương lượng).
   const validation = validateFastPlan({ symbol, direction, entry, sl, riskPercent });
@@ -244,7 +248,8 @@ export default function NewPlanScreen() {
 
   /** Lưu plan + ghi decision_interruption nếu user chọn "Tiếp tục" sau interruption. */
   async function savePlan(interruptionResult: Interruption | null = null) {
-    if (!user) return;
+    if (!user || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -283,6 +288,7 @@ export default function NewPlanScreen() {
       setError(e instanceof Error ? e.message : t('newPlan.errorSave'));
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -489,10 +495,11 @@ export default function NewPlanScreen() {
             <Text style={styles.interruptionTitle}>{t('newPlan.interruptionTitle')}</Text>
             <Text style={styles.interruptionText}>{interruption.evidenceText}</Text>
             <TouchableOpacity
-              style={styles.interruptionDanger}
+              style={[styles.interruptionDanger, saving && styles.btnDisabled]}
               onPress={handleProceedAfterInterruption}
+              disabled={saving}
             >
-              <Text style={styles.interruptionDangerText}>{t('newPlan.continue')}</Text>
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.interruptionDangerText}>{t('newPlan.continue')}</Text>}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.interruptionCancel}

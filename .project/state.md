@@ -15,7 +15,10 @@
 | **Retention Layer (9 module 0–8)** | ✅ Code xong + review | 147 → 224 test, review thêm +2 = 226 |
 | OpenSpec sync đợt Retention | ✅ Archived `2026-08-17-retention-layer` | 22 specs / 91 requirements |
 | `can_lam.md` (việc user cần làm) | ✅ Đã tạo | 12 việc phân ưu tiên |
-| **Đa ngôn ngữ (app-i18n)** | 🔄 Đang triển khai — UI + nội dung động + edge xong, còn verify/docs/review | vi + en (i18next); 242 test |
+| **Đa ngôn ngữ (app-i18n)** | ✅ Code xong | vi + en (i18next); 242 test |
+| In-app Guidance & Onboarding | ✅ Code xong | FeatureBadge/Tooltip/Spotlight/Tour; 269 test |
+| **Audit Checkpoint 1 (P0-P1 fix)** | ✅ 3 P0 + 10 P1 đã fix | Smoke test thật pass |
+| **Audit Checkpoint 2+3 (P14-P35 QA)** | ✅ Audit xong — **0 P0/P1 mới** | 10 P2, báo cáo `.project/audit-checkpoint2-3.md` |
 
 ## Todo còn lại (theo thứ tự ưu tiên)
 
@@ -87,21 +90,38 @@
 | Instant Audit M3 gate cứng: ≥95% parse thật mới bật; dưới ngưỡng → fallback quiz VĨNH VIỄN | Nguyên tắc bất biến user chốt — không hạ ngưỡng, không có deadline ép |
 | Fast Plan GIỮ SL bắt buộc (5 trường, không rút xuống 3) | Không đổi đề xuất gốc từng có — phá vỡ công thức lot size Phase 1 |
 | Ngưỡng thống nhất ≥30 lệnh đóng (cost 30/3, setup 30, danger-zone 30+5 lần) — KHÔNG hạ để demo | Nguyên tắc bất biến; test assert hằng số |
+| In-app Guidance tự build (KHÔNG thêm dep ngoài react-native-copilot/onboarding) | FeatureBadge/Tooltip/Spotlight/DisabledStateHelper đều từ RN core + AsyncStorage + i18n có sẵn; position math tách lib thuần `guidance-position.ts` (flip/clamp, test được) |
+| Trigger guidance chỉ-1-lần qua AsyncStorage (`guidance.tour.<id>.seen`, `guidance.feature.<key>.dismissed`), fail-open | Không spam user lặp lại action; không đổi schema/DB — trạng thái guidance local |
+| Tour dashboard chỉ chạy cho user mới (`latestScore == null && openExecs.length === 0` — trùng điều kiện card "How to start?") | Tránh phiền user cũ; Spotlight đo element qua `measureInWindow` (native) / `getBoundingClientRect` (web) |
 | Cost of Indiscipline disclaimer hiển thị ngay dưới con số (không footnote), đúng nguyên văn | Nguyên tắc bất biến — snapshot test không cho rút gọn |
 | M4 giả định: "PnL giả định lệnh lệch plan = đạt planned_tp" | ⚠️ CHƯA user duyệt — spec không ghi kết cục giả định; sửa 1 hàm nếu user chọn khác |
+| **Checkpoint 2+3: KHÔNG P0/P1 mới** — tất cả 26 feature đều PASS hoặc BLOCKED (device-level); 10 P2 improvements identified | Core logic đã稳固; main gaps: component tests, integration tests, performance with large datasets |
 | Notification = LOCAL (expo-notifications), chưa server push | Đủ Phase này; cột `push_token` đã sẵn nếu sau này làm remote push qua Edge Function |
 | Notification permission hỏi SAU lần đầu thấy Dashboard (markDashboardSeen) | Đúng ngữ cảnh, không hỏi ngay mở app lần đầu, không hỏi lại lần 2 |
 | Evening notification chỉ khi có lệnh đóng trong ngày | Tránh notification rỗng gây khó chịu (AC bắt buộc) |
-| Danger Zone pattern "lệnh thứ N" đếm theo `entry_time` (UTC, chưa theo timezone user) | Phase 8 sẽ thêm timezone cho notification — báo user nếu cần chuyển múi giờ |
+| Evening notification = **one-shot hôm nay + re-sync khi mở app/đóng lệnh/save settings** (KHÔNG DAILY-repeating) | Fix P1 từ audit Checkpoint 1: DAILY-repeating gửi cả ngày không có lệnh (spam) + check tại save-time bỏ sót lệnh đóng muộn. Re-sync đảm bảo kiểm tra "có lệnh đóng hôm nay" ở thời điểm gần trigger nhất có thể với local notification |
+| Danger Zone pattern giờ/ngày tính theo `user_profiles.timezone` (IANA) — `hourInZone`/`dayKeyInZone` qua Intl, fallback device-local khi timezone null/không hợp lệ | Fix P1 từ audit Checkpoint 1: trước đây giờ = device-local (getHours) nhưng ngày = UTC (slice 0,10) — bất nhất; user đổi timezone thiết bị → pattern dịch chuyển sai |
+| Edge `parse-mt4` gate server-side: `purpose='instant_audit'` → check `INSTANT_AUDIT_ENABLED` trong feature_flags (403 nếu false); paste-mt4 (Module 5 core) không gửi purpose → không bị chặn | Fix P0 từ audit Checkpoint 1: trước đây cờ chỉ check client-side — gọi thẳng edge function bypass được gate. Smoke test thật: instant_audit→403, import→200 |
+| Guard double-submit Fast Plan: `savingRef` (đồng bộ) + `disabled` trên nút "Tiếp tục" sau interruption | Fix P1 từ audit Checkpoint 1: tap nhanh 2 lần tạo duplicate trade_plans + decision_interruptions |
+| Cost of Indiscipline breakdown từng lệnh lệch plan = Pro (màn Pro) — `deviatedTradesBreakdown`, thiếu planned_tp → null (không suy đoán), kèm disclaimer cố định | Fix P1 từ audit Checkpoint 1: spec M4 yêu cầu breakdown Pro nhưng chưa implement; giờ đúng gating Free 1 dòng / Pro chi tiết |
 | i18n = **i18next + react-i18next + expo-localization** (đợt này vi + en; kiến trúc mở rộng zh/ja/ko/es bằng thêm file json + 1 dòng SUPPORTED_LANGS) | User chốt: full scope (UI + nội dung động + edge parse-mt4) + auto-detect + Settings picker |
 | Pure lib dùng `i18next.t` trực tiếp — **KHÔNG đổi signature hàm** | Giữ 226 test cũ pass (jest init lng:'vi'); thêm test so khớp key vi↔en + nội dung động en |
 | Preference ngôn ngữ lưu **AsyncStorage local** (không đổi schema DB) | Tránh đụng ràng buộc schema cứng; detect = preference → thiết bị → fallback vi |
 | Edge `parse-mt4` nhận `lang` trong body (mặc định vi) — dictionary message vi/en | Logic parse KHÔNG đổi — chỉ message hiển thị; đã redeploy + smoke test cả 2 ngôn ngữ |
 | i18n chỉ dịch **message hiển thị**, không dịch log dev (console.warn) / comment | Tránh phình file dịch với text không user thấy |
+| `actual_risk_percent` tính NGƯỢC từ lot × pip × pip value ÷ balance × 100 — `calculateActualRiskPercent` (risk-engine, thuần + test) | Fix P0-A từ audit Checkpoint 1: field chưa từng được ghi (widget/parse-mt4 hardcode null) → followed_plan luôn false, Discipline Score/Streak/Cost vô nghĩa. Widget + parse-mt4 edge tính lúc ghi; compute-deltas backfill khi null. Thiếu SL/balance → null, KHÔNG suy đoán |
+| Edge `detect-violations` được gọi từ widget sau khi đóng lệnh (fire-and-forget, mọi lệnh đóng) | Fix P0-B: edge chưa từng được gọi → `rule_violations` luôn rỗng → penalty = 0, Danger Zone/Weekly Audit không có dữ liệu. Edge tự lọc (overconfidence cần plan, revenge/martingale/hope không cần) |
+| Import MT4 auto-link plan: cùng symbol + direction + status='planned' + plan tạo trong vòng 48h TRƯỚC entry → set trade_plan_id + đánh dấu executed + chạy compute-deltas | ⚠️ HEURISTIC CẦN USER XÁC NHẬN (P1-1): auto-link là quyết định nghiệp vụ, không có trong spec. Window 48h conservative chống false positive; nếu user không muốn auto-link → bỏ đoạn plan-linking trong parse-mt4 |
+| Dedupe import MT4 theo (user, symbol, lot, entry, entry_time, exit_time) — paste lại lịch sử không tạo trùng | Fix P1-2: import 2 lần từng tạo duplicate trade_executions |
+| Snapshot Discipline Score tuần = UPSERT (update điểm mới nhất trong tuần) | Fix P1-3: insert-only giữ điểm cũ (VD 0) dù user đã thêm lệnh giữa tuần |
+| `weekBounds(day, timezone?)` — tuần tính theo calendar date trong `user_profiles.timezone` (Intl IANA), fallback device-local | Fix P1-4: toISOString() đổi sang UTC làm period_start lệch 1 ngày với user tz+; snapshot key + cửa sổ query sai |
+| Cooldown rewarded 5 phút enforce SERVER-SIDE (edge `unlock-pro`, đồng hồ server, theo `pro_unlocks.granted_at`) | Fix P1-5: client-side AsyncStorage bị System Clock Attack (đổi giờ máy qua cooldown → spam ad cộng dồn Pro). Client vẫn lưu local để hiện đếm ngược; server là nguồn chân lý. ⚠️ Lỗ hổng còn lại: RLS cho phép user tự update `subscription_tier` trực tiếp (chưa fix — cần đổi RLS, đề xuất riêng) |
+| Nhập số tay dùng `parseDecimalInput` (chấp nhận "1,5"/"1.5", hàng nghìn VN "10.000") thay parseFloat | Fix P1-6: parseFloat("1,5") = 1 → risk/entry sai âm thầm ở form Fast Plan/balance/widget/constitution |
+| compute-deltas ghi delta bằng select → update/insert (KHÔNG upsert onConflict) | Fix pre-existing phát hiện qua smoke test thật: `plan_vs_reality_deltas` không có unique constraint trên trade_execution_id → upsert luôn fail PGRST102 → pipeline delta chưa từng ghi được dữ liệu |
 
 ## Deploy / Môi trường
 
 - **Supabase project**: `ycmuuczwnogybyklzpsa` — **18/18 bảng đã chạy đầy đủ** (verify 2026-08-18 qua Management API): mục 13 (notification_preferences + feature_flags) ✓ · migrations-phase2 (pro_unlocks) ✓ · trigger adaptive `trg_adaptive_condition_decrease` ✓ · 7 index ✓ · RLS + policy MỌI bảng ✓.
-- **Edge functions**: 4 functions đã deploy, **`parse-mt4` = VERSION 2** (hardening M0, redeploy 2026-08-18 + smoke test OK); `verify_jwt=true`.
+- **Edge functions**: 4 functions đã deploy, **`parse-mt4` = VERSION 4** (hardening M0 → i18n lang → **gate server-side purpose=instant_audit**, redeploy 2026-08-18 + smoke test OK: instant_audit→403, import→200); `verify_jwt=true`.
 - **Git**: main trên GitHub (commit `1cd965c`, `41c3261`); toàn bộ diff đợt Retention đang treo chưa commit.
 - **Android SDK local**: `~/Android/Sdk` (platform-36, build-tools 36.0.0) — targetSdk 36 cho Google Play.

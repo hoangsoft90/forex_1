@@ -12,6 +12,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
+import { parseDecimalInput } from '@/lib/parse-number';
 import { supabase } from '@/lib/supabase';
 import {
   canAddRule,
@@ -103,8 +104,8 @@ export default function ConstitutionScreen() {
 
   async function saveValue(ruleType: TradingRuleType, valueText: string) {
     if (!user) return;
-    const value = parseFloat(valueText);
-    if (Number.isNaN(value) || value <= 0) return; // chưa hợp lệ thì không lưu
+    const value = parseDecimalInput(valueText);
+    if (value == null || value <= 0) return; // chưa hợp lệ thì không lưu
     const { error: e } = await supabase
       .from('trading_rules')
       .update({ base_value: value, updated_at: new Date().toISOString() })
@@ -122,8 +123,8 @@ export default function ConstitutionScreen() {
     setError(null);
     // Lưu tất cả draft còn chưa được lưu (onBlur có thể đã lưu từng cái).
     for (const [ruleType, val] of Object.entries(drafts)) {
-      const num = parseFloat(val);
-      if (!Number.isNaN(num) && num > 0) {
+      const num = parseDecimalInput(val);
+      if (num != null && num > 0) {
         await saveValue(ruleType as TradingRuleType, val);
       }
     }

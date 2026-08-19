@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import DisabledStateHelper from '@/components/disabled-state-helper';
+import FeatureBadge from '@/components/feature-badge';
 import i18n, { changeAppLanguage, LANG_NAMES, SUPPORTED_LANGS } from '@/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { formatHoursLeft, getProStatus } from '@/lib/tier';
@@ -80,15 +82,9 @@ export default function SettingsScreen() {
       });
       if (e) throw e;
 
-      // Lên lịch lại theo cấu hình mới (kiểm tra lệnh đóng hôm nay cho evening)
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const { data: closedToday } = await supabase
-        .from('trade_executions')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('exit_time', startOfDay.toISOString());
-      await scheduleDailyNotifications(prefs, (closedToday ?? []).length > 0);
+      // Lên lịch lại theo cấu hình mới — evening tự kiểm tra "có lệnh đóng hôm nay"
+      // ngay tại thời điểm này (không nhận param từ lúc save — tránh stale).
+      await scheduleDailyNotifications(prefs);
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : t('settings.saveError'));
@@ -127,7 +123,11 @@ export default function SettingsScreen() {
       </View>
 
       {/* ---- Ngôn ngữ (i18n): chọn ngôn ngữ hiển thị, lưu preference ---- */}
-      <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+      <View style={styles.sectionTitleRow}>
+        <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+        {/* FeatureBadge "Mới" — dismiss → ẩn vĩnh viễn (AsyncStorage) */}
+        <FeatureBadge featureKey="settings.language" />
+      </View>
       <Text style={styles.sectionHint}>{t('settings.languageHint')}</Text>
       <View style={styles.menu}>
         {SUPPORTED_LANGS.map((lang) => {
@@ -200,13 +200,20 @@ export default function SettingsScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {saved ? <Text style={styles.saved}>{t('settings.saved')}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.saveBtn, (saving || loading) && styles.disabled]}
-        onPress={handleSave}
+      {/* DisabledStateHelper: khi saving/loading, tap vào nút → giải thích lý do + unlock */}
+      <DisabledStateHelper
         disabled={saving || loading}
+        reason={t('guidance.saveDisabled.reason')}
+        unlock={t('guidance.saveDisabled.unlock')}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('settings.saveNotifications')}</Text>}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveBtn, (saving || loading) && styles.disabled]}
+          onPress={handleSave}
+          disabled={saving || loading}
+        >
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('settings.saveNotifications')}</Text>}
+        </TouchableOpacity>
+      </DisabledStateHelper>
 
       <TouchableOpacity onPress={signOut} style={styles.signOut}>
         <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
@@ -221,6 +228,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '700' },
   email: { fontSize: 14, opacity: 0.6 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginTop: 18, marginBottom: 6 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHint: { fontSize: 12, opacity: 0.6, marginBottom: 2 },
   activeLang: { color: '#208AEF', fontSize: 16, fontWeight: '700' },
   menu: {

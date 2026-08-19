@@ -60,9 +60,10 @@ const MSG: Record<'vi' | 'en', Record<string, (o?: Record<string, string>) => st
     missingFields: () => 'Thiếu Symbol / Volume / Price hợp lệ.',
     badTime: (o) => `Thời gian mở lệnh không đúng format (YYYY.MM.DD HH:MM): "${o?.time ?? ''}"`,
     noText: () => 'Thiếu text',
+    gateBlocked: () => 'Instant Audit chưa được bật (parser chưa đạt ngưỡng tin cậy).',
     dbError: (o) => `Lưu DB thất bại: ${o?.message ?? ''}`,
     importOk: (o) =>
-      `Import ${o?.count ?? '0'} lệnh thành công. Chú ý: format parser đang là GIẢ ĐỊNH — chưa verify với dữ liệu thật MT4 (Retention Layer Module 0 đang chờ mẫu thật).`,
+      `Import ${o?.count ?? '0'} lệnh thành công${(o?.dup && Number(o.dup) > 0) ? ` (bỏ qua ${o.dup} lệnh trùng)` : ''}. Chú ý: format parser đang là GIẢ ĐỊNH — chưa verify với dữ liệu thật MT4 (Retention Layer Module 0 đang chờ mẫu thật).`,
     importNone: () => 'Không import được lệnh nào — kiểm tra các dòng lỗi bên dưới.',
     serverError: (o) => `Lỗi server: ${o?.message ?? ''}`,
   },
@@ -72,9 +73,10 @@ const MSG: Record<'vi' | 'en', Record<string, (o?: Record<string, string>) => st
     missingFields: () => 'Missing valid Symbol / Volume / Price.',
     badTime: (o) => `Invalid open time format (YYYY.MM.DD HH:MM): "${o?.time ?? ''}"`,
     noText: () => 'Missing text',
+    gateBlocked: () => 'Instant Audit is not enabled yet (parser has not reached the reliability threshold).',
     dbError: (o) => `DB insert failed: ${o?.message ?? ''}`,
     importOk: (o) =>
-      `Imported ${o?.count ?? '0'} trades. Note: the parser format is ASSUMED — not verified with real MT4 data yet (Retention Layer Module 0 awaits real samples).`,
+      `Imported ${o?.count ?? '0'} trades${(o?.dup && Number(o.dup) > 0) ? ` (skipped ${o.dup} duplicates)` : ''}. Note: the parser format is ASSUMED — not verified with real MT4 data yet (Retention Layer Module 0 awaits real samples).`,
     importNone: () => 'No trades imported — check the error lines below.',
     serverError: (o) => `Server error: ${o?.message ?? ''}`,
   },
@@ -187,6 +189,37 @@ function detectNumberLocale(rawText: string): NumberLocale {
     }
   }
   return commaDecimal > periodDecimal ? 'commaDecimal' : 'periodDecimal';
+}
+
+// ⚠️ KEEP IN SYNC: actual risk helpers khớp `apps/mobile/src/lib/risk-engine.ts`
+// (calculateActualRiskPercent / pipValuePerLot / distanceInPips).
+function pipValuePerLot(symbol: string, price: number): number | null {
+  if (symbol === 'EURUSD') return 10; // 100k đơn vị × 0.0001, quote USD
+  if (symbol === 'XAUUSD') return 10; // 100 oz × 0.1, quote USD
+  if (symbol === 'USDJPY') return 1000 / price; // 100k × 0.01 = 1000 JPY → USD
+  return null;
+}
+
+function distanceInPips(symbol: string, entry: number, sl: number): number {
+  const pip = symbol === 'USDJPY' ? 0.01 : symbol === 'XAUUSD' ? 0.1 : 0.0001;
+  const raw = Math.abs(entry - sl) / pip;
+  return Math.round(raw * 1e6) / 1e6;
+}
+
+/** actual_risk_percent = (lot × pip × pip value) / balance × 100 — null nếu thiếu dữ liệu. */
+function actualRiskPercent(
+  lotSize: number,
+  symbol: string,
+  entry: number,
+  sl: number,
+  balance: number,
+): number | null {
+  const pipValue = pipValuePerLot(symbol, entry);
+  if (pipValue == null) return null;
+  const pips = distanceInPips(symbol, entry, sl);
+  if (pips <= 0 || balance <= 0 || lotSize <= 0) return null;
+  const risk = ((lotSize * pips * pipValue) / balance) * 100;
+  return Math.round(risk * 1e4) / 1e4;
 }
 
 function parseNumber(v: string | undefined, locale: NumberLocale): number | null {
@@ -422,6 +455,21 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const text = body?.text;
     const lang = typeof body?.lang === 'string' ? body.lang : 'vi';
+    // Retention Module 3 gate: purpose='instant_audit' → bắt buộc INSTANT_AUDIT_ENABLED=true.
+    // (paste-mt4 Module 5 gọi không có purpose → không bị chặn — gate chỉ cho Instant Audit.)
+    if (body?.purpose === 'instant_audit') {
+      const { data: flag } = await supabase
+        .from('feature_flags')
+        .select('is_enabled')
+        .eq('flag_name', 'INSTANT_AUDIT_ENABLED')
+        .maybeSingle();
+      if (flag?.is_enabled !== true) {
+        return new Response(JSON.stringify({ error: msgs(lang).gateBlocked() }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     if (typeof text !== 'string' || !text.trim()) {
       return new Response(JSON.stringify({ error: msgs(lang).noText() }), {
         status: 400,
@@ -431,50 +479,120 @@ Deno.serve(async (req: Request) => {
 
     const parsed = parseMt4History(text, lang);
 
-    // Lưu executions (chỉ lệnh đóng — có closeTime) kèm raw_import_payload
+    // Balance để tính actual_risk_percent (P0-A) — đọc 1 lần qua service role.
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('account_balance_baseline')
+      .eq('id', user.id)
+      .maybeSingle();
+    const balance = (profile?.account_balance_baseline as number | null | undefined) ?? null;
+
     let imported = 0;
-    let openOnly = 0;
+    let duplicates = 0;
+    const closedWithPlan: string[] = [];
     for (const t of parsed.trades) {
-      const row = {
-        user_id: user.id,
-        symbol: t.symbol,
-        direction: t.direction,
-        lot_size: t.lotSize,
-        actual_entry: t.openPrice,
-        actual_sl: t.sl,
-        actual_tp: t.tp,
-        actual_risk_percent: null, // tính sau ở module khác
-        entry_time: t.openTime,
-        exit_time: t.closeTime,
-        exit_price: t.closePrice,
-        pnl_amount: t.profit,
-        source: 'copy_paste_mt4',
-        raw_import_payload: {
-          ticket: t.ticket,
-          rawLine: t.rawLine,
-          format_note: 'Giả định — chưa verify với dữ liệu thật MT4',
-        },
-      };
-      const { error: insertErr } = await supabase.from('trade_executions').insert(row);
-      if (insertErr) {
+      // P1-2 Dedupe: bỏ qua lệnh đã import (cùng user/symbol/lot/entry/entry_time/exit_time,
+      // source copy_paste_mt4) — chống duplicate khi paste lại lịch sử.
+      let dupQuery = supabase
+        .from('trade_executions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('source', 'copy_paste_mt4')
+        .eq('symbol', t.symbol)
+        .eq('lot_size', t.lotSize)
+        .eq('actual_entry', t.openPrice)
+        .eq('entry_time', t.openTime);
+      dupQuery = t.closeTime ? dupQuery.eq('exit_time', t.closeTime) : dupQuery.is('exit_time', null);
+      const { count: dupCount } = await dupQuery;
+      if ((dupCount ?? 0) > 0) {
+        duplicates++;
+        continue;
+      }
+
+      // P0-A: tính actual_risk_percent ngược từ lot + SL + balance (thiếu → null, không suy đoán).
+      const actualRisk =
+        balance != null && balance > 0 && t.sl != null
+          ? actualRiskPercent(t.lotSize, t.symbol, t.openPrice, t.sl, balance)
+          : null;
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from('trade_executions')
+        .insert({
+          user_id: user.id,
+          symbol: t.symbol,
+          direction: t.direction,
+          lot_size: t.lotSize,
+          actual_entry: t.openPrice,
+          actual_sl: t.sl,
+          actual_tp: t.tp,
+          actual_risk_percent: actualRisk,
+          entry_time: t.openTime,
+          exit_time: t.closeTime,
+          exit_price: t.closePrice,
+          pnl_amount: t.profit,
+          source: 'copy_paste_mt4',
+          raw_import_payload: {
+            ticket: t.ticket,
+            rawLine: t.rawLine,
+            format_note: 'Giả định — chưa verify với dữ liệu thật MT4',
+          },
+        })
+        .select('id')
+        .single();
+      if (insertErr || !inserted) {
         parsed.errorLines.push({
           lineNumber: 0,
           content: t.rawLine,
-          reason: msgs(lang).dbError({ message: insertErr.message }),
+          reason: msgs(lang).dbError({ message: insertErr?.message ?? 'insert trả về rỗng' }),
         });
         continue;
       }
       imported++;
+
+      // P1-1: lệnh đóng khớp plan chưa thực hiện (cùng symbol + direction, plan tạo
+      // trong vòng 48h TRƯỚC entry, status='planned') → link + đánh dấu executed,
+      // rồi chạy compute-deltas để có followed_plan. Heuristic conservative — xem
+      // báo cáo fix (cần user xác nhận chính sách auto-link).
+      if (t.closeTime) {
+        const { data: plan } = await supabase
+          .from('trade_plans')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('symbol', t.symbol)
+          .eq('direction', t.direction)
+          .eq('status', 'planned')
+          .lte('created_at', t.openTime)
+          .gte('created_at', new Date(new Date(t.openTime).getTime() - 48 * 3600_000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (plan) {
+          await supabase.from('trade_executions').update({ trade_plan_id: plan.id }).eq('id', inserted.id);
+          await supabase.from('trade_plans').update({ status: 'executed' }).eq('id', plan.id);
+          closedWithPlan.push(inserted.id);
+        }
+      }
+    }
+
+    // P1-1: chạy compute-deltas cho lệnh import có plan (fire-and-forget — dùng JWT
+    // user gốc để edge nhận diện đúng chủ sở hữu).
+    for (const execId of closedWithPlan) {
+      fetch(`${supabaseUrl}/functions/v1/compute-deltas`, {
+        method: 'POST',
+        headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ executionId: execId }),
+      }).catch(() => {});
     }
 
     return new Response(
       JSON.stringify({
         imported,
+        duplicates,
         errorLines: parsed.errorLines,
         skippedNonTrade: parsed.skippedNonTrade,
         detectedLocale: parsed.detectedLocale,
         message: imported > 0
-          ? msgs(lang).importOk({ count: String(imported) })
+          ? msgs(lang).importOk({ count: String(imported), dup: String(duplicates) })
           : msgs(lang).importNone(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

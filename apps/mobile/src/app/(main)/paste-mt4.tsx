@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import i18n from '@/i18n';
 import { safeBack } from '@/lib/navigation';
+import { syncEveningNotification } from '@/lib/notification-manager';
 import { supabase } from '@/lib/supabase';
 
 type ParseResult = {
@@ -50,6 +51,10 @@ export default function PasteMt4Screen() {
       });
       if (fnError) throw fnError;
       setResult(data as ParseResult);
+      // Vừa import lệnh đóng → re-sync evening review nếu hôm nay có lệnh
+      if ((data as ParseResult).imported > 0) {
+        syncEveningNotification().catch(() => {});
+      }
     } catch (e) {
       setError(
         e instanceof Error

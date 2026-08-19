@@ -91,6 +91,32 @@ export function calculateRiskAmount(balance: number, riskPercent: number): numbe
   return balance * (riskPercent / 100);
 }
 
+export type ActualRiskParams = {
+  lotSize: number;
+  symbol: SymbolKey;
+  entry: number;
+  sl: number;
+  balance: number;
+};
+
+/**
+ * Tính `actual_risk_percent` NGƯỢC từ lot size + SL + balance (data_model:
+ * "tính toán ngược từ lot_size + SL + account_balance") — nghịch đảo của
+ * calculateLotSize:
+ *   lotSize = (Balance × Risk%) / (pips × pipValue)
+ *   → Risk%  = (lotSize × pips × pipValue) / Balance × 100
+ *
+ * Trả null nếu thiếu dữ liệu (SL/balance/lot không hợp lệ) — KHÔNG suy đoán.
+ * Làm tròn 4 chữ số thập phân (khớp round() trong compute-deltas).
+ */
+export function calculateActualRiskPercent(p: ActualRiskParams): number | null {
+  const pips = distanceInPips(p.symbol, p.entry, p.sl);
+  const pipValue = pipValuePerLot(p.symbol, p.entry);
+  if (pips <= 0 || pipValue <= 0 || p.balance <= 0 || p.lotSize <= 0) return null;
+  const riskPercent = ((p.lotSize * pips * pipValue) / p.balance) * 100;
+  return Math.round(riskPercent * 1e4) / 1e4;
+}
+
 /** Risk:Reward ratio = |TP - Entry| / |Entry - SL|. Trả null nếu thiếu TP. */
 export function calculateRiskReward(entry: number, sl: number, tp: number | null): number | null {
   if (tp == null) return null;

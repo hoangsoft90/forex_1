@@ -16,6 +16,8 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import i18n from '@/i18n';
+import { buildEveningReview } from '@/lib/notification-content';
+import { supabase } from '@/lib/supabase';
 
 const HAS_SEEN_DASHBOARD_KEY = 'has_seen_dashboard_v1';
 const NOTIF_PERMISSION_ASKED_KEY = 'notif_permission_asked_v1';
@@ -95,14 +97,13 @@ export async function cancelAllScheduled(): Promise<void> {
 }
 
 /**
- * Lên lịch 2 notification hàng ngày theo giờ cấu hình (nếu bật).
- * Evening: vẫn lên lịch — nhưng nội dung sẽ được xác định lúc chạy qua handler
- * kiểm tra dữ liệu trong ngày (xem buildEveningReview).
+ * Lên lịch notification hàng ngày theo giờ cấu hình (nếu bật).
+ * Morning: DAILY lặp (nội dung tĩnh).
+ * Evening: KHÔNG lặp DAILY — schedule one-shot hôm nay CHỈ KHI có lệnh đóng trong
+ * ngày (kiểm tra tại thời điểm schedule), và được re-sync mỗi khi app mở/đóng lệnh
+ * (syncEveningNotification). Tránh spam ngày không có lệnh — đúng AC Module 8.
  */
-export async function scheduleDailyNotifications(
-  prefs: NotificationPrefs,
-  hasClosedToday: boolean,
-): Promise<void> {
+export async function scheduleDailyNotifications(prefs: NotificationPrefs): Promise<void> {
   try {
     await cancelAllScheduled();
     if (Platform.OS === 'web') return;
@@ -119,27 +120,84 @@ export async function scheduleDailyNotifications(
     }
 
     if (prefs.evening_enabled) {
-      // AC: không gửi cuối ngày nếu không có lệnh đóng — nội dung được xác định lúc trigger
-      const content = hasClosedToday
-        ? {
-            title: i18n.t('notification.eveningTitle'),
-            body: i18n.t('notification.managerEveningBody'),
-          }
-        : null;
-      if (content) {
-        await Notifications.scheduleNotificationAsync({
-          identifier: EVENING_ID,
-          content,
-          trigger: dailyTrigger(prefs.evening_time),
-        });
-      }
+      // AC: chỉ gửi khi có lệnh đóng hôm nay — kiểm tra NGAY BÂY GIỜ, không phải lúc save
+      await syncEveningNotification(prefs);
     }
   } catch {
     // ignore — notification không được phép làm hỏng luồng chính
   }
 }
 
-/** Trigger lặp lại hàng ngày theo giờ "HH:MM" (24h). */
+/** Đếm lệnh đóng trong ngày hôm nay (device-local midnight → so với exit_time UTC). */
+async function countClosedToday(): Promise<number> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { data } = await supabase
+      .from('trade_executions')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('exit_time', startOfDay.toISOString());
+    return (data ?? []).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Re-sync evening review: gọi khi app mở (Dashboard) / đóng lệnh (widget, paste-mt4)
+ * / save settings. Chỉ schedule one-shot hôm nay nếu CÓ lệnh đóng trong ngày;
+ * ngày không có lệnh → hủy (im lặng). One-shot → không bao giờ gửi trùng ngày sau.
+ */
+export async function syncEveningNotification(prefs?: NotificationPrefs): Promise<void> {
+  try {
+    if (Platform.OS === 'web') return;
+    // Hủy job cũ trước (nếu có) — tránh 2 job cùng ngày sau khi đổi giờ
+    await Notifications.cancelScheduledNotificationAsync(EVENING_ID).catch(() => {});
+
+    let p = prefs;
+    if (!p) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('notification_preferences')
+        .select('evening_review_enabled, evening_review_time')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!data) return;
+      p = {
+        morning_enabled: true,
+        morning_time: '08:00',
+        evening_enabled: data.evening_review_enabled !== false,
+        evening_time: (data.evening_review_time ?? '21:00').slice(0, 5),
+      };
+    }
+    if (!p.evening_enabled) return;
+
+    const closedCount = await countClosedToday();
+    const content = buildEveningReview({ hasClosedToday: closedCount > 0, closedCount });
+    if (!content.ok) return; // không có lệnh đóng hôm nay → im lặng
+
+    const trigger = todayOneShot(p.evening_time);
+    if (!trigger) return; // giờ evening đã qua hôm nay → không gửi muộn giờ (đợi re-sync ngày mai)
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: EVENING_ID,
+      content: { title: content.title, body: content.body },
+      trigger,
+    });
+  } catch {
+    // ignore — notification không được phép làm hỏng luồng chính
+  }
+}
+
+/** Trigger lặp lại hàng ngày theo giờ "HH:MM" (24h) — dùng cho morning brief. */
 function dailyTrigger(time: string): Notifications.NotificationTriggerInput {
   const [h, m] = time.split(':').map((n) => parseInt(n, 10));
   const hour = Number.isFinite(h) ? h : 8;
@@ -148,5 +206,23 @@ function dailyTrigger(time: string): Notifications.NotificationTriggerInput {
     type: Notifications.SchedulableTriggerInputTypes.DAILY,
     hour,
     minute,
+  } as Notifications.NotificationTriggerInput;
+}
+
+/**
+ * Trigger ONE-SHOT cho hôm nay lúc "HH:MM" (giờ thiết bị).
+ * Trả null nếu giờ đã qua hôm nay (không gửi muộn — tránh fire ngay lập tức).
+ * One-shot: mỗi ngày chỉ gửi 1 lần nếu có lệnh đóng — re-sync ngày sau qua app mở.
+ */
+function todayOneShot(time: string): Notifications.NotificationTriggerInput | null {
+  const [h, m] = time.split(':').map((n) => parseInt(n, 10));
+  const hour = Number.isFinite(h) ? h : 21;
+  const minute = Number.isFinite(m) ? m : 0;
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  if (date.getTime() <= Date.now()) return null;
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date,
   } as Notifications.NotificationTriggerInput;
 }

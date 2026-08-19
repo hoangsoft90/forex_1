@@ -399,7 +399,9 @@
     "skipNote": "Bỏ qua {{count}} lệnh thiếu dữ liệu plan (không suy đoán).",
     "hiddenNotEnoughTrades": "Cần thêm dữ liệu để tính chỉ số này (hiện có {{count}}/30 lệnh).",
     "hiddenNotEnoughDeviated": "Cần thêm dữ liệu để tính chỉ số này (hiện có {{count}}/3 lệnh lệch plan).",
-    "disclaimer": "Đây là ước tính giả định dựa trên chênh lệch giữa kế hoạch và thực tế — không phải bảo đảm lợi nhuận. Kế hoạch ban đầu vẫn có thể sai."
+    "disclaimer": "Đây là ước tính giả định dựa trên chênh lệch giữa kế hoạch và thực tế — không phải bảo đảm lợi nhuận. Kế hoạch ban đầu vẫn có thể sai.",
+    "proRow": "Thực tế ${actual} → Theo plan ${hypo}",
+    "proRowMissing": "Thiếu planned_tp — không suy đoán"
   },
   "mainLayout": {
     "settings": "Cài đặt",
@@ -516,5 +518,29 @@
     "minutes": "{{count}} phút",
     "hours": "{{count}} giờ",
     "hoursMinutes": "{{hours}} giờ {{minutes}} phút"
+  },
+  "guidance": {
+    "badgeNew": "Mới",
+    "skip": "Bỏ qua",
+    "next": "Tiếp",
+    "done": "Xong",
+    "stepOf": "Bước {{current}}/{{total}}",
+    "close": "Đóng",
+    "gotIt": "Đã hiểu",
+    "disabledUnlockFallback": "Chờ thao tác hiện tại hoàn tất rồi thử lại.",
+    "dashboardTour": {
+      "step1": {
+        "title": "⚡ Quick Plan — lên kế hoạch trước khi vào lệnh",
+        "body": "Tạo kế hoạch nhanh chỉ với 5 trường bắt buộc. Risk Engine tự tính lot size theo Risk % và SL của bạn."
+      },
+      "step2": {
+        "title": "📖 Journal — nhật ký giao dịch",
+        "body": "Mọi lệnh đã đóng đều được ghi vào đây. Hệ thống tự tính Discipline Score và phát hiện vi phạm từ dữ liệu thật."
+      }
+    },
+    "saveDisabled": {
+      "reason": "Đang xử lý cài đặt...",
+      "unlock": "Chờ thao tác hoàn tất rồi bấm lại."
+    }
   }
 }

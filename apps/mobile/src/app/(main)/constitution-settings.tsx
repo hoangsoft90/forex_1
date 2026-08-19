@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth-context';
 import { safeBack } from '@/lib/navigation';
+import { parseDecimalInput } from '@/lib/parse-number';
 import { supabase } from '@/lib/supabase';
 import {
   canAddRule,
@@ -101,8 +102,8 @@ export default function ConstitutionSettingsScreen() {
 
   async function saveValue(ruleType: TradingRuleType, valueText: string) {
     if (!user) return;
-    const value = parseFloat(valueText);
-    if (Number.isNaN(value) || value <= 0) return;
+    const value = parseDecimalInput(valueText);
+    if (value == null || value <= 0) return;
     const { error: e } = await supabase
       .from('trading_rules')
       .update({ base_value: value, updated_at: new Date().toISOString() })
@@ -149,9 +150,9 @@ export default function ConstitutionSettingsScreen() {
     if (!user || !adaptive) return;
     const rule = rules.find((r) => r.rule_type === 'max_risk_per_trade');
     if (!rule) return;
-    const threshold = parseFloat(adaptive.threshold);
-    const adjusted = parseFloat(adaptive.adjustedValue);
-    if (Number.isNaN(threshold) || threshold <= 0 || Number.isNaN(adjusted) || adjusted <= 0) {
+    const threshold = parseDecimalInput(adaptive.threshold);
+    const adjusted = parseDecimalInput(adaptive.adjustedValue);
+    if (threshold == null || threshold <= 0 || adjusted == null || adjusted <= 0) {
       setError(t('constitutionSettings.adaptiveInvalid'));
       return;
     }

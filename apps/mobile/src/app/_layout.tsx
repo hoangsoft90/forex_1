@@ -10,6 +10,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 
+import { GuidanceProvider } from '@/components/guidance-context';
 import i18n, { resolveInitialLanguage } from '@/i18n';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 
@@ -103,7 +104,10 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <I18nGate>
-        <RootNavigator />
+        {/* Guidance phải nằm TRÊN Stack để overlay spotlight phủ mọi màn hình */}
+        <GuidanceProvider>
+          <RootNavigator />
+        </GuidanceProvider>
       </I18nGate>
     </AuthProvider>
   );

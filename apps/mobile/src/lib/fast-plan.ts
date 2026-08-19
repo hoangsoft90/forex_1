@@ -10,6 +10,7 @@
  */
 
 import i18n from '@/i18n';
+import { parseDecimalInput } from '@/lib/parse-number';
 
 export const FAST_PLAN_REQUIRED_FIELDS = ['Symbol', 'Direction', 'Entry', 'SL', 'Risk%'] as const;
 
@@ -32,23 +33,25 @@ export type FastPlanValidation =
  * - entry !== sl (khoảng cách SL = 0 là vô nghĩa cho lot size)
  */
 export function validateFastPlan(input: FastPlanInput): FastPlanValidation {
-  const entry = parseFloat(input.entry);
-  const sl = parseFloat(input.sl);
-  const risk = parseFloat(input.riskPercent);
+  // parseDecimalInput: chấp nhận cả "1.5" và "1,5" (locale EU/VI) — parseFloat
+  // cắt tại dấu phẩy → "0,5" thành 0 → chặn nhầm (P1-6).
+  const entry = parseDecimalInput(input.entry);
+  const sl = parseDecimalInput(input.sl);
+  const risk = parseDecimalInput(input.riskPercent);
 
   if (!input.symbol.trim()) {
     return { ok: false, reason: i18n.t('fastPlan.reasonSymbol') };
   }
-  if (!(entry > 0)) {
+  if (entry == null || entry <= 0) {
     return { ok: false, reason: i18n.t('fastPlan.reasonEntry') };
   }
-  if (!(sl > 0)) {
+  if (sl == null || sl <= 0) {
     return { ok: false, reason: i18n.t('fastPlan.reasonSl') };
   }
   if (entry === sl) {
     return { ok: false, reason: i18n.t('fastPlan.reasonEntrySlSame') };
   }
-  if (!(risk > 0)) {
+  if (risk == null || risk <= 0) {
     return { ok: false, reason: i18n.t('fastPlan.reasonRisk') };
   }
   return { ok: true };

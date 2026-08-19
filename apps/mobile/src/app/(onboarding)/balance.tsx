@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ONBOARDING_EVENTS, trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth-context';
+import { parseDecimalInput } from '@/lib/parse-number';
 import { supabase } from '@/lib/supabase';
 
 export default function BalanceScreen() {
@@ -25,8 +26,8 @@ export default function BalanceScreen() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleContinue() {
-    const value = parseFloat(balance);
-    if (!balance || Number.isNaN(value) || value <= 0) {
+    const value = parseDecimalInput(balance);
+    if (value == null || value <= 0) {
       setError(t('balance.error'));
       return;
     }

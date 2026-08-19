@@ -3,8 +3,12 @@
  *
  * Luồng:
  *   1. showRewardedAd() — user xem hết ad → onRewarded
- *   2. Nếu rewarded: upsert `user_profiles` (tier='pro', expires=now+24h)
- *   3. Insert `pro_unlocks` (method='admob_rewarded') để audit
+ *   2. Gọi edge `unlock-pro` — server kiểm tra cooldown 5 phút (đồng hồ SERVER,
+ *      chống System Clock Attack — P1-5), upsert `user_profiles` (tier='pro',
+ *      expires=now+24h), insert `pro_unlocks` để audit.
+ *
+ * Cooldown client-side (AsyncStorage) chỉ để hiện feedback/đếm ngược ngay;
+ * nguồn chân lý là server — đổi giờ máy không qua được.
  *
  * Không tạo bản ghi `subscriptions` — bảng đó dành cho thanh toán thật
  * (payment_provider check constraint không có 'admob').
@@ -19,7 +23,6 @@ import {
   recordRewardedAt,
 } from '@/lib/ad-cooldown';
 import { showRewardedAd } from '@/lib/admob';
-import { proExpiry24h } from '@/lib/tier';
 
 export type UnlockProResult =
   | { ok: true; expiresAt: string }
@@ -47,55 +50,30 @@ export async function unlockProViaAd(): Promise<UnlockProResult> {
     return { ok: false, reason: ad.error ?? i18n.t('proUnlock.notCompleted') };
   }
 
-  // Ghi nhận lượt xem thành công → bắt đầu cooldown cho lần sau.
+  // Ghi nhận client-side để hiện cooldown/đếm ngược ngay — nhưng nguồn chân lý
+  // là SERVER (edge unlock-pro check pro_unlocks.granted_at, đồng hồ server).
   await recordRewardedAt();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { ok: false, reason: i18n.t('proUnlock.notLoggedIn') };
+  // Server-side grant: cooldown thật + upsert profile + insert pro_unlocks.
+  const { data, error: invokeErr } = await supabase.functions.invoke('unlock-pro', {});
+  if (invokeErr) {
+    // invokeErr.functionsHttpError chứa response body lỗi (VD 429 cooldown từ server).
+    const body = invokeErr.context?.response
+      ? await invokeErr.context.response.json().catch(() => null)
+      : null;
+    if (body?.ok === false && body.reason === 'cooldown' && typeof body.remainingMs === 'number') {
+      return {
+        ok: false,
+        reason: i18n.t('proUnlock.cooldown', {
+          time: formatCooldown(body.remainingMs),
+        }),
+      };
+    }
+    return { ok: false, reason: i18n.t('proUnlock.saveError', { message: invokeErr.message }) };
   }
-
-  const expiresAt = proExpiry24h();
-
-  // Upsert profile: tier='pro' + hạn 24h (chỉ tăng hạn nếu hiện chưa Pro hoặc sắp hết)
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('subscription_tier, subscription_expires_at')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  const currentExpiry = profile?.subscription_expires_at
-    ? new Date(profile.subscription_expires_at as string).getTime()
-    : 0;
-  const newExpiry = new Date(expiresAt).getTime();
-  const finalExpiry =
-    profile?.subscription_tier === 'pro' && currentExpiry > newExpiry
-      ? (profile.subscription_expires_at as string)
-      : expiresAt;
-
-  const { error: upsertErr } = await supabase.from('user_profiles').upsert(
-    {
-      id: user.id,
-      subscription_tier: 'pro',
-      subscription_expires_at: finalExpiry,
-    },
-    { onConflict: 'id' },
-  );
-  if (upsertErr) {
-    return { ok: false, reason: i18n.t('proUnlock.saveError', { message: upsertErr.message }) };
+  const result = data as { ok?: boolean; expiresAt?: string; error?: string };
+  if (result?.ok !== true || !result.expiresAt) {
+    return { ok: false, reason: result?.error ?? i18n.t('proUnlock.saveError', { message: 'unknown' }) };
   }
-
-  const { error: unlockErr } = await supabase.from('pro_unlocks').insert({
-    user_id: user.id,
-    granted_until: finalExpiry,
-    method: 'admob_rewarded',
-  });
-  if (unlockErr) {
-    // Pro đã được ghi — chỉ audit thất bại, không rollback quyền Pro.
-    console.warn('pro_unlocks insert thất bại (không ảnh hưởng quyền Pro):', unlockErr.message);
-  }
-
-  return { ok: true, expiresAt: finalExpiry };
+  return { ok: true, expiresAt: result.expiresAt };
 }

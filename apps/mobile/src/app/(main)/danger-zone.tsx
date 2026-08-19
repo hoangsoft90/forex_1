@@ -7,6 +7,7 @@ import {
   dangerZoneSummary,
   DangerZoneDetail,
   findDangerZoneDetail,
+  hourInZone,
   nthOrderSummary,
 } from '@/lib/danger-zone';
 import { supabase } from '@/lib/supabase';
@@ -30,7 +31,12 @@ export default function DangerZoneScreen() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: closed }, { data: violations }] = await Promise.all([
+    const [{ data: profile }, { data: closed }, { data: violations }] = await Promise.all([
+      supabase
+        .from('user_profiles')
+        .select('timezone')
+        .eq('id', user.id)
+        .maybeSingle(),
       supabase
         .from('trade_executions')
         .select('id, entry_time')
@@ -38,6 +44,8 @@ export default function DangerZoneScreen() {
         .not('exit_time', 'is', null),
       supabase.from('rule_violations').select('trade_execution_id, is_negative'),
     ]);
+    // Module 6: tính giờ pattern theo timezone user (IANA), fallback device-local nếu null
+    const timezone = (profile?.timezone as string | undefined) ?? undefined;
 
     const closedList = (closed ?? []) as { id: string; entry_time: string }[];
     const violList = (violations ?? []) as {
@@ -46,7 +54,7 @@ export default function DangerZoneScreen() {
     }[];
     setTotalClosed(closedList.length);
 
-    const d = findDangerZoneDetail({ closedExecutions: closedList, violations: violList });
+    const d = findDangerZoneDetail({ closedExecutions: closedList, violations: violList }, timezone);
     setDetail(d);
 
     // Biểu đồ vi phạm theo giờ (tất cả giờ, không cần đủ ngưỡng — chỉ là phân bố)
@@ -57,7 +65,7 @@ export default function DangerZoneScreen() {
       if (!v.trade_execution_id) continue;
       const exec = execById.get(v.trade_execution_id);
       if (!exec) continue;
-      const h = new Date(exec.entry_time).getHours();
+      const h = hourInZone(exec.entry_time, timezone);
       bars[h] = (bars[h] ?? 0) + 1;
     }
     setHourBars(

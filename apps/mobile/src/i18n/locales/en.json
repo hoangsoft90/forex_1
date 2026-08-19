@@ -401,7 +401,9 @@
     "skipNote": "Skipped {{count}} trades missing plan data (no guessing).",
     "hiddenNotEnoughTrades": "Need more data to compute this metric (currently {{count}}/30 trades).",
     "hiddenNotEnoughDeviated": "Need more data to compute this metric (currently {{count}}/3 deviated trades).",
-    "disclaimer": "This is a hypothetical estimate based on the difference between your plan and reality — not a profit guarantee. The original plan could still be wrong."
+    "disclaimer": "This is a hypothetical estimate based on the difference between your plan and reality — not a profit guarantee. The original plan could still be wrong.",
+    "proRow": "Actual ${actual} → If followed ${hypo}",
+    "proRowMissing": "Missing planned_tp — no estimate"
   },
   "mainLayout": {
     "settings": "Settings",
@@ -518,5 +520,29 @@
     "minutes": "{{count}} minutes",
     "hours": "{{count}} hours",
     "hoursMinutes": "{{hours}} hours {{minutes}} minutes"
+  },
+  "guidance": {
+    "badgeNew": "New",
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Done",
+    "stepOf": "Step {{current}}/{{total}}",
+    "close": "Close",
+    "gotIt": "Got it",
+    "disabledUnlockFallback": "Wait for the current action to finish, then try again.",
+    "dashboardTour": {
+      "step1": {
+        "title": "⚡ Quick Plan — plan before you enter",
+        "body": "Create a fast plan with only 5 required fields. The Risk Engine calculates lot size from your Risk % and SL."
+      },
+      "step2": {
+        "title": "📖 Journal — your trade log",
+        "body": "Every closed trade is recorded here. The system calculates your Discipline Score and detects violations from real data."
+      }
+    },
+    "saveDisabled": {
+      "reason": "Processing settings...",
+      "unlock": "Wait for the current action to finish, then tap again."
+    }
   }
 }

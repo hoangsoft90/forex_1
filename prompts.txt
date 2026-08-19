@@ -1,0 +1,320 @@
+# Bộ Prompt Audit & QA cuối cùng — Trading Discipline OS
+
+> Tổng hợp từ `plan4.md` (38 prompt gốc) + `plan4_review1-4.md`. Giữ nguyên khung 2 vòng + 4 checkpoint của bản gốc (đã tốt), CHỈ chèn thêm các prompt mới ở đúng vị trí để lấp khoảng trống mà cả 4 review đồng thuận, cộng thêm 2 điểm mù bổ sung (locale số ở form nhập tay, flag bypass phía server).
+>
+> **Cách dùng:** gửi theo đúng thứ tự dưới đây. Prompt nào ghi "(GIỮ NGUYÊN từ plan4.md)" thì copy nguyên văn từ file gốc. Prompt nào ghi "(MỚI)" hoặc "(SỬA)" thì dùng bản trong file này.
+
+---
+
+## PROMPT 0 — Establish review protocol (SỬA — bổ sung 1 mục)
+
+*(Giữ nguyên toàn bộ nội dung Prompt 0 trong `plan4.md`, chỉ thêm đoạn sau vào cuối phần QUY TẮC:)*
+
+```
+BỔ SUNG QUY TẮC — Independent Calculation:
+Với mọi công thức tài chính (lot size, R:R, Discipline Score, Edge Score, Cost of
+Indiscipline, delta Plan vs Reality), khi audit hoặc test, bạn phải TỰ TÍNH LẠI kết
+quả bằng công thức viết tay/độc lập (không đọc lại chính đoạn code đang audit để suy
+ra "trông có vẻ đúng"), rồi so sánh với output thực tế của code. Nếu hai kết quả
+lệch nhau, đó là P0/P1 tùy mức độ, không phải "improvement suggestion".
+```
+
+---
+
+## NHÓM 1 — ADVERSARIAL REVIEW (không sửa code)
+
+**Prompt 1 → 9: (GIỮ NGUYÊN từ plan4.md)**
+Đọc lại toàn bộ product & tìm contradiction · Tấn công business logic (risk/lot/pip/currency) · Tấn công Personal Rules + Decision Interruption · Audit Plan vs Reality lifecycle · Audit Behavior Engine · Audit Discipline/Edge Score · Audit data integrity · Audit security/privacy · Audit onboarding & first-use.
+
+---
+
+### Prompt 10 — Audit Retention M0–M8 chuyên sâu (MỚI — thay thế bản rút gọn cũ)
+
+```
+Chưa sửa code.
+
+Trong .plan/plan4.md gốc, Prompt 10 chỉ audit retention ở mức tổng quát. Bây giờ hãy audit
+CHI TIẾT TỪNG MODULE M0–M8 theo đúng định nghĩa trong .plan/retention_layer_addendum.md
+và trạng thái thực tế mô tả ở guide.md/features.md.
+
+Với MỖI module dưới đây, trả lời riêng biệt:
+
+M0 — MT4/MT5 Parser:
+- Parser đã được test với dữ liệu THẬT (không phải fixture tự tạo) từ bao nhiêu
+  broker? Liệt kê cụ thể.
+- Tỷ lệ parse đúng thực đo là bao nhiêu %? Có đạt ngưỡng ≥95% đã cam kết không?
+- Cờ INSTANT_AUDIT_ENABLED hiện đang là true hay false? Điều kiện nào đã/chưa đạt
+  để set true?
+- QUAN TRỌNG: cờ này được kiểm tra ở đâu — client-side (React Native) hay
+  server-side (Edge Function/RLS/DB)? Nếu chỉ client-side, một request gọi thẳng
+  Edge Function parse-mt4 (bỏ qua UI) có bị chặn không? Đây là P0 nếu bypass được.
+
+M1 — Fast Plan:
+- Xác nhận chính xác: SL có bị chặn cứng ở tầng nào (client validation, API layer,
+  DB constraint)? Nếu chỉ chặn ở client, gọi thẳng API tạo trade_plans thiếu SL có
+  thành công không?
+- Trường Risk% mặc định lấy từ rule nào nếu user có nhiều rule loại
+  max_risk_per_trade (data cũ + rule mới)?
+
+M2 — Today Dashboard:
+- User có 0 lệnh, 1 lệnh chưa đóng, và >30 lệnh — dashboard render đúng 3 trạng
+  thái khác nhau như thế nào? Có card nào bị lỗi div-by-zero hoặc hiện "NaN"/"-Infinity"
+  không?
+
+M3 — Instant Audit (đã hỏi ở M0, bổ sung thêm):
+- Nếu user bỏ qua bước paste lịch sử, luồng onboarding có bị treo/lỗi không?
+- Khi INSTANT_AUDIT_ENABLED=false, có đường code nào (kể cả debug/test path) vô
+  tình vẫn gọi parser không?
+
+M4 — Cost of Indiscipline:
+- Test cụ thể: 1 lệnh lệch plan nhưng thiếu planned_tp — lệnh này có bị loại đúng
+  khỏi phép tính hypothetical_pnl không, hay bị gán giá trị mặc định/suy đoán?
+- Disclaimer xuất hiện ở TẤT CẢ vị trí hiển thị con số này chưa (Dashboard, Weekly
+  Audit, chi tiết Pro)? Kiểm tra từng nơi riêng biệt, đừng suy luận "chắc đã có".
+- Ngưỡng ≥30 lệnh tổng VÀ ≥3 lệnh lệch plan — cả hai điều kiện có được kiểm tra
+  đồng thời hay chỉ 1 trong 2?
+
+M5 — Setup Analytics:
+- setup_tag = null hoặc 'other' có bị loại khỏi thống kê tổng không (phải KHÔNG
+  bị loại, chỉ gom nhóm riêng)?
+- Ngưỡng 30 lệnh áp dụng trên tổng số lệnh đóng, hay trên số lệnh của TỪNG
+  setup_tag riêng? (Cần làm rõ vì 2 cách hiểu cho kết quả rất khác nhau.)
+
+M6 — Personal Danger Zone:
+- Pattern giờ trong ngày dùng timezone nào — thiết bị user hay UTC hay
+  user_profiles.timezone? Nếu user đổi timezone giữa chừng, dữ liệu cũ có bị tính
+  sai giờ không?
+- Ngưỡng "pattern lặp ≥5 lần" — 5 lần trong TOÀN BỘ lịch sử hay trong kỳ gần đây?
+
+M7 — Discipline Streak:
+- Xác nhận streak tính theo entry_time, KHÔNG theo thời điểm nhập liệu vào hệ
+  thống. Test case cụ thể: user import 10 lệnh cũ (entry_time trong quá khứ) sau
+  khi đã có streak=5 từ lệnh live — streak có bị tính lại/xáo trộn không?
+- Xóa 1 lệnh khỏi giữa chuỗi streak (không phải lệnh gần nhất) — streak có được
+  tính lại đúng không?
+
+M8 — Push Notification:
+- Evening review: xác nhận chính xác điều kiện "có lệnh đóng trong ngày" dùng
+  exit_time theo timezone nào. User đóng lệnh lúc 23:55 timezone A — có tính vào
+  "hôm nay" đúng ở timezone của user không?
+- Đổi giờ notification trong Settings — job đã lên lịch trước đó có bị hủy/dời
+  đúng không, hay vẫn chạy theo giờ cũ?
+
+Tạo bảng tổng hợp: Module | Vấn đề tìm được | Severity | Evidence.
+
+Không sửa code.
+```
+
+---
+
+### Prompt 10b — Audit Adaptive Rules & khóa "chỉ giảm không tăng" (MỚI)
+
+```
+Chưa sửa code.
+
+Adaptive Rules là một nguyên tắc bất biến của app: risk chỉ được TỰ ĐỘNG điều
+chỉnh GIẢM khi ATR vượt ngưỡng, không bao giờ được tự tăng. Hãy tấn công khóa
+này ở TỪNG TẦNG riêng biệt:
+
+1. DB trigger: đọc trigger/constraint thực tế trên bảng rule_adaptive_conditions.
+   Constraint hiện tại (VD adjusted_value <= base_value) có thực sự chặn được
+   mọi cách chèn dữ liệu adjusted_value > base_value không? Thử viết ra 1 câu
+   SQL INSERT/UPDATE cụ thể xem có lọt qua được không.
+
+2. API/Edge Function: nếu có endpoint tạo/sửa rule_adaptive_conditions, gọi trực
+   tiếp với payload adjusted_value > base_value (bỏ qua UI) — có bị từ chối không?
+
+3. Đường vòng "xóa rule cũ, tạo rule mới": user xóa rule max_risk_per_trade rồi
+   tạo lại với base_value cao hơn, sau đó gắn adaptive_condition mới — có phá vỡ
+   được ý định "chỉ giảm" theo cách này không (vì baseline đã đổi)?
+
+4. Trường hợp ATR = 0 hoặc dữ liệu ATR bị thiếu/lỗi — công thức tính
+   adjusted_value xử lý ra sao? Có thể vô tình cho adjusted_value cao hơn
+   base_value nếu ATR=0 hoặc âm không?
+
+5. Màn hình "Continue Anyway" khi risk vượt đề xuất adaptive — bấm liên tục
+   nhiều lần (double-tap) có tạo ra nhiều bản ghi decision_interruptions hay
+   nhiều trade_plans trùng nhau không?
+
+Với mỗi lỗ hổng tìm được: mô tả chính xác cách khai thác, severity, và tại sao
+nó vi phạm nguyên tắc cốt lõi "adaptive chỉ giảm risk" của sản phẩm.
+
+Không sửa code.
+```
+
+---
+
+**Prompt 11 → 13: (GIỮ NGUYÊN từ plan4.md)**
+Audit integration/import/offline · Cross-feature adversarial scenarios (≥30 kịch bản) · Tổng kết vòng 1 (P0-P3, Top 10 hidden risks, requirement ambiguities, acceptance criteria).
+
+*(Bổ sung nhỏ cho Prompt 12 — Cross-feature: thêm 2 kịch bản vào danh sách ≥30 kịch bản đã yêu cầu:*
+- *"Fast Plan nhập Risk% bằng dấu phẩy thập phân (locale khác) trong khi rule lưu bằng dấu chấm — risk engine tính đúng không?"*
+- *"Adaptive Rules đề xuất giảm risk + Decision Interruption cùng trigger trên 1 Plan — thứ tự hiển thị 2 cảnh báo này có gây nhầm lẫn/che khuất nhau không?")*
+
+**→ DỪNG LẠI SAU PROMPT 13. Đọc report. Fix toàn bộ P0/P1 trước khi sang Checkpoint 2.**
+
+---
+
+## NHÓM 2 — QA VERIFICATION (sau khi fix P0/P1)
+
+**Prompt 14 → 18: (GIỮ NGUYÊN từ plan4.md)**
+Feature Test Matrix toàn bộ modules · QA Onboarding + Instant Audit Gate · QA Constitution + Adaptive Rules · QA Fast Plan + Risk Engine · QA Decision Interruption.
+
+*(Prompt 16 "QA Constitution + Adaptive Rules" — bổ sung yêu cầu: mọi test case phải bao gồm cả 5 kịch bản tấn công đã liệt kê ở Prompt 10b, verify bằng cách RE-RUN thực tế, không chỉ đọc lại code.)*
+
+---
+
+### Prompt 19 — QA Execution Widget + MT4 Parser (SỬA — thêm điều kiện chặn cứng)
+
+```
+QA toàn bộ Execution Capture (Widget + Paste MT4/5).
+
+Trước khi test bất kỳ điều gì khác, xác nhận và ghi rõ vào report:
+"Parser đã verify với dữ liệu thật chưa: [CÓ/CHƯA]. Nếu CHƯA, mọi kết quả test
+Instant Audit (M3) trong report này chỉ có giá trị THAM KHẢO, không được dùng làm
+căn cứ để set INSTANT_AUDIT_ENABLED=true."
+
+Sau đó test:
+- Widget nhập nhanh: đo thời gian thực tế (không phải ước lượng) từ mở màn hình
+  đến lưu thành công, với ít nhất 5 lần đo. AC là ≤20 giây — ghi rõ số đo thật.
+- Paste MT4/5: test với format thật nếu đã có (từ Exness/ICMarkets/XM/FTMO...).
+  Nếu chưa có dữ liệu thật, DỪNG LẠI và báo cáo rõ đây là BLOCKED, không tự tạo
+  dữ liệu giả rồi báo PASS.
+- Test locale số: nhập Entry/SL bằng dấu phẩy thập phân (giả lập thiết bị locale
+  châu Âu) trực tiếp vào Widget/Fast Plan (KHÔNG qua import) — verify công thức
+  lot size vẫn tính đúng, không bị hiểu sai dấu phẩy thành dấu phân cách hàng nghìn.
+- Test dòng lỗi: file có dòng sai format → verify UI hiện đúng số dòng + lý do,
+  không silent-fail, không import thiếu mà không báo.
+
+PASS/FAIL/BLOCKED cho từng mục, kèm evidence cụ thể.
+```
+
+**Prompt 20 → 22: (GIỮ NGUYÊN từ plan4.md, áp dụng thêm checklist chi tiết M4-M7 từ Prompt 10 ở trên khi QA)**
+QA Plan vs Reality + Cost of Indiscipline (M4) · QA Behavior + Setup Analytics (M5) + Danger Zone (M6) · QA Scores + Streak (M7) + Weekly Audit.
+
+---
+
+### Prompt 23 — QA Push Notifications M8 (SỬA — thêm timezone edge case)
+
+```
+QA toàn bộ Push Notification (Morning brief + Evening review).
+
+Ngoài các test case chuẩn (bật/tắt riêng từng loại, đổi giờ, permission timing),
+BẮT BUỘC test thêm:
+- User đóng lệnh lúc 23:50 theo timezone của user_profiles.timezone — verify
+  Evening review tối hôm đó có nhận diện đúng lệnh này là "có lệnh đóng trong
+  ngày" hay bị tính nhầm sang ngày hôm sau do lệch múi giờ server/UTC.
+- Đổi giờ notification trong Settings từ 21:00 sang 22:00 — verify job cũ (21:00)
+  bị hủy đúng, không gửi trùng 2 lần (1 lần 21:00 cũ + 1 lần 22:00 mới) trong
+  cùng 1 ngày chuyển đổi.
+- Không có lệnh nào đóng cả tuần — verify Evening review im lặng hoàn toàn suốt
+  tuần đó, không gửi thông báo rỗng bất kỳ ngày nào.
+
+PASS/FAIL/BLOCKED + evidence.
+```
+
+---
+
+### Prompt 24 — QA i18n + In-app Guidance (MỚI — hoàn toàn thiếu trong plan4.md gốc)
+
+```
+QA toàn bộ i18n (vi/en) và In-app Guidance (Tour, FeatureBadge, Tooltip).
+
+i18n:
+- Parity key: liệt kê TẤT CẢ text hiển thị trong app, verify mỗi key tiếng Việt
+  đều có key tiếng Anh tương ứng và ngược lại. Báo cáo danh sách key bị thiếu ở
+  bất kỳ ngôn ngữ nào (kể cả text trong Edge Function response, error message,
+  notification content — không chỉ UI tĩnh).
+- Đổi ngôn ngữ giữa chừng khi đang có form đang mở (VD giữa lúc điền Fast Plan)
+  — verify dữ liệu đã nhập không bị mất, label đổi đúng ngôn ngữ mới.
+- Format số/tiền tệ có đổi theo ngôn ngữ không hay cố định 1 kiểu? Nếu cố định,
+  có gây hiểu nhầm khi user dùng tiếng Anh nhưng quen đọc số kiểu Việt (hoặc
+  ngược lại) không?
+
+In-app Guidance:
+- Tour spotlight: verify vị trí highlight tính đúng trên nhiều kích thước màn
+  hình khác nhau (không hardcode toạ độ) — test ít nhất 2 kích thước màn hình.
+- Tour chỉ hiện 1 lần — verify trạng thái "đã xem" lưu ĐÚNG theo user
+  (per-user), không bị lưu local device rồi user khác đăng nhập trên cùng máy
+  vẫn không thấy tour (đây là lỗi cross-user leakage nếu xảy ra).
+- FeatureBadge "Mới" — bấm tắt trên thiết bị A, đăng nhập cùng tài khoản trên
+  thiết bị B — badge có đồng bộ tắt theo không, hay chỉ tắt local?
+- Tooltip nút bị khóa (DisabledStateHelper) — verify tooltip hiện ĐÚNG lý do
+  thực tế của lần khóa đó (VD "đang lưu" vs "thiếu SL" vs "vượt risk") — không
+  hiện thông điệp chung chung sai ngữ cảnh.
+
+PASS/FAIL/BLOCKED + evidence cho từng mục.
+```
+
+**Prompt 25 → 26: (GIỮ NGUYÊN từ plan4.md)**
+QA Monetization + Portfolio + Security · E2E Journeys (5 cụ thể của bản gốc).
+
+*(Bổ sung cho Prompt 25 — Security/Ads: thêm test "System Clock Attack" — chỉnh giờ hệ thống điện thoại lùi lại trước cooldown 5 phút của AdMob rewarded ad, verify server-side (không phải chỉ client timestamp) có chặn được việc xem ad liên tục hay không.)*
+
+**→ DỪNG LẠI SAU PROMPT 26. Fix các FAIL trước khi sang Checkpoint 3.**
+
+---
+
+**Prompt 27 → 35: (GIỮ NGUYÊN từ plan4.md)**
+Navigation state test · Large dataset/performance (1k/5k/10k trades) · Security regression.
+
+**Prompt 36 → 37: (GIỮ NGUYÊN từ plan4.md)**
+Full user journeys (10 journey) · Regression suite toàn bộ.
+
+---
+
+### Prompt 38 — Final Release Gate (SỬA — mở rộng phạm vi bao phủ)
+
+```
+(Giữ nguyên toàn bộ cấu trúc report của Prompt 38 gốc trong plan4.md: PRODUCT,
+BUSINESS LOGIC, DATA, UX, RESILIENCE, SECURITY, PERFORMANCE → RELEASE BLOCKERS/
+HIGH/MEDIUM/LOW RISK → Core Feature Coverage → P0/P1 Regression → Remaining
+Unknowns → Final verdict.)
+
+BẮT BUỘC bổ sung các mục sau vào từng phần tương ứng, không được coi report là
+đầy đủ nếu thiếu:
+
+PRODUCT: thêm dòng riêng cho từng module M0-M8 (không gộp chung "retention").
+BUSINESS LOGIC: thêm dòng riêng "Adaptive Rules lock" với kết quả từ Prompt 10b.
+DATA: thêm dòng "INSTANT_AUDIT_ENABLED enforcement" — ghi rõ client-only hay
+  server-enforced, và trạng thái hiện tại true/false.
+UX: thêm dòng "i18n parity" và "In-app Guidance cross-user" với kết quả từ
+  Prompt 24.
+SECURITY: thêm dòng "System Clock Attack trên AdMob cooldown".
+
+Core Feature Coverage table PHẢI liệt kê từng module M0-M8 là 1 dòng riêng, không
+được gộp thành 1 dòng "Retention features".
+
+Final verdict CHỈ được chọn READY FOR RELEASE nếu:
+- Parser M0 đạt ≥95% trên dữ liệu thật (không phải fixture), CÓ evidence cụ thể.
+- Adaptive Rules lock không bị bypass ở bất kỳ tầng nào (Prompt 10b PASS toàn bộ).
+- INSTANT_AUDIT_ENABLED được enforce server-side, không chỉ client-side.
+- Cost of Indiscipline disclaimer xuất hiện ở 100% vị trí hiển thị.
+
+Nếu bất kỳ điều kiện nào ở trên không đạt, verdict tối đa là READY FOR BETA,
+và phải liệt kê rõ điều kiện cần hoàn thành trước khi chuyển sang RELEASE.
+```
+
+---
+
+## Thứ tự chạy thực tế (4 checkpoint, không đổi so với bản gốc)
+
+```
+CHECKPOINT 1:  Prompt 0 → 1→9 → 10 → 10b → 11→13
+               Dừng lại. Đọc report. Fix P0/P1.
+
+CHECKPOINT 2:  Prompt 14→18 → 19 → 20→22 → 23 → 24 → 25→26
+               Dừng lại. Fix các FAIL.
+
+CHECKPOINT 3:  Prompt 27→35
+
+CHECKPOINT 4:  Prompt 36 → 37 → 38
+```
+
+---
+
+## Ghi chú khi gửi cho agent
+
+- Đính kèm cả `plan4.md` (để agent lấy nguyên văn các prompt "GIỮ NGUYÊN") lẫn file này (để agent biết prompt nào bị SỬA/MỚI và chèn ở đâu).
+- Prompt 10, 10b, 19 (bản sửa), 23 (bản sửa), 24, 38 (bản sửa) là phần khác biệt quan trọng nhất — đây là chỗ lấp đúng khoảng trống mà cả 4 review đã chỉ ra cộng với 2 điểm bổ sung (locale số ở form nhập tay, enforcement server-side của feature flag).
+- Nếu agent báo BLOCKED ở Prompt 19 vì chưa có dữ liệu MT4 thật — đây là tín hiệu đúng, không phải lỗi của agent. Cần bạn cung cấp dữ liệu thật trước khi có thể kết luận READY FOR RELEASE, đúng như điều kiện đã khóa cứng ở Prompt 38.

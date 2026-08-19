@@ -36,7 +36,47 @@ export type DangerZoneInput = {
  * Trả null khi: chưa đủ 30 lệnh đóng HOẶC pattern chưa đủ 5 lần lặp
  * (không hiển thị kết luận từ dữ liệu ít — đúng AC Module 6).
  */
-export function findDangerZonePattern(input: DangerZoneInput): DangerZonePattern | null {
+/**
+ * Giờ trong ngày (0-23) theo timezone user (IANA, VD 'Asia/Ho_Chi_Minh').
+ * Không truyền timezone → fallback device-local (hành vi cũ, giữ test pass).
+ * Dùng Intl (không phụ thuộc thư viện) — Hermes/RN hỗ trợ.
+ */
+export function hourInZone(iso: string, timezone?: string): number {
+  if (!timezone) return new Date(iso).getHours();
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(iso));
+    const h = parts.find((p) => p.type === 'hour')?.value;
+    return h != null ? Number(h) % 24 : new Date(iso).getHours();
+  } catch {
+    // timezone không hợp lệ → device-local (không crash, không suy đoán sai)
+    return new Date(iso).getHours();
+  }
+}
+
+/** Ngày (YYYY-MM-DD) theo timezone user — dùng cho nhóm "lệnh thứ N trong ngày". */
+export function dayKeyInZone(iso: string, timezone?: string): string {
+  if (!timezone) return iso.slice(0, 10);
+  try {
+    // en-CA cho ra định dạng YYYY-MM-DD đúng thứ tự
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+export function findDangerZonePattern(
+  input: DangerZoneInput,
+  timezone?: string,
+): DangerZonePattern | null {
   const { closedExecutions, violations } = input;
   const totalClosed = closedExecutions.length;
   if (totalClosed < MIN_CLOSED_TRADES) return null;
@@ -48,7 +88,7 @@ export function findDangerZonePattern(input: DangerZoneInput): DangerZonePattern
     if (!v.trade_execution_id) continue;
     const exec = execById.get(v.trade_execution_id);
     if (!exec) continue;
-    const hour = new Date(exec.entry_time).getHours();
+    const hour = hourInZone(exec.entry_time, timezone);
     hourCounts[hour] = (hourCounts[hour] ?? 0) + 1;
   }
 
@@ -90,7 +130,10 @@ export type DangerZoneDetail = {
  * Tìm pattern "lệnh thứ N trong ngày" — ngưỡng ≥30 lệnh + pattern ≥5 lần.
  * Tính thứ tự lệnh trong ngày theo entry_time (cùng ngày → đếm tăng dần).
  */
-export function findNthOrderPattern(input: DangerZoneInput): NthOrderPattern | null {
+export function findNthOrderPattern(
+  input: DangerZoneInput,
+  timezone?: string,
+): NthOrderPattern | null {
   const { closedExecutions, violations } = input;
   const totalClosed = closedExecutions.length;
   if (totalClosed < MIN_CLOSED_TRADES) return null;
@@ -100,7 +143,7 @@ export function findNthOrderPattern(input: DangerZoneInput): NthOrderPattern | n
   const sorted = [...closedExecutions].sort(
     (a, b) => new Date(a.entry_time).getTime() - new Date(b.entry_time).getTime(),
   );
-  const dayKey = (iso: string) => iso.slice(0, 10);
+  const dayKey = (iso: string) => dayKeyInZone(iso, timezone);
   const orderByDay = new Map<string, Map<string, number>>(); // day -> execId -> nth
   const countsByDay = new Map<string, number>();
   for (const e of sorted) {
@@ -133,10 +176,13 @@ export function findNthOrderPattern(input: DangerZoneInput): NthOrderPattern | n
 }
 
 /** Tổng hợp đầy đủ patterns cho màn chi tiết (Module 6). */
-export function findDangerZoneDetail(input: DangerZoneInput): DangerZoneDetail {
+export function findDangerZoneDetail(
+  input: DangerZoneInput,
+  timezone?: string,
+): DangerZoneDetail {
   return {
-    hourPattern: findDangerZonePattern(input),
-    nthOrderPattern: findNthOrderPattern(input),
+    hourPattern: findDangerZonePattern(input, timezone),
+    nthOrderPattern: findNthOrderPattern(input, timezone),
   };
 }
 

@@ -1,4 +1,5 @@
 import {
+  calculateActualRiskPercent,
   calculateLotSize,
   calculateRiskAmount,
   calculateRiskReward,
@@ -94,5 +95,58 @@ describe('Risk Engine — R:R, risk amount, limit check', () => {
     expect(isRiskOverLimit(2, 1)).toBe(true);
     expect(isRiskOverLimit(1, 1)).toBe(false);
     expect(isRiskOverLimit(0.5, 1)).toBe(false);
+  });
+});
+
+describe('Actual Risk Percent — công thức ngược (tính tay độc lập)', () => {
+  it('EURUSD lot 0.2, entry 1.1000, SL 1.0950 (50 pip × $10), balance $10k → 1%', () => {
+    // Tính tay: risk $ = 0.2 lot × 50 pip × $10/pip/lot = $100 → 100/10000×100 = 1%
+    const r = calculateActualRiskPercent({
+      lotSize: 0.2,
+      symbol: 'EURUSD',
+      entry: 1.1,
+      sl: 1.095,
+      balance: 10_000,
+    });
+    expect(r).toBeCloseTo(1, 6);
+  });
+
+  it('USDJPY lot 0.3, entry 150.00, SL 150.50 (pip value 1000/150=$6.667), balance $10k → 1%', () => {
+    // Tính tay: risk $ = 0.3 × 50 × 6.6667 = $100 → 1%
+    const r = calculateActualRiskPercent({
+      lotSize: 0.3,
+      symbol: 'USDJPY',
+      entry: 150,
+      sl: 150.5,
+      balance: 10_000,
+    });
+    expect(r).toBeCloseTo(1, 4);
+  });
+
+  it('XAUUSD lot 0.1, entry 2400, SL 2390 (100 pip × $10), balance $10k → 1%', () => {
+    const r = calculateActualRiskPercent({
+      lotSize: 0.1,
+      symbol: 'XAUUSD',
+      entry: 2400,
+      sl: 2390,
+      balance: 10_000,
+    });
+    expect(r).toBeCloseTo(1, 6);
+  });
+
+  it('Nghịch đảo của calculateLotSize: lot từ risk 1% → actual risk ≈ 1%', () => {
+    const lot = calculateLotSize({ balance: 10_000, riskPercent: 1, symbol: 'EURUSD', entry: 1.1, sl: 1.095 });
+    const r = calculateActualRiskPercent({ lotSize: lot, symbol: 'EURUSD', entry: 1.1, sl: 1.095, balance: 10_000 });
+    // floor xuống 0.01 → risk thực ≤ 1% nhưng rất gần
+    expect(r).not.toBeNull();
+    expect(r!).toBeLessThanOrEqual(1);
+    expect(r!).toBeGreaterThan(0.99);
+  });
+
+  it('balance = 0 hoặc thiếu SL hợp lệ → null (không suy đoán)', () => {
+    expect(calculateActualRiskPercent({ lotSize: 0.2, symbol: 'EURUSD', entry: 1.1, sl: 1.095, balance: 0 })).toBeNull();
+    // entry == sl → 0 pip → không tính được risk
+    expect(calculateActualRiskPercent({ lotSize: 0.2, symbol: 'EURUSD', entry: 1.1, sl: 1.1, balance: 10_000 })).toBeNull();
+    expect(calculateActualRiskPercent({ lotSize: 0, symbol: 'EURUSD', entry: 1.1, sl: 1.095, balance: 10_000 })).toBeNull();
   });
 });

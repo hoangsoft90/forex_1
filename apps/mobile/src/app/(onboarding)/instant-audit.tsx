@@ -65,7 +65,7 @@ export default function InstantAuditScreen() {
     setAuditText(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('parse-mt4', {
-        body: { text, lang: i18n.language },
+        body: { text, lang: i18n.language, purpose: 'instant_audit' },
       });
       if (fnError) throw fnError;
       const result = data as ParseResult;

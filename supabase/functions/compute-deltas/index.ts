@@ -30,6 +30,29 @@ function round(n: number, digits: number): number {
   return Math.round(n * f) / f;
 }
 
+// ⚠️ KEEP IN SYNC: helpers khớp `apps/mobile/src/lib/risk-engine.ts`.
+function pipValuePerLot(symbol: string, price: number): number | null {
+  if (symbol === 'EURUSD') return 10;
+  if (symbol === 'XAUUSD') return 10;
+  if (symbol === 'USDJPY') return 1000 / price;
+  return null;
+}
+
+/** actual_risk_percent = (lot × pip × pip value) / balance × 100 — null nếu thiếu dữ liệu. */
+function actualRiskPercent(
+  lotSize: number,
+  symbol: string,
+  entry: number,
+  sl: number,
+  balance: number,
+): number | null {
+  const pipValue = pipValuePerLot(symbol, entry);
+  if (pipValue == null) return null;
+  const pips = Math.abs(entry - sl) / pipSizeForSymbol(symbol);
+  if (pips <= 0 || balance <= 0 || lotSize <= 0) return null;
+  return round(((lotSize * pips * pipValue) / balance) * 100, 4);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -61,7 +84,7 @@ Deno.serve(async (req: Request) => {
     // Lấy execution + plan liên kết
     const { data: exec, error: execErr } = await supabase
       .from('trade_executions')
-      .select('id, user_id, symbol, trade_plan_id, actual_entry, actual_sl, actual_risk_percent, exit_time')
+      .select('id, user_id, symbol, trade_plan_id, lot_size, actual_entry, actual_sl, actual_risk_percent, exit_time')
       .eq('id', executionId)
       .eq('user_id', user.id)
       .single();
@@ -104,8 +127,28 @@ Deno.serve(async (req: Request) => {
       Math.abs(actualSl - (plan?.planned_sl ?? actualSl)) / pip,
       2,
     );
+
+    // P0-A: backfill actual_risk_percent nếu null (lệnh cũ/widget/import thiếu) —
+    // tính ngược từ lot + SL + balance rồi cập nhật execution, dùng giá trị mới
+    // cho delta. Thiếu SL/balance/symbol không hỗ trợ → giữ null (không suy đoán).
+    let actualRisk = exec.actual_risk_percent;
+    if (actualRisk == null) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('account_balance_baseline')
+        .eq('id', user.id)
+        .maybeSingle();
+      const balance = (profile?.account_balance_baseline as number | null | undefined) ?? null;
+      if (balance != null && balance > 0 && exec.actual_sl != null) {
+        actualRisk = actualRiskPercent(exec.lot_size, exec.symbol, exec.actual_entry, exec.actual_sl, balance);
+        if (actualRisk != null) {
+          await supabase.from('trade_executions').update({ actual_risk_percent: actualRisk }).eq('id', exec.id);
+        }
+      }
+    }
+
     const riskDeviationPercent = round(
-      (exec.actual_risk_percent ?? 0) - (plan?.planned_risk_percent ?? 0),
+      (actualRisk ?? 0) - (plan?.planned_risk_percent ?? 0),
       4,
     );
 
@@ -125,11 +168,25 @@ Deno.serve(async (req: Request) => {
       computed_at: new Date().toISOString(),
     };
 
-    // Upsert theo execution (1 execution = 1 delta)
-    const { error: upsertErr } = await supabase
+    // Ghi 1 delta / 1 execution. KHÔNG dùng upsert(onConflict) vì bảng
+    // plan_vs_reality_deltas KHÔNG có unique constraint trên trade_execution_id
+    // (smoke test 2026-08-18 phát hiện upsert luôn fail PGRST102 → pipeline delta
+    // chưa từng ghi được dữ liệu). Chọn select → update/insert thay vì đổi schema.
+    const { data: existingDelta } = await supabase
       .from('plan_vs_reality_deltas')
-      .upsert(row, { onConflict: 'trade_execution_id' });
-    if (upsertErr) throw upsertErr;
+      .select('id')
+      .eq('trade_execution_id', exec.id)
+      .maybeSingle();
+    let writeErr: { message: string } | null = null;
+    if (existingDelta) {
+      ({ error: writeErr } = await supabase
+        .from('plan_vs_reality_deltas')
+        .update(row)
+        .eq('id', existingDelta.id));
+    } else {
+      ({ error: writeErr } = await supabase.from('plan_vs_reality_deltas').insert(row));
+    }
+    if (writeErr) throw writeErr;
 
     return new Response(JSON.stringify({ ok: true, ...row }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

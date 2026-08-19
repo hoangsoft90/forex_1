@@ -63,6 +63,39 @@ describe('Personal Danger Zone (Module 6 — dùng ở Today Dashboard Module 2)
     expect(findDangerZonePattern({ closedExecutions: execs, violations: viols })).toBeNull();
   });
 
+  it('MODULE 6 FIX: pattern tính theo user_profiles.timezone, không phải device/UTC', () => {
+    // entry_time 17:00 UTC = 00:00 hôm sau ở Asia/Ho_Chi_Minh (+7)
+    const execs: { id: string; entry_time: string }[] = [];
+    for (let i = 0; i < 35; i++) {
+      execs.push({ id: `tz${i}`, entry_time: `2026-08-01T17:00:00Z` });
+    }
+    const viols = makeViolations(['tz0', 'tz1', 'tz2', 'tz3', 'tz4', 'tz5']);
+    const r = findDangerZonePattern({ closedExecutions: execs, violations: viols }, 'Asia/Ho_Chi_Minh');
+    expect(r?.hour).toBe(0); // 17:00 UTC → 00:00 (+7), KHÔNG phải 17 (giờ UTC/device)
+    expect(r?.count).toBe(6);
+  });
+
+  it('nth-order dùng cùng timezone user (ngày không bị lệch do UTC)', () => {
+    // 23:30 UTC ngày 08-01 = 06:30 ngày 08-02 ở +7 → cùng ngày local
+    const execs: { id: string; entry_time: string }[] = [];
+    const violIds: string[] = [];
+    for (let d = 1; d <= 6; d++) {
+      for (let n = 0; n < 6; n++) {
+        const id = `dz${d}n${n}`;
+        execs.push({ id, entry_time: `2026-08-0${d}T23:30:00Z` });
+        if (n === 2) violIds.push(id);
+      }
+    }
+    const r = findNthOrderPattern(
+      { closedExecutions: execs, violations: makeViolations(violIds) },
+      'Asia/Ho_Chi_Minh',
+    );
+    // 23:30 UTC → 06:30 +7 ngày hôm sau: mỗi ngày local có 6 lệnh cùng ngày → nth vẫn đúng
+    expect(r).not.toBeNull();
+    expect(r?.nth).toBe(3);
+    expect(r?.count).toBe(6);
+  });
+
   it('chọn giờ có số lần cao nhất khi nhiều giờ cùng đủ ngưỡng', () => {
     const execs = [
       ...makeExecs(20, 9), // e0..e19 @ 9:00

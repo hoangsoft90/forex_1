@@ -13,8 +13,10 @@ import { useTranslation } from 'react-i18next';
 
 import { EXECUTION_EVENTS, trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth-context';
+import { syncEveningNotification } from '@/lib/notification-manager';
 import { safeBack } from '@/lib/navigation';
-import { isSupportedSymbol } from '@/lib/risk-engine';
+import { parseDecimalInput } from '@/lib/parse-number';
+import { calculateActualRiskPercent, isSupportedSymbol } from '@/lib/risk-engine';
 import { supabase } from '@/lib/supabase';
 
 type LinkedPlan = { id: string; symbol: string; direction: 'buy' | 'sell' };
@@ -63,9 +65,9 @@ export default function ExecutionWidgetScreen() {
   }, [findSuggestedPlan]);
 
   async function handleSave() {
-    const lotNum = parseFloat(lot);
-    const entryNum = parseFloat(entry);
-    if (!isSupportedSymbol(symbol) || !(lotNum > 0) || !(entryNum > 0)) {
+    const lotNum = parseDecimalInput(lot);
+    const entryNum = parseDecimalInput(entry);
+    if (!isSupportedSymbol(symbol) || !(lotNum != null && lotNum > 0) || !(entryNum != null && entryNum > 0)) {
       setError(t('executionWidget.fillError'));
       return;
     }
@@ -73,7 +75,30 @@ export default function ExecutionWidgetScreen() {
     setSaving(true);
     setError(null);
     try {
-      const exitNum = exitPrice ? parseFloat(exitPrice) : null;
+      const exitNum = exitPrice ? parseDecimalInput(exitPrice) : null;
+      const slNum = sl ? parseDecimalInput(sl) : null;
+      const tpNum = tp ? parseDecimalInput(tp) : null;
+      // Tính actual_risk_percent ngược từ lot + SL + balance (P0-A fix:
+      // trước đây luôn null → followed_plan luôn false). Thiếu SL/balance → null,
+      // không suy đoán — compute-deltas sẽ backfill nếu có thể.
+      let actualRisk: number | null = null;
+      if (slNum != null && isSupportedSymbol(symbol)) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('account_balance_baseline')
+          .eq('id', user.id)
+          .maybeSingle();
+        const balance = profile?.account_balance_baseline as number | null;
+        if (balance != null) {
+          actualRisk = calculateActualRiskPercent({
+            lotSize: lotNum,
+            symbol,
+            entry: entryNum,
+            sl: slNum,
+            balance,
+          });
+        }
+      }
       const { data: inserted, error: e } = await supabase
         .from('trade_executions')
         .insert({
@@ -83,8 +108,9 @@ export default function ExecutionWidgetScreen() {
           direction,
           lot_size: lotNum,
           actual_entry: entryNum,
-          actual_sl: sl ? parseFloat(sl) : null,
-          actual_tp: tp ? parseFloat(tp) : null,
+          actual_sl: slNum,
+          actual_tp: tpNum,
+          actual_risk_percent: actualRisk,
           entry_time: new Date().toISOString(),
           exit_time: exitNum != null ? new Date().toISOString() : null,
           exit_price: exitNum,
@@ -94,13 +120,19 @@ export default function ExecutionWidgetScreen() {
         .single();
       if (e) throw e;
 
-      // Auto-trigger tính delta khi trade ĐÓNG (exit_time set + có plan) — Module 6.
-      if (inserted?.exit_time && inserted?.trade_plan_id) {
-        supabase.functions.invoke('compute-deltas', {
+      // Auto-trigger khi trade ĐÓNG: tính delta (Module 6) + detect violations (Module 7).
+      // Chạy fire-and-forget — không chặn luồng chính nếu edge chưa deploy.
+      if (inserted?.exit_time) {
+        if (inserted?.trade_plan_id) {
+          supabase.functions.invoke('compute-deltas', {
+            body: { executionId: inserted.id },
+          }).catch(() => {});
+        }
+        // Behavior Engine: detect-violations tự check điều kiện (overconfidence cần
+        // plan, revenge/martingale/hope không cần) — chạy cho MỌI lệnh đóng.
+        supabase.functions.invoke('detect-violations', {
           body: { executionId: inserted.id },
-        }).catch(() => {
-          // Không chặn luồng chính nếu edge function chưa deploy
-        });
+        }).catch(() => {});
       }
 
       // Đánh dấu plan đã được thực hiện — nếu không, plan vẫn status='planned'
@@ -121,6 +153,8 @@ export default function ExecutionWidgetScreen() {
         saved_at: new Date().toISOString(),
         linked_plan: Boolean(linkPlan && suggestedPlan),
       });
+      // Vừa đóng lệnh → re-sync evening review (hôm nay đã có lệnh đóng → gửi tối nay)
+      syncEveningNotification().catch(() => {});
       safeBack(router, '/(main)');
     } catch (e) {
       setError(e instanceof Error ? e.message : t('common.error'));

@@ -29,6 +29,8 @@
 16. Build APK để tìm lỗi native thật: theo skill `expo-build-debug-apk-gh` (push lên main → GH Actions → tải artifact), KHÔNG chỉ dựa vào `expo export`. Debug APK đã nhúng JS bundle (plugin `embed-js-in-debug` — `debuggableVariants = []` cho RN 0.86); nếu app cài vào máy không mở được (logcat "Unable to load script") → dùng skill `expo-apk-standalone`. Identity app hiện tại: package `com.trademind.trading`, tên "Trading Discipline OS" — KHÔNG dùng lại `com.hoangsoft90.mobile`.
 17. Thay đổi schema/API → cập nhật ADR + nhắc user chạy migration trên SQL Editor.
 
+> 📌 **Independent Calculation** (audit/test công thức tài chính: lot size, R:R, Discipline/Edge Score, Cost of Indiscipline, delta Plan vs Reality) là quy tắc RIÊNG CỦA APP — đặt tại `apps/mobile/AGENTS.md` (xem để áp dụng).
+
 ## Cấm kỵ riêng project
 
 - ❌ Không đổi schema (`data_model.md` / `schema.sql`) mà không hỏi user — bảng/field là ràng buộc cứng.

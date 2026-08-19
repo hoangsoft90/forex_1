@@ -26,7 +26,14 @@ export default function ScoresScreen() {
   const loadScores = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { start, end } = weekBounds(new Date());
+    // Timezone user (P1-4): tuần tính theo calendar date trong user_profiles.timezone.
+    const { data: tzRow } = await supabase
+      .from('user_profiles')
+      .select('timezone')
+      .eq('id', user.id)
+      .maybeSingle();
+    const timezone = tzRow?.timezone as string | undefined;
+    const { start, end } = weekBounds(new Date(), timezone);
 
     const [{ data: profile }, { data: executions }, { data: deltas }, { data: violations }, { data: interruptions }] =
       await Promise.all([
@@ -75,7 +82,7 @@ export default function ScoresScreen() {
     // Tiến bộ tuần này: so với snapshot tuần trước
     const prevWeek = new Date();
     prevWeek.setDate(prevWeek.getDate() - 7);
-    const prevBounds = weekBounds(prevWeek);
+    const prevBounds = weekBounds(prevWeek, timezone);
     const { data: prevSnapshot } = await supabase
       .from('discipline_score_snapshots')
       .select('score')
@@ -83,14 +90,27 @@ export default function ScoresScreen() {
       .eq('period_start', prevBounds.start)
       .maybeSingle();
 
-    // Ghi snapshot tuần này ĐÚNG 1 LẦN (không tính trùng khi mở app nhiều lần trong tuần)
+    // Ghi snapshot tuần này — UPSERT (P1-3): trước đây insert-only nên nếu mở app
+    // nhiều lần trong tuần, snapshot giữ nguyên điểm cũ (VD 0 khi chưa có lệnh) dù
+    // user đã thêm lệnh/violation giữa tuần. Giờ cập nhật điểm mới nhất của tuần.
     const { data: existingSnapshot } = await supabase
       .from('discipline_score_snapshots')
       .select('id')
       .eq('user_id', user.id)
       .eq('period_start', start)
       .maybeSingle();
-    if (!existingSnapshot) {
+    if (existingSnapshot) {
+      await supabase
+        .from('discipline_score_snapshots')
+        .update({
+          period_end: end,
+          score: discipline.score,
+          rule_adherence_rate: discipline.ruleAdherenceRate,
+          violations_count: violationsCount,
+          bad_trades_prevented_count: prevented,
+        })
+        .eq('id', existingSnapshot.id);
+    } else {
       await supabase.from('discipline_score_snapshots').insert({
         user_id: user.id,
         period_start: start,
