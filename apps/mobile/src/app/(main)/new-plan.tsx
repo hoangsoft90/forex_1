@@ -467,7 +467,7 @@ export default function NewPlanScreen() {
 
           {/* TradingView chart — hiển thị giá symbol đang chọn (Phase 2) */}
           <Text style={styles.label}>{t('newPlan.chartLabel', { symbol })}</Text>
-          <TradingViewChart symbol={symbol} height={220} />
+          <TradingViewChart symbol={symbol} height={320} />
         </View>
       )}
 

@@ -28,9 +28,14 @@ import { getAdUnitId, isAdmobConfigured, TEST_ADS, TEST_DEVICE_IDS } from '@/lib
  * Khi TEST_ADS=false và có TEST_DEVICE_IDS → các device đó luôn nhận test ads.
  */
 export function initAdMob(): void {
-  MobileAds().setRequestConfiguration({
-    testDeviceIdentifiers: TEST_DEVICE_IDS,
-  });
+  try {
+    MobileAds().setRequestConfiguration({
+      testDeviceIdentifiers: TEST_DEVICE_IDS,
+    });
+  } catch {
+    // Native module chưa sẵn sàng (Expo Go / missing native) — bỏ qua, showRewardedAd sẽ fail-open.
+    console.warn('[ads] MobileAds() init failed — native module may not be available.');
+  }
   if (TEST_ADS) {
     console.log('[ads] Đang chạy chế độ TEST_ADS — ads hiện "Test ad", không tính doanh thu.');
   } else {
@@ -57,44 +62,52 @@ export async function showRewardedAd(): Promise<RewardResult> {
     return { rewarded: false, error: i18n.t('admob.notConfigured') };
   }
 
-  const rewardedAd = RewardedAd.createForAdRequest(unitId, {
-    requestNonPersonalizedAdsOnly: true,
-  });
-
-  return new Promise<RewardResult>((resolve) => {
-    // Timer an toàn: ad quá lâu không load → không treo app.
-    const timeout = setTimeout(() => {
-      cleanup();
-      resolve({ rewarded: false, error: i18n.t('admob.timeout') });
-    }, 30_000);
-
-    const unsubLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
-      rewardedAd.show();
+  // Wrap toàn bộ trong try-catch: native module (TurboModule) có thể
+  // chưa sẵn sàng (Expo Go, build thiếu config) → ném TypeError thay vì crash.
+  try {
+    const rewardedAd = RewardedAd.createForAdRequest(unitId, {
+      requestNonPersonalizedAdsOnly: true,
     });
-    const unsubEarned = rewardedAd.addAdEventListener(
-      RewardedAdEventType.EARNED_REWARD,
-      () => {
+
+    return new Promise<RewardResult>((resolve) => {
+      // Timer an toàn: ad quá lâu không load → không treo app.
+      const timeout = setTimeout(() => {
         cleanup();
-        resolve({ rewarded: true });
-      },
-    );
-    const unsubClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
-      cleanup();
-      resolve({ rewarded: false, error: i18n.t('admob.closedEarly') });
-    });
-    const unsubError = rewardedAd.addAdEventListener(AdEventType.ERROR, (err) => {
-      cleanup();
-      resolve({ rewarded: false, error: i18n.t('admob.loadError', { message: err.message }) });
-    });
+        resolve({ rewarded: false, error: i18n.t('admob.timeout') });
+      }, 30_000);
 
-    function cleanup() {
-      clearTimeout(timeout);
-      unsubLoaded();
-      unsubEarned();
-      unsubClosed();
-      unsubError();
-    }
+      const unsubLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        rewardedAd.show();
+      });
+      const unsubEarned = rewardedAd.addAdEventListener(
+        RewardedAdEventType.EARNED_REWARD,
+        () => {
+          cleanup();
+          resolve({ rewarded: true });
+        },
+      );
+      const unsubClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
+        cleanup();
+        resolve({ rewarded: false, error: i18n.t('admob.closedEarly') });
+      });
+      const unsubError = rewardedAd.addAdEventListener(AdEventType.ERROR, (err) => {
+        cleanup();
+        resolve({ rewarded: false, error: i18n.t('admob.loadError', { message: err.message }) });
+      });
 
-    rewardedAd.load();
-  });
+      function cleanup() {
+        clearTimeout(timeout);
+        unsubLoaded();
+        unsubEarned();
+        unsubClosed();
+        unsubError();
+      }
+
+      rewardedAd.load();
+    });
+  } catch (e) {
+    // Native module chưa sẵn sàng — trả về lỗi rõ ràng, KHÔNG crash app.
+    console.warn('[ads] showRewardedAd failed — native module error:', e);
+    return { rewarded: false, error: i18n.t('admob.notConfigured') };
+  }
 }

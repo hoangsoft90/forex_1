@@ -29,14 +29,15 @@ type Props = {
   height?: number;
 };
 
-export default function TradingViewChart({ symbol, height = 280 }: Props) {
+export default function TradingViewChart({ symbol, height = 360 }: Props) {
   const { t, i18n } = useTranslation();
   const tvLocale = i18n.resolvedLanguage?.startsWith('vi') ? 'vi_VN' : 'en';
   const html = useMemo(() => {
     const tv = tvSymbol(symbol);
     const loadFailMsg = t('chart.webLoadFail');
     // TradingView iframe embed — ổn định hơn JS widget trên Android WebView
-    // (tránh lỗi load event timing + script S3).*
+    // (tránh lỗi load event timing + script S3).
+    // Dùng px cụ thể (không dùng %) để Android WebView render đúng kích thước.
     const iframeSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(tv)}&interval=15&timezone=Asia%2FHo_Chi_Minh&theme=light&style=1&locale=${tvLocale}&hide_side_toolbar=0&allow_symbol_change=0&autosize=1`;
     return `
 <!DOCTYPE html>
@@ -45,25 +46,28 @@ export default function TradingViewChart({ symbol, height = 280 }: Props) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
-  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
-  iframe { width: 100%; height: 100%; border: none; }
+  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; height: ${height}px; }
+  #tv-wrap { position: relative; width: 100%; height: ${height}px; }
+  iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
   .error-msg { padding: 20px; font-family: sans-serif; color: #888; text-align: center; }
 </style>
 </head>
 <body>
-  <iframe
-    src="${iframeSrc}"
-    title="TradingView ${tv}"
-    allowfullscreen
-    onload="document.getElementById('tv-loading').style.display='none'"
-    onerror="document.getElementById('tv-loading').innerHTML='<p class=\'error-msg\'>${loadFailMsg}</p>'"
-  ></iframe>
-  <div id="tv-loading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#f8f8f8">
-    <p class="error-msg">${t('chart.loading', { symbol })}</p>
+  <div id="tv-wrap">
+    <iframe
+      src="${iframeSrc}"
+      title="TradingView ${tv}"
+      allowfullscreen
+      onload="document.getElementById('tv-loading').style.display='none'"
+      onerror="document.getElementById('tv-loading').innerHTML='<p class=\\'error-msg\\'>${loadFailMsg}</p>'"
+    ></iframe>
+    <div id="tv-loading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#f8f8f8;z-index:1">
+      <p class="error-msg">${t('chart.loading', { symbol })}</p>
+    </div>
   </div>
 </body>
 </html>`;
-  }, [symbol, t, tvLocale]);
+  }, [symbol, t, tvLocale, height]);
 
   return (
     <View style={[styles.wrap, { height }]}>

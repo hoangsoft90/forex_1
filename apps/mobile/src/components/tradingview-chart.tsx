@@ -28,7 +28,7 @@ type Props = {
   height?: number;
 };
 
-export default function TradingViewChart({ symbol, height = 280 }: Props) {
+export default function TradingViewChart({ symbol, height = 360 }: Props) {
   const src = useMemo(() => {
     const tv = tvSymbol(symbol);
     const params = new URLSearchParams({
