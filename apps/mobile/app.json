@@ -69,7 +69,8 @@
       ],
       "expo-notifications",
       "./plugins/embed-js-in-debug",
-      "expo-localization"
+      "expo-localization",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

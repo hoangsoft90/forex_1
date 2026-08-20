@@ -1,3 +1,4 @@
+import { Sentry } from '@/lib/sentry'; // Sentry.init() runs on native import
 import {
   DarkTheme,
   DefaultTheme,
@@ -100,7 +101,7 @@ function I18nGate({ children }: { children: ReactNode }) {
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }
 
-export default function RootLayout() {
+function RootLayoutInner() {
   return (
     <AuthProvider>
       <I18nGate>
@@ -112,3 +113,6 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+// Wrap with Sentry for automatic error boundary + touch/tracing instrumentation.
+export default Sentry.wrap(RootLayoutInner);
