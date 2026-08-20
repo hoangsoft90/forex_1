@@ -1,16 +1,13 @@
 /**
  * sentry.native.ts — Sentry error tracking initialization (Android/iOS).
  *
- * DSN is read from EXPO_PUBLIC_SENTRY_DSN env var (set in .env or build env).
- * If DSN is empty/missing, Sentry is disabled (no-op) — safe for dev/test.
+ * DSN is read from EXPO_PUBLIC_SENTRY_DSN env var.
+ * If DSN is empty/missing, Sentry is disabled (no-op).
  *
- * Features enabled:
- * - Error monitoring (crashes, unhandled exceptions)
- * - Performance tracing (sample rate configurable)
- * - Session replay on errors
- *
- * Source maps are auto-uploaded via @sentry/react-native/metro plugin
- * when SENTRY_AUTH_TOKEN is set during build.
+ * IMPORTANT: We do NOT use Sentry.wrap() because it blocks the JS thread
+ * on device and causes app to hang on startup. Instead, Sentry.init() runs
+ * in background for error capture only. React's built-in error boundary
+ * handles crash UI.
  */
 
 import * as SentryLib from '@sentry/react-native';
@@ -18,19 +15,37 @@ import * as SentryLib from '@sentry/react-native';
 const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
 if (dsn) {
-  SentryLib.init({
-    dsn,
-    // TracesSampleRate: 1.0 = capture 100% of transactions (dev/beta).
-    // Lower to 0.1–0.2 for production to reduce cost.
-    tracesSampleRate: __DEV__ ? 1.0 : 0.2,
-    // Session replay: capture replays for all errors + 10% of sessions.
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    integrations: [SentryLib.mobileReplayIntegration()],
-    // Enable debug logging in dev only.
-    debug: __DEV__,
-  });
+  try {
+    SentryLib.init({
+      dsn,
+      tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+      // Enable debug logging in dev only.
+      debug: __DEV__,
+      // Minimal init — no replay, no heavy integrations to avoid blocking JS thread.
+    });
+  } catch {
+    // Silent fail — Sentry is non-critical.
+  }
 }
 
-/** Re-export Sentry API for use in _layout.tsx (Sentry.wrap). */
-export const Sentry = SentryLib;
+/** Re-export Sentry API for use in _layout.tsx (wrap is no-op — we don't wrap). */
+export const Sentry = {
+  init: () => {},
+  /** No-op: Sentry.wrap() causes app hang on device. Use React ErrorBoundary instead. */
+  wrap: (Component: React.ComponentType) => Component,
+  captureException: (e: unknown) => {
+    try { SentryLib.captureException(e); } catch {}
+  },
+  captureMessage: (msg: string) => {
+    try { SentryLib.captureMessage(msg); } catch {}
+  },
+  withScope: (fn: (scope: unknown) => void) => {
+    try { SentryLib.withScope(fn as any); } catch {}
+  },
+  setTag: (key: string, value: string) => {
+    try { SentryLib.setTag(key, value); } catch {}
+  },
+  setUser: (user: Record<string, string>) => {
+    try { SentryLib.setUser(user); } catch {}
+  },
+};
