@@ -23,6 +23,8 @@ import {
 import i18n from '@/i18n';
 import { getAdUnitId, isAdmobConfigured, TEST_ADS, TEST_DEVICE_IDS } from '@/lib/ads-config';
 
+export { isAdmobConfigured };
+
 /**
  * Khởi tạo AdMob + đăng ký test device (gọi 1 lần lúc app start).
  * Khi TEST_ADS=false và có TEST_DEVICE_IDS → các device đó luôn nhận test ads.
