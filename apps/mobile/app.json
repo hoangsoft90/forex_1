@@ -30,6 +30,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
+      "enable_ads": false,
       "test_ads": false
     },
     "plugins": [

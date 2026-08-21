@@ -6,15 +6,25 @@ import { Platform } from 'react-native';
  * Đây là FILE CẤU HÌNH DUY NHẤT cho ads — sửa ở đây, không sửa rải rác.
  *
  * Các chế độ:
- *   - `TEST_ADS = true`  → dùng TEST ad unit IDs của Google.
+ *   - `ENABLE_ADS = false` → TẮT toàn bộ ads (banner, rewarded, interstitial).
+ *     App chạy normal, KHÔNG gọi AdMob SDK, KHÔNG hiển thị quảng cáo.
+ *   - `ENABLE_ADS = true` + `TEST_ADS = true` → dùng TEST ad unit IDs của Google.
  *     Ad sẽ hiện "Test ad" (watermark), KHÔNG bị AdMob giới hạn tài khoản.
- *   - `TEST_ADS = false` → dùng ID THẬT từ biến môi trường.
- *     Chỉ đổi khi đã có AdMob account + ad unit thật + device test.
+ *   - `ENABLE_ADS = true` + `TEST_ADS = false` → dùng ID THẬT từ AdMob dashboard.
+ *     Chỉ dùng khi đã có AdMob account + ad unit thật + device test.
  */
+
+/**
+ * Master flag — bật/tắt toàn bộ ads.
+ * false = ads tắt hoàn toàn (banner, rewarded, interstitial đều không chạy).
+ * true = ads bật (xem TEST_ADS để biết test hay prod).
+ */
+export const ENABLE_ADS = false;
 
 /**
  * Flag test ads — false khi dùng ad unit thật.
  * Đổi thành true nếu cần quay lại test mode.
+ * Chỉ có hiệu lực khi ENABLE_ADS = true.
  */
 export const TEST_ADS = false;
 
@@ -73,8 +83,10 @@ export function getAdUnitId(kind: 'banner' | 'interstitial' | 'rewarded'): strin
 
 /**
  * Kiểm tra AdMob đã được cấu hình chưa.
- * Luôn trả true khi TEST_ADS=true (test IDs luôn có sẵn).
+ * Trả false nếu ENABLE_ADS=false (tắt hoàn toàn).
+ * Trả true nếu TEST_ADS=true (test IDs luôn có sẵn).
  */
 export function isAdmobConfigured(): boolean {
+  if (!ENABLE_ADS) return false;
   return TEST_ADS || Boolean(PROD_IDS.android.banner || PROD_IDS.android.rewarded);
 }

@@ -11,7 +11,7 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getAdUnitId, TEST_ADS } from '@/lib/ads-config';
+import { getAdUnitId, ENABLE_ADS, TEST_ADS } from '@/lib/ads-config';
 
 type Props = {
   /** Nếu true → ẩn banner (vd màn hình cần toàn màn hình) */
@@ -22,7 +22,7 @@ export default function AdBanner({ hidden = false }: Props) {
   const insets = useSafeAreaInsets();
   const unitId = getAdUnitId('banner');
 
-  if (hidden || !unitId) return null;
+  if (hidden || !ENABLE_ADS || !unitId) return null;
 
   return (
     <View style={[styles.wrap, { paddingBottom: insets.bottom }]}>
