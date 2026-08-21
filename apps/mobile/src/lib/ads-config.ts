@@ -19,14 +19,14 @@ import { Platform } from 'react-native';
  * false = ads tắt hoàn toàn (banner, rewarded, interstitial đều không chạy).
  * true = ads bật (xem TEST_ADS để biết test hay prod).
  */
-export const ENABLE_ADS = false;
+export const ENABLE_ADS = true;
 
 /**
  * Flag test ads — false khi dùng ad unit thật.
  * Đổi thành true nếu cần quay lại test mode.
  * Chỉ có hiệu lực khi ENABLE_ADS = true.
  */
-export const TEST_ADS = false;
+export const TEST_ADS = true;
 
 /** Test ad unit IDs chính thức của Google (an toàn 100%). */
 export const TEST_IDS = {

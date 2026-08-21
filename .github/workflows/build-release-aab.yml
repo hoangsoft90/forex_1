@@ -101,7 +101,7 @@ jobs:
         working-directory: apps/mobile/android
         run: ./gradlew bundleRelease
         env:
-          SENTRY_UPLOAD: 'false'
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
