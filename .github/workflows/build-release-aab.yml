@@ -1,0 +1,111 @@
+name: Build Release AAB (Signed)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+    env:
+      # Public-by-design: values are embedded in the APK/AAB. Protection = Supabase RLS.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://ycmuuczwnogybyklzpsa.supabase.co' }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljbXV1Y3p3bm9neWJ5a2x6cHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Mjg5ODQsImV4cCI6MjEwMjUwNDk4NH0.wojHxvi-3-0yyR_NlpMU3XsEmcLDjs1MB62Nv90Tcgg' }}
+      EXPO_PUBLIC_ADMOB_APP_ID: ca-app-pub-6917313063209470~2893035413
+      EXPO_PUBLIC_ADMOB_BANNER_UNIT_ID: ca-app-pub-6917313063209470/2681961047
+      EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID: ca-app-pub-6917313063209470/5327627069
+      EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID: ca-app-pub-6917313063209470/2079431012
+      EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: npm ci
+
+      - name: Generate native project (expo prebuild)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --clean --no-install
+        env:
+          CI: '1'
+
+      # ── Release keystore (fixed key, stored as GitHub Secret) ──────────
+      - name: Decode release keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > apps/mobile/android/app/release.keystore
+          echo "Keystore decoded ($(wc -c < apps/mobile/android/app/release.keystore) bytes)"
+
+      - name: Patch build.gradle for release signing
+        working-directory: apps/mobile/android
+        env:
+          KEY_ALIAS: trademind
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+        run: |
+          python3 << 'PYEOF'
+          import re
+          path = 'app/build.gradle'
+          with open(path) as f:
+              content = f.read()
+
+          # 1) Inject release config inside signingConfigs block (after debug closing brace)
+          content = re.sub(
+              r'(        \}\n    \}\n    buildTypes)',
+              r"""        }
+              release {
+                  storeFile file('release.keystore')
+                  storePassword System.getenv('STORE_PASSWORD') ?: ''
+                  keyAlias System.getenv('KEY_ALIAS') ?: ''
+                  keyPassword System.getenv('KEY_PASSWORD') ?: ''
+              }
+          }
+          buildTypes""",
+              content
+          )
+
+          # 2) In the release buildType, replace debug → release signingConfig
+          content = re.sub(
+              r'(release \{[^}]*signingConfig )signingConfigs\.debug',
+              r'\1signingConfigs.release',
+              content
+          )
+
+          with open(path, 'w') as f:
+              f.write(content)
+
+          # Verify
+          assert 'signingConfigs.release' in content, 'release signingConfig not found'
+          assert "storeFile file('release.keystore')" in content, 'keystore path not found'
+          print('build.gradle patched: release signing config injected')
+          PYEOF
+
+      - name: Build release AAB
+        working-directory: apps/mobile/android
+        run: ./gradlew bundleRelease
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-discipline-os-release-aab
+          path: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
