@@ -17,16 +17,16 @@
 7. **Navigation**: mọi nút back dùng `safeBack(router, fallback)`; onboarding KHÔNG dùng safeBack (replace trực tiếp). Không để màn hình nào treo spinner vĩnh viễn khi thiếu dữ liệu (deep-link).
 8. **Fetch dữ liệu**: cảnh giác vòng lặp vô hạn (state trong deps useCallback) — xem `patterns.md`. Lọc theo tuần/ngày phải kèm `trade_execution_id`/thời gian thật, không filter user_id trần.
 9. **Platform split**: dùng package native-only → tách `.native.ts(x)` + web stub, giữ API 2 bên giống nhau, verify `expo export --platform web`.
-10. **Ads**: chỉ sửa cấu hình ở `src/lib/ads-config.ts`. Giữ `TEST_ADS=true` trừ khi user yêu cầu ra mắt thật. Rewarded phải qua cooldown (`ad-cooldown.ts`).
+10. **Ads**: chỉ sửa cấu hình ở `src/lib/ads-config.ts`. Flag `ENABLE_ADS=false` (mặc định) tắt toàn bộ ads; `ENABLE_ADS=true` + `TEST_ADS=true/false` để bật. Rewarded phải qua cooldown (`ad-cooldown.ts`).
 11. **Edge function**: deploy từ root repo (`supabase functions deploy <tên>`), không từ `supabase/`. Giữ `verify_jwt=true`.
 12. **Không commit secrets**: `.env`, key, token — đều đã trong .gitignore; verify bằng `git status`/dry-run trước commit.
 
 ## Trước khi báo "xong"
 
-13. **Verify bắt buộc** (trong `apps/mobile`): `npx tsc --noEmit` = 0 lỗi · `npm run lint` = 0 · `npx jest` pass (226 test hiện tại, thêm test cho công thức mới).
+13. **Verify bắt buộc** (trong `apps/mobile`): `npx tsc --noEmit` = 0 lỗi · `npm run lint` = 0 · `npx jest` pass (319 test hiện tại, thêm test cho công thức mới).
 14. Đụng native/package mới → chạy `npx expo export --platform android` + `--platform web`.
 15. **Code review** theo AGENTS.md (OCR → Ponytail → Impact → Dead code → Pattern → Scope → Lessons) trước khi commit; task lớn phải chạy Task Completion Hook (ADR/memory/working.md).
-16. Build APK để tìm lỗi native thật: dùng skill `expo-apk-gh-push` (push code + trigger build trên GH Actions), KHÔNG chỉ dựa vào `expo export`. Repo: `https://github.com/hoangsoft90/forex_1`. Debug APK đã nhúng JS bundle (plugin `embed-js-in-debug` — `debuggableVariants = []` cho RN 0.86); nếu app cài vào máy không mở được (logcat "Unable to load script") → dùng skill `expo-apk-standalone`. Identity app hiện tại: package `com.trademind.trading`, tên "Trading Discipline OS" — KHÔNG dùng lại `com.hoangsoft90.mobile`. GitHub token lấy từ user (không lưu vào config/env).
+16. Build APK để tìm lỗi native thật: dùng skill `expo-apk-gh-push` (push code + trigger build trên GH Actions), KHÔNG chỉ dựa vào `expo export`. Repo: `https://github.com/hoangsoft90/forex_1`. Debug APK đã nhúng JS bundle (plugin `embed-js-in-debug` — `debuggableVariants = []` cho RN 0.86); nếu app cài vào máy không mở được (logcat "Unable to load script") → dùng skill `expo-apk-standalone`. Identity app hiện tại: package `com.trademind.discipline`, tên "Trading Discipline OS" — KHÔNG dùng lại `com.hoangsoft90.mobile` hay `com.trademind.trading`. GitHub token lấy từ user (không lưu vào config/env).
 17. Thay đổi schema/API → cập nhật ADR + nhắc user chạy migration trên SQL Editor.
 
 > 📌 **Independent Calculation** (audit/test công thức tài chính: lot size, R:R, Discipline/Edge Score, Cost of Indiscipline, delta Plan vs Reality) là quy tắc RIÊNG CỦA APP — đặt tại `apps/mobile/AGENTS.md` (xem để áp dụng).

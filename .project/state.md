@@ -19,6 +19,16 @@
 | In-app Guidance & Onboarding | ✅ Code xong | FeatureBadge/Tooltip/Spotlight/Tour; 269 test |
 | **Audit Checkpoint 1 (P0-P1 fix)** | ✅ 3 P0 + 10 P1 đã fix | Smoke test thật pass |
 | **Audit Checkpoint 2+3 (P14-P35 QA)** | ✅ Audit xong — **0 P0/P1 mới** | 10 P2, báo cáo `.project/audit-checkpoint2-3.md` |
+| **Audit Checkpoint 4 (Final Release Gate)** | ✅ Verdict: 🟡 READY FOR BETA | 287 test, 10 journeys PASS, 2 BLOCKED (device-only) |
+| **Sentry integration** | ✅ Cài + deploy | `@sentry/react-native` v7.11.0, DSN + auth token trong GH Secrets |
+| **37 symbols support** | ✅ Code xong | forex majors/crosses, commodities, indices, crypto — 319 test |
+| **Package rename** | ✅ `com.trademind.discipline` | iOS + Android + google-services + docs |
+| **AdMob real IDs** | ✅ Setup | `TEST_ADS=false`, banner/interstitial/rewarded IDs |
+| **Release AAB workflow** | ✅ Created | Signed keystore, Python patcher, `build-release-aab.yml` |
+| **Feature graphic + Privacy Policy** | ✅ Created + hosted | Firebase Hosting + GitHub Pages |
+| **ENABLE_ADS flag** | ✅ Default off | Master toggle trong `ads-config.ts` |
+| **User Guide** | ✅ Hosted | `trading-discipline-os.web.app/guide.html` |
+| **app-ads.txt** | ✅ Deployed | Firebase Hosting cho AdMob review |
 
 ## Todo còn lại (theo thứ tự ưu tiên)
 
@@ -27,8 +37,8 @@
 ### Ngay (blocker / bảo mật)
 - [x] **Chạy SQL mục 13 trên SQL Editor** (bảng `notification_preferences` + `feature_flags` + seed `INSTANT_AUDIT_ENABLED=false`) — ✅ **ĐÃ CHẠY** (verify 2026-08-18: 2 bảng + RLS + policies + seed đầy đủ).
 - [x] **Deploy lại edge function `parse-mt4`** — ✅ **ĐÃ REDEPLOY** (2026-08-18, VERSION 2, smoke test 3 lệnh parse sạch).
-- [ ] **User revoke GH token cũ** đã dán trong chat (`ghp_m31j33...`) — khẩn cấp bảo mật; skill mới đọc token mới từ env/chat.
-- [ ] **Commit + push** toàn bộ diff đang treo (Retention M0–8 + jest.setup + schema mục 13 + openspec + can_lam.md + .project/) — sau đó GH Actions tự build APK kiểm tra native (expo-notifications mới).
+- [ ] **User revoke GH token cũ** đã dán trong chat — khẩn cấp bảo mật; skill mới đọc token mới từ env/chat.
+- [x] **Commit + push** toàn bộ diff — ✅ **ĐÃ COMMIT + PUSH** (nhiều commits: `51f1a27`, `bfe02f7`, `7ca6d2d`, `f9348dc`, `45dc9cd`, `6fd04b1`, `bfe02f7`).
 - [x] **Chạy `supabase/migrations-phase2.sql` trên SQL Editor** (bảng `pro_unlocks`) — ✅ **ĐÃ CHẠY** (verify 2026-08-18: bảng + check constraint `method='admob_rewarded'` + FK cascade + RLS 4 policies + index đầy đủ).
 
 ### Chờ user cung cấp / xác nhận
@@ -39,8 +49,8 @@
 - [ ] Thanh toán thật Momo/VNPay (khi có merchant account) — bảng `subscriptions` đã sẵn schema.
 
 ### Phase 2 còn treo
-- [ ] **Tạo AdMob account** khi sẵn sàng: App ID + Banner/Rewarded Unit ID thật vào `.env` + `app.json`, đổi `TEST_ADS=false`.
-- [ ] **Test ads thật trên máy**: build APK (GH Actions) → xem log lấy device ID → đưa vào `TEST_DEVICE_IDS`.
+- [x] **Tạo AdMob account + setup thật** — ✅ **ĐÃ XONG** (2026-08-21): `ENABLE_ADS=true` + `TEST_ADS=false`, prod IDs (banner/interstitial/rewarded) trong `ads-config.ts` + `.env` + workflow. Hiện `ENABLE_ADS=false` (default off) — đổi thành `true` khi muốn bật ads.
+- [ ] **Test ads thật trên máy**: đổi `ENABLE_ADS=true` → build APK → xem log lấy device ID → đưa vào `TEST_DEVICE_IDS`.
 - [ ] Nguồn giá thật cho ATR + correlation (Phase 3 — hiện là ước lượng tham chiếu, đã ghi rõ trong UI).
 
 ### Bug nhỏ chưa fix (từ code review 2026-08-17)
@@ -69,6 +79,10 @@
 | 2026-08-18 | `auth-context` sau signOut không clear tier/expiry → tier cũ hiện vài giây khi login tài khoản khác | Clear `tier` + `subscriptionExpiresAt` trong nhánh session null của onAuthStateChange |
 | 2026-08-18 | `execution-widget` link plan không set `trade_plans.status='executed'` → plan bị suggest lại nhiều lần | Update status='executed' sau insert execution (fail chỉ warn, không chặn luồng) |
 | 2026-08-18 | `navigation.ts` `navigateWithFallback` dead code | Xóa function (verify 0 caller) |
+| 2026-08-21 | TradingView chart height container mismatch (Android WebView %) | `position:absolute` iframe + `position:relative` container, height px cụ thể |
+| 2026-08-21 | `isAdmobConfigured` missing re-export từ `admob.native.ts` → ProScreen crash | Thêm `export { isAdmobConfigured }` + try-catch bọc toàn bộ native calls |
+| 2026-08-21 | Sentry Metro serializer crash (`determineDebugIdFromBundleSource`) | Bỏ `withSentryConfig` hoàn toàn — Expo plugin đã xử lý source maps |
+| 2026-08-21 | App treo khi có `Sentry.wrap()` + `mobileReplayIntegration()` | Wrap() = no-op, bỏ replay, giữ minimal init |
 
 ## Quyết định quan trọng (decision log)
 
@@ -78,6 +92,10 @@
 | Analytics = bảng `analytics_events` trong Supabase (KHÔNG PostHog) | Free 100%, đơn giản; PostHog nối sau nếu cần dashboard |
 | Pro 24h qua AdMob rewarded — **cộng dồn** hạn hiện tại | Giả định user duyệt: đang Pro thì +24h từ hạn hiện tại, không ghi đè |
 | `TEST_ADS=true` mặc định | Tránh AdMob giới hạn tài khoản khi chưa có ad unit thật |
+| `ENABLE_ADS=false` mặc định (2026-08-21) | Master flag tắt toàn bộ ads — banner, rewarded, interstitial đều không chạy khi false |
+| Package `com.trademind.discipline` (2026-08-21) | Đổi từ `com.trademind.trading` — phù hợp tên app "Trading Discipline OS" |
+| Sentry minimal init (2026-08-21) | Bỏ `Sentry.wrap()` + replay (block JS thread trên device thật) — giữ `Sentry.init()` non-blocking cho error capture |
+| Firebase Hosting cho app-ads.txt + guide (2026-08-21) | AdMob yêu cầu `app-ads.txt` accessible publicly; user guide hosted cùng chỗ |
 | Cooldown rewarded = 5 phút (`AD_REWARD_COOLDOWN_MS`) | Giả định của agent — spec không ghi con số, dễ đổi 1 chỗ |
 | ATR/correlation = giá trị ƯỚC LƯỢNG tham chiếu | Chưa có nguồn giá thật; UI ghi rõ "ước lượng" |
 | Portfolio Risk ngưỡng = `min(maxRiskPerTrade×3, maxDailyLoss)` | Spec không ghi công thức — lấy quy ước an toàn (giả định cần duyệt) |
@@ -118,6 +136,12 @@
 | Cooldown rewarded 5 phút enforce SERVER-SIDE (edge `unlock-pro`, đồng hồ server, theo `pro_unlocks.granted_at`) | Fix P1-5: client-side AsyncStorage bị System Clock Attack (đổi giờ máy qua cooldown → spam ad cộng dồn Pro). Client vẫn lưu local để hiện đếm ngược; server là nguồn chân lý. ⚠️ Lỗ hổng còn lại: RLS cho phép user tự update `subscription_tier` trực tiếp (chưa fix — cần đổi RLS, đề xuất riêng) |
 | Nhập số tay dùng `parseDecimalInput` (chấp nhận "1,5"/"1.5", hàng nghìn VN "10.000") thay parseFloat | Fix P1-6: parseFloat("1,5") = 1 → risk/entry sai âm thầm ở form Fast Plan/balance/widget/constitution |
 | compute-deltas ghi delta bằng select → update/insert (KHÔNG upsert onConflict) | Fix pre-existing phát hiện qua smoke test thật: `plan_vs_reality_deltas` không có unique constraint trên trade_execution_id → upsert luôn fail PGRST102 → pipeline delta chưa từng ghi được dữ liệu |
+| `ENABLE_ADS=false` mặc định — master flag tắt toàn bộ ads | Flag mới (2026-08-21) trong `ads-config.ts`; `isAdmobConfigured()` return false → banner không render + `showRewardedAd()` fail-open; đổi thành true khi muốn bật ads |
+| Package `com.trademind.discipline` (đổi từ `com.trademind.trading`) | 2026-08-21: phù hợp tên app "Trading Discipline OS"; all files synced |
+| Sentry = minimal init (KHÔNG Sentry.wrap, KHÔNG replay) | 2026-08-21: `Sentry.wrap()` + `mobileReplayIntegration()` block JS thread → wrap() = no-op, giữ `Sentry.init()` non-blocking cho error capture |
+| Firebase Hosting cho app-ads.txt + user guide | 2026-08-21: `trading-discipline-os.web.app`; AdMob yêu cầu `app-ads.txt` accessible publicly |
+| Release AAB workflow = keystore trong GitHub Secrets + Python patcher | 2026-08-21: keystore RSA 2048 (alias `trademind`), `build-release-aab.yml` inject release signing config runtime |
+| 37 symbols hỗ trợ (từ 3) | 2026-08-21: forex majors/crosses, commodities, indices, crypto; centralized `pipSizeForSymbol()` trong risk-engine |
 
 ## Deploy / Môi trường
 

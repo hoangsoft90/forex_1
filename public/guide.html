@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Discipline OS — User Guide</title>
+  <style>
+    :root {
+      --navy: #0D2B52;
+      --blue: #208AEF;
+      --green: #22C55E;
+      --red: #EF4444;
+      --gold: #FFD700;
+      --dark: #081932;
+      --light: #F0F4F8;
+      --text: #1a2332;
+      --muted: #6b7a8d;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--light);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--navy) 100%);
+      color: white;
+      padding: 60px 20px 50px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.2rem; margin-bottom: 8px; }
+    .hero h1 span { color: var(--blue); }
+    .hero p { color: #b0c4de; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+    .hero .badge {
+      display: inline-block;
+      background: var(--blue);
+      color: white;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 16px;
+    }
+
+    /* Nav */
+    .toc {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow-x: auto;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .toc a {
+      display: inline-block;
+      color: var(--navy);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin: 2px 4px;
+      transition: all 0.2s;
+    }
+    .toc a:hover { background: var(--blue); color: white; }
+
+    /* Content */
+    .container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+
+    section {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    section h2 {
+      font-size: 1.4rem;
+      color: var(--navy);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    section h2 .icon { font-size: 1.5rem; }
+    section h3 {
+      font-size: 1.1rem;
+      color: var(--blue);
+      margin: 20px 0 10px;
+    }
+    p { margin-bottom: 12px; }
+    ul, ol { margin: 10px 0 16px 20px; }
+    li { margin-bottom: 6px; }
+
+    .step {
+      background: #f8fafc;
+      border-left: 4px solid var(--blue);
+      padding: 14px 18px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .step .num {
+      display: inline-block;
+      background: var(--blue);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    .tip {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+    }
+    .tip::before { content: "💡 "; }
+
+    .warn {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+    }
+    .warn::before { content: "⚠️ "; }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .feature-card .emoji { font-size: 1.8rem; margin-bottom: 6px; }
+    .feature-card h4 { font-size: 0.95rem; color: var(--navy); margin-bottom: 4px; }
+    .feature-card p { font-size: 0.82rem; color: var(--muted); margin: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th { background: #f1f5f9; color: var(--navy); font-weight: 600; }
+
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .footer a { color: var(--blue); }
+
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Trading <span>Discipline</span> OS</h1>
+  <p>Your Personal Trading Constitution — plan trades, follow rules, build unbreakable habits.</p>
+  <div class="badge">📱 User Guide v1.0</div>
+</div>
+
+<!-- Table of Contents -->
+<nav class="toc">
+  <a href="#getting-started">Getting Started</a>
+  <a href="#constitution">Trading Constitution</a>
+  <a href="#fast-plan">Fast Plan</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#journal">Journal & Delta</a>
+  <a href="#cost">Cost of Indiscipline</a>
+  <a href="#streak">Discipline Streak</a>
+  <a href="#danger-zone">Danger Zone</a>
+  <a href="#analytics">Analytics</a>
+  <a href="#pro">Pro Features</a>
+  <a href="#faq">FAQ</a>
+</nav>
+
+<div class="container">
+
+  <!-- Getting Started -->
+  <section id="getting-started">
+    <h2><span class="icon">🚀</span> Getting Started</h2>
+    <p>Trading Discipline OS helps you <strong>stop losing money due to bad habits</strong> and build the discipline that profitable traders have.</p>
+
+    <h3>Download & Install</h3>
+    <p>Download the latest APK from the releases page or install from Google Play Store (coming soon).</p>
+
+    <h3>Quick Onboarding (≤ 3 minutes)</h3>
+    <div class="step"><span class="num">1</span> <strong>Sign up</strong> with your email — no phone number needed.</div>
+    <div class="step"><span class="num">2</span> <strong>Set your first rule</strong> — choose from 5 templates (max risk%, max daily loss, no revenge trading, etc.)</div>
+    <div class="step"><span class="num">3</span> <strong>Paste your MT4/MT5 history</strong> (optional) — the app analyzes your past trades to build your personal danger zone.</div>
+    <div class="step"><span class="num">4</span> <strong>Start trading with a plan</strong> — use Fast Plan to create your first trade plan in 15 seconds.</div>
+
+    <div class="tip">The app works best after you have at least 15 trades logged. The more data you give it, the smarter its alerts become.</div>
+  </section>
+
+  <!-- Trading Constitution -->
+  <section id="constitution">
+    <h2><span class="icon">📋</span> Trading Constitution</h2>
+    <p>Your personal set of trading rules. The app checks every trade against these rules and <strong>interrupts you before you break them</strong>.</p>
+
+    <h3>How It Works</h3>
+    <ul>
+      <li><strong>Create rules</strong> — tap "Add Rule" and choose from templates or write custom ones.</li>
+      <li><strong>Set limits</strong> — each rule has a measurable threshold (e.g., "Max risk per trade: 2%").</li>
+      <li><strong>Adaptive Rules</strong> — some rules auto-adjust based on market volatility. When ATR is high, the app suggests reducing your risk.</li>
+      <li><strong>Decision Interruption</strong> — when you're about to break a rule, the app pops up a warning and asks you to confirm.</li>
+    </ul>
+
+    <h3>Rule Templates</h3>
+    <table>
+      <tr><th>Rule</th><th>Default</th><th>What It Does</th></tr>
+      <tr><td>Max Risk Per Trade</td><td>2%</td><td>Blocks trades that risk more than your limit</td></tr>
+      <tr><td>Max Daily Loss</td><td>5%</td><td>Stops you from trading after a bad day</td></tr>
+      <tr><td>No Revenge Trading</td><td>—</td><td>Detects revenge patterns and warns you</td></tr>
+      <tr><td>Max Open Positions</td><td>3</td><td>Limits concurrent exposure</td></tr>
+      <tr><td>Required Stop Loss</td><td>Yes</td><td>Forces you to set SL before entering</td></tr>
+    </table>
+
+    <div class="warn">You can have up to 3 rules for free. Pro (unlocked via rewarded ad) gives you unlimited rules.</div>
+  </section>
+
+  <!-- Fast Plan -->
+  <section id="fast-plan">
+    <h2><span class="icon">⚡</span> Fast Plan</h2>
+    <p>Create a complete trade plan in <strong>under 15 seconds</strong>.</p>
+
+    <h3>Steps</h3>
+    <div class="step"><span class="num">1</span> <strong>Select Symbol</strong> — choose from 37 supported pairs (EURUSD, XAUUSD, BTCUSD, US30, etc.)</div>
+    <div class="step"><span class="num">2</span> <strong>Enter Entry Price</strong> — your planned entry point</div>
+    <div class="step"><span class="num">3</span> <strong>Set Stop Loss</strong> — the app validates this against your rules</div>
+    <div class="step"><span class="num">4</span> <strong>Set Risk %</strong> — how much of your balance you're willing to risk</div>
+    <div class="step"><span class="num">5</span> <strong>Lot Size auto-calculated</strong> — the app does the math using forex-standard pip values</div>
+
+    <h3>What You Get</h3>
+    <ul>
+      <li><strong>Exact lot size</strong> based on your SL distance and risk %</li>
+      <li><strong>Risk validation</strong> — if it violates your rules, the app blocks saving</li>
+      <li><strong>TradingView chart</strong> integrated in the form for quick analysis</li>
+      <li><strong>Take Profit suggestions</strong> based on R:R ratio</li>
+    </ul>
+
+    <div class="tip">The lot size calculation works for all 37 supported symbols including forex majors, crosses, commodities (XAUUSD, XAGUSD), indices (US30, NAS100), and crypto (BTCUSD, ETHUSD).</div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard">
+    <h2><span class="icon">📊</span> Today Dashboard</h2>
+    <p>Your daily command center — everything you need to know at a glance.</p>
+
+    <h3>Widgets</h3>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="emoji">🏆</div>
+        <h4>Discipline Score</h4>
+        <p>Your daily score (0–100) based on how well you followed your plan. Compare with yesterday.</p>
+      </div>
+      <div class="feature-card">
+        <div class="emoji">📈</div>
+        <h4>Open Positions</h4>
+        <p>Live PnL for your currently open trades. See running profit/loss in real time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="emoji">⚡</div>
+        <h4>Quick Plan</h4>
+        <p>Tap to create a new trade plan instantly without leaving the dashboard.</p>
+      </div>
+      <div class="feature-card">
+        <div class="emoji">🔥</div>
+        <h4>Streak</h4>
+        <p>Number of consecutive trades that followed your plan. Keep it going!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Journal & Delta -->
+  <section id="journal">
+    <h2><span class="icon">📝</span> Journal & Delta</h2>
+    <p>Log your trades and compare <strong>what you planned vs what actually happened</strong>.</p>
+
+    <h3>Logging a Trade</h3>
+    <div class="step"><span class="num">1</span> After closing a position, tap "Log Trade" on the dashboard.</div>
+    <div class="step"><span class="num">2</span> Enter your actual entry, exit, and SL — or paste from MT4/MT5.</div>
+    <div class="step"><span class="num">3</span> The app auto-matches it to your plan and calculates the delta.</div>
+
+    <h3>Understanding Delta</h3>
+    <table>
+      <tr><th>Metric</th><th>What It Measures</th><th>Good Value</th></tr>
+      <tr><td>Entry Delta</td><td>How many pips your actual entry differed from plan</td><td>&lt; 5 pips</td></tr>
+      <tr><td>Risk Delta</td><td>How much your actual risk % differed from plan</td><td>&lt; 0.5%</td></tr>
+      <tr><td>SL Delta</td><td>Did you move your stop loss?</td><td>0 (never move SL)</td></tr>
+    </table>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="emoji">✅</div>
+        <h4>On Plan Badge</h4>
+        <p>Trade followed your plan within acceptable tolerance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="emoji">❌</div>
+        <h4>Off Plan Badge</h4>
+        <p>Trade deviated from plan — review what happened and why.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cost of Indiscipline -->
+  <section id="cost">
+    <h2><span class="icon">📈</span> Cost of Indiscipline</h2>
+    <p>The most powerful feature — see <strong>exactly how much money your rule-breaking costs you</strong>.</p>
+
+    <h3>How It Works</h3>
+    <p>The app calculates: <em>"If you had followed your plan perfectly, how much would you have made?"</em> Then it compares that to your actual result.</p>
+
+    <div class="step"><span class="num">1</span> You enter a trade with a plan (entry, SL, TP, lot size).</div>
+    <div class="step"><span class="num">2</span> You deviate from the plan (move SL, change lot, revenge trade).</div>
+    <div class="step"><span class="num">3</span> The app shows: <strong>"Following plan: +$X. Actual result: -$Y. Cost: $Z."</strong></div>
+
+    <div class="tip">This feature requires at least 30 logged trades with at least 3 plan deviations to generate meaningful data.</div>
+
+    <div class="warn">The hypothetical PnL is an estimate — it assumes you would have held to your TP. Real results may vary. Always check the disclaimer.</div>
+  </section>
+
+  <!-- Discipline Streak -->
+  <section id="streak">
+    <h2><span class="icon">🔥</span> Discipline Streak</h2>
+    <p>Count your consecutive trades that followed the plan. The longer your streak, the stronger your discipline muscle.</p>
+
+    <h3>How Streaks Work</h3>
+    <ul>
+      <li><strong>+1</strong> when a trade is logged as "On Plan"</li>
+      <li><strong>Reset to 0</strong> when a trade is "Off Plan"</li>
+      <li>Streak is based on <strong>entry time</strong>, not when you logged the trade</li>
+      <li>Importing old trades won't break your current streak</li>
+    </ul>
+
+    <div class="tip">Aim for a streak of 10+. Most profitable traders maintain streaks of 20+.</div>
+  </section>
+
+  <!-- Danger Zone -->
+  <section id="danger-zone">
+    <h2><span class="icon">🎯</span> Personal Danger Zone</h2>
+    <p>Discover <strong>when during the day you're most likely to break your rules</strong>.</p>
+
+    <h3>What It Shows</h3>
+    <ul>
+      <li><strong>Hourly heatmap</strong> — which hours have the most violations</li>
+      <li><strong>Pattern detection</strong> — recurring behaviors like "always revenge trade after 3pm"</li>
+      <li><strong>Timezone-aware</strong> — uses your profile timezone (not device timezone)</li>
+    </ul>
+
+    <h3>Using This Data</h3>
+    <p>When the app detects a pattern (≥ 5 violations at the same time), it will:</p>
+    <ol>
+      <li>Show a warning before you trade during danger hours</li>
+      <li>Suggest taking a break during high-risk periods</li>
+      <li>Track whether your danger zone improves over time</li>
+    </ol>
+  </section>
+
+  <!-- Analytics -->
+  <section id="analytics">
+    <h2><span class="icon">📊</span> Setup Analytics</h2>
+    <p>Group your trades by <strong>setup type</strong> and discover which strategies actually have an edge.</p>
+
+    <h3>How It Works</h3>
+    <ul>
+      <li><strong>Tag each trade</strong> with a setup type (e.g., "Breakout", "Pullback", "News")</li>
+      <li>The app calculates win rate, average R:R, and edge for each setup</li>
+      <li>Requires ≥ 30 trades per setup tag for statistical significance</li>
+    </ul>
+
+    <h3>Reading the Results</h3>
+    <table>
+      <tr><th>Metric</th><th>What It Means</th></tr>
+      <tr><td>Win Rate</td><td>% of trades that hit TP before SL</td></tr>
+      <tr><td>Average R:R</td><td>Mean reward-to-risk ratio</td></tr>
+      <tr><td>Edge Score</td><td>Combined score — positive = profitable edge</td></tr>
+      <tr><td>Sample Size</td><td>Number of trades — more = more reliable</td></tr>
+    </table>
+
+    <div class="tip">If a setup has a negative edge after 30+ trades, consider removing it from your strategy.</div>
+  </section>
+
+  <!-- Pro -->
+  <section id="pro">
+    <h2><span class="icon">💎</span> Pro Features</h2>
+    <p>Unlock advanced features for free by watching a rewarded ad.</p>
+
+    <h3>Free vs Pro</h3>
+    <table>
+      <tr><th>Feature</th><th>Free</th><th>Pro (24h)</th></tr>
+      <tr><td>Trading Rules</td><td>3 rules</td><td>Unlimited</td></tr>
+      <tr><td>Discipline Score</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Journal & Delta</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Trend Score</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Portfolio Correlation</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Weekly Audit</td><td>❌</td><td>✅</td></tr>
+    </table>
+
+    <h3>How to Unlock</h3>
+    <div class="step"><span class="num">1</span> Go to <strong>Settings → Pro</strong> or tap any Pro-locked feature.</div>
+    <div class="step"><span class="num">2</span> Tap <strong>"Watch Ad to Unlock"</strong>.</div>
+    <div class="step"><span class="num">3</span> Watch the full rewarded ad (usually 15–30 seconds).</div>
+    <div class="step"><span class="num">4</span> Pro features unlock for <strong>24 hours</strong>. After that, watch another ad to renew.</div>
+
+    <div class="tip">Pro resets daily — this encourages consistent engagement without paywalls.</div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <h2><span class="icon">❓</span> Frequently Asked Questions</h2>
+
+    <h3>Is my data private?</h3>
+    <p>Yes. Your trading data is protected by Row Level Security — only you can see it. We never sell or share your data with third parties.</p>
+
+    <h3>Which symbols are supported?</h3>
+    <p>37 symbols including:</p>
+    <ul>
+      <li><strong>Forex Majors:</strong> EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD, USDCHF</li>
+      <li><strong>Forex Crosses:</strong> EURJPY, GBPJPY, EURGBP, EURAUD, and more</li>
+      <li><strong>Commodities:</strong> XAUUSD (Gold), XAGUSD (Silver), USOIL, UKOIL</li>
+      <li><strong>Indices:</strong> US30, NAS100, SPX500, DE40, UK100</li>
+      <li><strong>Crypto:</strong> BTCUSD, ETHUSD, BNBUSD, SOLUSD</li>
+    </ul>
+
+    <h3>Can I import trades from MT4/MT5?</h3>
+    <p>Yes! Copy your trade history from MetaTrader (tab-separated format) and paste it into the app. The parser auto-detects columns and imports your trades.</p>
+
+    <h3>Does the app work offline?</h3>
+    <p>Core features (logging, viewing trades) work offline. Rules sync, danger zone analysis, and cloud backup require an internet connection.</p>
+
+    <h3>How do I change language?</h3>
+    <p>Go to <strong>Settings → Language</strong> and choose between English and Vietnamese. The app auto-detects your device language on first launch.</p>
+
+    <h3>What is the Discipline Score?</h3>
+    <p>A 0–100 score calculated daily based on: plan adherence, risk compliance, rule violations, and trade quality. Higher = more disciplined.</p>
+
+    <h3>Can I delete my account?</h3>
+    <p>Yes. Go to <strong>Settings → Account → Delete Account</strong>. All your data is permanently removed from our servers.</p>
+  </section>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p><strong>Trading Discipline OS</strong> — Built for traders who want to improve.</p>
+  <p>Contact: <a href="mailto:haibasoftware@gmail.com">haibasoftware@gmail.com</a></p>
+  <p style="margin-top:8px;">Trading involves risk. This app helps with discipline — not financial advice.</p>
+</div>
+
+</body>
+</html>
