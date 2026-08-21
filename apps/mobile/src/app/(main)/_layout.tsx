@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 
 import AdBanner from '@/components/ad-banner';
 import { initAdMob } from '@/lib/admob';
+import { ENABLE_ADS } from '@/lib/ads-config';
 import { configureNotificationHandler } from '@/lib/notification-manager';
 
 export default function MainLayout() {
   const { t } = useTranslation();
   useEffect(() => {
-    // Khởi tạo AdMob 1 lần (register test device) khi nhóm main mount.
-    initAdMob();
+    // Khởi tạo AdMob 1 lần khi ENABLE_ADS=true (register test device).
+    if (ENABLE_ADS) initAdMob();
     // Notification hiển thị cả khi app foreground (Module 8).
     configureNotificationHandler();
   }, []);

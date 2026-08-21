@@ -30,6 +30,11 @@ export { isAdmobConfigured };
  * Khi TEST_ADS=false và có TEST_DEVICE_IDS → các device đó luôn nhận test ads.
  */
 export function initAdMob(): void {
+  // Nếu ads tắt → KHÔNG init SDK (tránh native SDK auto-load ads).
+  if (!isAdmobConfigured()) {
+    console.log('[ads] ENABLE_ADS=false — skipping AdMob SDK init.');
+    return;
+  }
   try {
     MobileAds().setRequestConfiguration({
       testDeviceIdentifiers: TEST_DEVICE_IDS,
