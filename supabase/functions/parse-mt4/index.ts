@@ -193,15 +193,37 @@ function detectNumberLocale(rawText: string): NumberLocale {
 
 // ⚠️ KEEP IN SYNC: actual risk helpers khớp `apps/mobile/src/lib/risk-engine.ts`
 // (calculateActualRiskPercent / pipValuePerLot / distanceInPips).
+function pipSizeForSymbol(symbol: string): number {
+  if (['USDJPY','EURJPY','GBPJPY','AUDJPY','NZDJPY','CADJPY','CHFJPY'].includes(symbol)) return 0.01;
+  if (['XAUUSD','XPTUSD','XPDUSD','NAS100','SPX500','DE40','AUS200'].includes(symbol)) return 0.1;
+  if (['BTCUSD'].includes(symbol)) return 1;
+  if (['ETHUSD','BNBUSD','SOLUSD'].includes(symbol)) return 0.01;
+  if (['US30','UK100','JP225','HK33'].includes(symbol)) return 1;
+  if (['USOIL','UKOIL'].includes(symbol)) return 0.01;
+  if (symbol === 'XAGUSD') return 0.001;
+  return 0.0001;
+}
+
 function pipValuePerLot(symbol: string, price: number): number | null {
-  if (symbol === 'EURUSD') return 10; // 100k đơn vị × 0.0001, quote USD
-  if (symbol === 'XAUUSD') return 10; // 100 oz × 0.1, quote USD
-  if (symbol === 'USDJPY') return 1000 / price; // 100k × 0.01 = 1000 JPY → USD
+  const pip = pipSizeForSymbol(symbol);
+  if (['EURUSD','GBPUSD','AUDUSD','NZDUSD'].includes(symbol)) return 100_000 * pip;
+  if (['USDJPY','USDCAD','USDCHF'].includes(symbol)) return 100_000 * pip / price;
+  if (['EURJPY','GBPJPY','AUDJPY','NZDJPY','CADJPY','CHFJPY'].includes(symbol)) return 100_000 * pip / 150;
+  if (['EURGBP'].includes(symbol)) return 100_000 * pip * 1.27;
+  if (['EURAUD','GBPAUD'].includes(symbol)) return 100_000 * pip * 0.65;
+  if (['EURNZD'].includes(symbol)) return 100_000 * pip * 0.60;
+  if (['EURCAD','GBPCAD'].includes(symbol)) return 100_000 * pip * 0.74;
+  if (['EURCHF','GBPCHF'].includes(symbol)) return 100_000 * pip * 1.12;
+  if (symbol === 'XAUUSD') return 100 * pip;
+  if (symbol === 'XAGUSD') return 5_000 * pip;
+  if (['USOIL','UKOIL'].includes(symbol)) return 1_000 * pip;
+  if (['XPTUSD','XPDUSD'].includes(symbol)) return 100 * pip;
+  if (['US30','NAS100','SPX500','DE40','UK100','JP225','HK33','AUS200','BTCUSD','ETHUSD','BNBUSD','SOLUSD'].includes(symbol)) return pip;
   return null;
 }
 
 function distanceInPips(symbol: string, entry: number, sl: number): number {
-  const pip = symbol === 'USDJPY' ? 0.01 : symbol === 'XAUUSD' ? 0.1 : 0.0001;
+  const pip = pipSizeForSymbol(symbol);
   const raw = Math.abs(entry - sl) / pip;
   return Math.round(raw * 1e6) / 1e6;
 }

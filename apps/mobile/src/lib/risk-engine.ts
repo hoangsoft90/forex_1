@@ -4,12 +4,13 @@
  * Công thức lot size CHUẨN forex (mvp_scope mục 3):
  *   lotSize = (Balance × Risk%) / (khoảng cách Entry-SL theo pip × giá trị pip 1 lot)
  *
- * Pip value khác nhau theo từng cặp:
- *   - EURUSD: pip 0.0001, contract 100,000 đơn vị, quote USD → $10/pip/lot
- *   - USDJPY: pip 0.01, contract 100,000, quote JPY → (1000 JPY)/pip/lot, đổi USD theo giá
- *   - XAUUSD: pip 0.1, contract 100 oz, quote USD → $10/pip/lot
+ * Pip value khác nhau theo từng cặp — xem SYMBOL_PIP_CONFIG bên dưới.
  *
  * KHÔNG tự sáng tạo công thức — giữ đúng chuẩn tài chính forex.
+ *
+ * 📌 Lưu ý cross-rate: symbol cross (EURGBP, EURJPY...) cần rate của cặp quote→USD
+ *    để tính pip value chính xác. Hiện dùng approximate rate (fallback trong config).
+ *    Nếu có live cross rates, truyền qua pipValuePerLot() param thứ 3.
  */
 
 export type PipValueConfig = {
@@ -19,32 +20,117 @@ export type PipValueConfig = {
   contractSize: number;
   /**
    * Hệ số quy đổi pip value về USD theo giá hiện tại.
-   * Quote USD → 1; quote JPY → 1/giá (vì pip value tính bằng JPY, chia cho tỷ giá).
+   * Quote USD → 1; quote JPY → 1/giá; cross → approximate rate.
    */
   quoteToUsdFactor: (price: number) => number;
 };
 
-export type SymbolKey = 'EURUSD' | 'XAUUSD' | 'USDJPY';
+// ── Symbol Groups ──────────────────────────────────────────────────────────
 
-/** Cấu hình pip value theo từng cặp (giá trị chuẩn tài chính). */
-export const SYMBOL_PIP_CONFIG: Record<SymbolKey, PipValueConfig> = {
-  EURUSD: {
-    pipSize: 0.0001,
-    contractSize: 100_000,
-    quoteToUsdFactor: () => 1,
-  },
-  USDJPY: {
-    pipSize: 0.01,
-    contractSize: 100_000,
-    // 1 pip = 1000 JPY/lot → đổi USD: 1000 / USDJPY (giá hiện tại)
-    quoteToUsdFactor: (price) => 1 / price,
-  },
-  XAUUSD: {
-    pipSize: 0.1,
-    contractSize: 100, // 100 oz / lot
-    quoteToUsdFactor: () => 1,
-  },
+/** Forex Majors — quote USD */
+const FOREX_MAJORS_USD: Record<string, PipValueConfig> = {
+  EURUSD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1 },
+  GBPUSD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1 },
+  AUDUSD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1 },
+  NZDUSD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1 },
 };
+
+/** Forex Majors — base USD (quote là ngoại tệ, cần inverse rate) */
+const FOREX_MAJORS_INVERSE: Record<string, PipValueConfig> = {
+  USDJPY:  { pipSize: 0.01,   contractSize: 100_000, quoteToUsdFactor: (p) => 1 / p },
+  USDCAD:  { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: (p) => 1 / p },
+  USDCHF:  { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: (p) => 1 / p },
+};
+
+/** Forex Crosses — JPY quote (cần USDJPY rate; approximate ≈ 150) */
+const FOREX_CROSSES_JPY: Record<string, PipValueConfig> = {
+  EURJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+  GBPJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+  AUDJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+  NZDJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+  CADJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+  CHFJPY: { pipSize: 0.01, contractSize: 100_000, quoteToUsdFactor: () => 1 / 150 },
+};
+
+/** Forex Crosses — GBP quote (cần GBPUSD rate; approximate ≈ 1.27) */
+const FOREX_CROSSES_GBP: Record<string, PipValueConfig> = {
+  EURGBP: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1.27 },
+};
+
+/** Forex Crosses — AUD quote (cần AUDUSD rate; approximate ≈ 0.65) */
+const FOREX_CROSSES_AUD: Record<string, PipValueConfig> = {
+  EURAUD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 0.65 },
+  GBPAUD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 0.65 },
+};
+
+/** Forex Crosses — NZD quote (cần NZDUSD rate; approximate ≈ 0.60) */
+const FOREX_CROSSES_NZD: Record<string, PipValueConfig> = {
+  EURNZD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 0.60 },
+};
+
+/** Forex Crosses — CAD quote (cần USDCAD rate → 1/USDCAD; approximate ≈ 0.74) */
+const FOREX_CROSSES_CAD: Record<string, PipValueConfig> = {
+  EURCAD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 0.74 },
+  GBPCAD: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 0.74 },
+};
+
+/** Forex Crosses — CHF quote (cần USDCHF rate → 1/USDCHF; approximate ≈ 1.12) */
+const FOREX_CROSSES_CHF: Record<string, PipValueConfig> = {
+  EURCHF: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1.12 },
+  GBPCHF: { pipSize: 0.0001, contractSize: 100_000, quoteToUsdFactor: () => 1.12 },
+};
+
+/** Commodities — quote USD */
+const COMMODITIES: Record<string, PipValueConfig> = {
+  XAUUSD: { pipSize: 0.1,   contractSize: 100,   quoteToUsdFactor: () => 1 },       // Gold: 100 oz/lot
+  XAGUSD: { pipSize: 0.001, contractSize: 5_000, quoteToUsdFactor: () => 1 },       // Silver: 5000 oz/lot
+  USOIL:  { pipSize: 0.01,  contractSize: 1_000, quoteToUsdFactor: () => 1 },       // WTI Crude: 1000 bbl/lot
+  UKOIL:  { pipSize: 0.01,  contractSize: 1_000, quoteToUsdFactor: () => 1 },       // Brent Crude: 1000 bbl/lot
+  XPTUSD: { pipSize: 0.1,   contractSize: 100,   quoteToUsdFactor: () => 1 },       // Platinum: 100 oz/lot
+  XPDUSD: { pipSize: 0.1,   contractSize: 100,   quoteToUsdFactor: () => 1 },       // Palladium: 100 oz/lot
+};
+
+/** Indices — quote USD, contract = 1 unit (point-based) */
+const INDICES: Record<string, PipValueConfig> = {
+  US30:   { pipSize: 1,    contractSize: 1, quoteToUsdFactor: () => 1 },   // Dow Jones
+  NAS100: { pipSize: 0.1,  contractSize: 1, quoteToUsdFactor: () => 1 },   // Nasdaq 100
+  SPX500: { pipSize: 0.1,  contractSize: 1, quoteToUsdFactor: () => 1 },   // S&P 500
+  DE40:   { pipSize: 0.1,  contractSize: 1, quoteToUsdFactor: () => 1 },   // DAX
+  UK100:  { pipSize: 1,    contractSize: 1, quoteToUsdFactor: () => 1 },   // FTSE
+  JP225:  { pipSize: 1,    contractSize: 1, quoteToUsdFactor: () => 1 },   // Nikkei
+  HK33:   { pipSize: 1,    contractSize: 1, quoteToUsdFactor: () => 1 },   // Hang Seng
+  AUS200: { pipSize: 0.1,  contractSize: 1, quoteToUsdFactor: () => 1 },   // ASX 200
+};
+
+/** Crypto — quote USD, contract = 1 unit */
+const CRYPTO: Record<string, PipValueConfig> = {
+  BTCUSD: { pipSize: 1,    contractSize: 1, quoteToUsdFactor: () => 1 },
+  ETHUSD: { pipSize: 0.01, contractSize: 1, quoteToUsdFactor: () => 1 },
+  BNBUSD: { pipSize: 0.01, contractSize: 1, quoteToUsdFactor: () => 1 },
+  SOLUSD: { pipSize: 0.01, contractSize: 1, quoteToUsdFactor: () => 1 },
+};
+
+// ── Combined Config ────────────────────────────────────────────────────────
+
+export const SYMBOL_PIP_CONFIG: Record<string, PipValueConfig> = {
+  ...FOREX_MAJORS_USD,
+  ...FOREX_MAJORS_INVERSE,
+  ...FOREX_CROSSES_JPY,
+  ...FOREX_CROSSES_GBP,
+  ...FOREX_CROSSES_AUD,
+  ...FOREX_CROSSES_NZD,
+  ...FOREX_CROSSES_CAD,
+  ...FOREX_CROSSES_CHF,
+  ...COMMODITIES,
+  ...INDICES,
+  ...CRYPTO,
+};
+
+/**
+ * Union type của tất cả symbols được hỗ trợ — dùng cho type safety.
+ * Bất kỳ symbol nào trong SYMBOL_PIP_CONFIG đều là SymbolKey hợp lệ.
+ */
+export type SymbolKey = keyof typeof SYMBOL_PIP_CONFIG;
 
 export function isSupportedSymbol(symbol: string): symbol is SymbolKey {
   return symbol in SYMBOL_PIP_CONFIG;
@@ -62,6 +148,12 @@ export function distanceInPips(symbol: SymbolKey, entry: number, sl: number): nu
   const cfg = SYMBOL_PIP_CONFIG[symbol];
   const raw = Math.abs(entry - sl) / cfg.pipSize;
   return Math.round(raw * 1e6) / 1e6; // round 6 chữ số thập phân để tránh 0.1-0.095 float error
+}
+
+/** Bước giá 1 pip theo symbol — dùng chung với deltas.ts, cost-of-indiscipline.ts. */
+export function pipSizeForSymbol(symbol: string): number {
+  const cfg = SYMBOL_PIP_CONFIG[symbol as SymbolKey];
+  return cfg ? cfg.pipSize : 0.0001; // fallback: pip chuẩn forex
 }
 
 export type LotSizeParams = {

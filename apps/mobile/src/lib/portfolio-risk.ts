@@ -34,11 +34,27 @@ export type PortfolioRiskResult = {
   positions: (OpenPosition & { riskPercentEffective: number })[];
 };
 
-/** Hệ số tương quan ước lượng giữa các cặp (quy ước thị trường, tham chiếu). */
+/** Hệ số tương quan ước lượng giữa các cặp (quy ước thị trường, tham chiếu).
+ * Ước lượng trung bình lịch sử — UI phải ghi rõ "ước lượng tham chiếu". */
 export const ESTIMATED_CORRELATIONS: Record<string, Record<string, number>> = {
-  EURUSD: { USDJPY: 0.35, XAUUSD: -0.2 },
-  USDJPY: { EURUSD: 0.35, XAUUSD: -0.15 },
-  XAUUSD: { EURUSD: -0.2, USDJPY: -0.15 },
+  // Forex Majors
+  EURUSD: { USDJPY: 0.35, GBPUSD: 0.85, AUDUSD: 0.70, NZDUSD: 0.65, XAUUSD: -0.20, USDCAD: -0.55, USDCHF: -0.88 },
+  GBPUSD: { USDJPY: 0.30, AUDUSD: 0.60, NZDUSD: 0.55, XAUUSD: -0.15, USDCAD: -0.50, USDCHF: -0.80 },
+  AUDUSD: { USDJPY: 0.40, NZDUSD: 0.90, XAUUSD: 0.30, USDCAD: -0.45, USDCHF: -0.65 },
+  NZDUSD: { USDJPY: 0.35, XAUUSD: 0.25, USDCAD: -0.40, USDCHF: -0.60 },
+  USDJPY: { XAUUSD: -0.15, USDCAD: 0.30, USDCHF: 0.80 },
+  USDCAD: { USDCHF: 0.55 },
+  // Gold & Silver
+  XAUUSD: { XAGUSD: 0.85, USOIL: -0.10 },
+  XAGUSD: { USOIL: -0.05 },
+  // Oil
+  USOIL: { UKOIL: 0.95 },
+  // Indices (tương quan cao giữa các chỉ số US)
+  US30: { NAS100: 0.90, SPX500: 0.95 },
+  NAS100: { SPX500: 0.92 },
+  // JPY crosses (tương quan cao với USDJPY)
+  EURJPY: { GBPJPY: 0.80, AUDJPY: 0.75 },
+  GBPJPY: { AUDJPY: 0.70 },
 };
 
 export function correlationBetween(a: string, b: string): number | null {

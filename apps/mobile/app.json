@@ -30,7 +30,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
-      "test_ads": true
+      "test_ads": false
     },
     "plugins": [
       "expo-router",
@@ -45,8 +45,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+          "androidAppId": "ca-app-pub-6917313063209470~2893035413",
+          "iosAppId": "ca-app-pub-6917313063209470~2893035413"
         }
       ],
       [

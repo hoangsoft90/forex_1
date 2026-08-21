@@ -97,8 +97,8 @@ describe('correlationBetween', () => {
     expect(correlationBetween('EURUSD', 'XAUUSD')).toBe(-0.2);
   });
 
-  it('cặp không có → null', () => {
-    expect(correlationBetween('EURUSD', 'GBPUSD')).toBeNull();
+  it('cặp không có trong bảng → null', () => {
+    expect(correlationBetween('EURUSD', 'FAKEUSD')).toBeNull();
   });
 });
 
@@ -124,7 +124,7 @@ describe('correlationMatrix', () => {
   });
 
   it('symbol lạ → bỏ qua cặp không có hệ số', () => {
-    const m = correlationMatrix(['EURUSD', 'GBPUSD']);
+    const m = correlationMatrix(['EURUSD', 'FAKEUSD']);
     expect(m).toHaveLength(0);
   });
 });

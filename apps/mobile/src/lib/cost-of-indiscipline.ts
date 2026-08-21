@@ -19,7 +19,7 @@
  */
 
 import i18n from '@/i18n';
-import { isSupportedSymbol, pipValuePerLot } from '@/lib/risk-engine';
+import { isSupportedSymbol, pipValuePerLot, pipSizeForSymbol } from '@/lib/risk-engine';
 
 export const MIN_TRADES_FOR_COST = 30;
 export const MIN_DEVIATED_FOR_COST = 3;
@@ -80,12 +80,9 @@ export function hypotheticalPnlAtTp(
   return sign * pips * pv * lotSize;
 }
 
-/** Bước giá 1 pip theo symbol (dùng chung với risk-engine). */
+/** Bước giá 1 pip theo symbol — dùng centralized từ risk-engine. */
 function pipStep(symbol: string): number {
-  // USDJPY 3 chữ số thập phân; còn lại 5 (XAUUSD 2). Đúng cấu hình trong risk-engine.
-  if (symbol === 'USDJPY') return 0.01;
-  if (symbol === 'XAUUSD') return 0.1;
-  return 0.0001;
+  return pipSizeForSymbol(symbol);
 }
 
 /** 1 lệnh lệch plan — breakdown chi tiết cho màn Pro (Module 4 gating). */

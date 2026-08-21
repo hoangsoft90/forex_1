@@ -12,6 +12,8 @@
  *   - KHÔNG có SL adjustment nào
  */
 
+import { pipSizeForSymbol } from './risk-engine';
+
 export type DeltaInput = {
   plannedEntry: number;
   actualEntry: number;
@@ -35,12 +37,8 @@ export type DeltaResult = {
 export const ENTRY_DEVIATION_MAX_PIPS = 5;
 export const RISK_DEVIATION_MAX_PERCENT = 0.2;
 
-/** Khoảng cách 1 pip theo symbol (dùng chung với risk-engine). */
-export function pipSizeForSymbol(symbol: string): number {
-  if (symbol === 'USDJPY') return 0.01;
-  if (symbol === 'XAUUSD') return 0.1;
-  return 0.0001; // EURUSD & các cặp khác
-}
+/** Re-export cho backward compat (nếu có caller bên ngoài dùng). */
+export { pipSizeForSymbol };
 
 /** Tính delta cho 1 execution vs plan. */
 export function computeDeltas(symbol: string, input: DeltaInput): DeltaResult {

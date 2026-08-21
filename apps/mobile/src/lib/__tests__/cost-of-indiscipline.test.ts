@@ -170,18 +170,18 @@ describe('hypotheticalPnlAtTp', () => {
     expect(hypotheticalPnlAtTp('EURUSD', 'buy', 0, 1.1, 1.11)).toBe(0);
   });
 
-  it('BUG-FIX: symbol ngoài 3 cặp hỗ trợ (GBPUSD import MT4) → 0, KHÔNG crash', () => {
-    // trước đây crash vì pipValuePerLot(symbol as SymbolKey) với cfg undefined
-    expect(hypotheticalPnlAtTp('GBPUSD', 'buy', 0.1, 1.27, 1.29)).toBe(0);
-    expect(hypotheticalPnlAtTp('EURJPY', 'sell', 0.5, 161.5, 160.9)).toBe(0);
+  it('BUG-FIX: symbol không hỗ trợ (FAKEUSD) → 0, KHÔNG crash', () => {
+    // symbol không có trong SYMBOL_PIP_CONFIG → isSupportedSymbol=false → return 0
+    expect(hypotheticalPnlAtTp('FAKEUSD', 'buy', 0.1, 1.27, 1.29)).toBe(0);
+    expect(hypotheticalPnlAtTp('FAKEJPY', 'sell', 0.5, 161.5, 160.9)).toBe(0);
   });
 
-  it('BUG-FIX: computeCostOfIndiscipline không crash với execution symbol lạ', () => {
+  it('BUG-FIX: computeCostOfIndiscipline không crash với symbol không hỗ trợ', () => {
     const executions = [
       ...Array.from({ length: 30 }, (_, i) => exec(`p${i}`, 5)),
-      exec('d1', -25, 'GBPUSD', 'buy', 0.1),
-      exec('d2', -40, 'GBPUSD', 'buy', 0.1),
-      exec('d3', -15, 'GBPUSD', 'buy', 0.1),
+      exec('d1', -25, 'FAKEUSD', 'buy', 0.1),
+      exec('d2', -40, 'FAKEUSD', 'buy', 0.1),
+      exec('d3', -15, 'FAKEUSD', 'buy', 0.1),
     ];
     const followedByExec: Record<string, boolean> = {};
     executions.forEach((e) => (followedByExec[e.id] = !e.id.startsWith('d')));
@@ -190,9 +190,10 @@ describe('hypotheticalPnlAtTp', () => {
       d2: plan(1.27, 1.26, 1.29),
       d3: plan(1.27, 1.26, 1.29),
     };
-    // KHÔNG throw — lệnh lệch plan symbol lạ bị loại khỏi hypothetical (0 đóng góp)
+    // KHÔNG throw — symbol không hỗ trợ → hypotheticalPnlAtTp trả 0 → lệnh lệch plan đóng góp 0 vào hypothetical
     const r = computeCostOfIndiscipline({ executions, followedByExec, plansByExec });
-    expect(r.skippedIncomplete).toBe(0); // vẫn đủ dữ liệu plan
-    expect(r.hypotheticalPnl).toBeCloseTo(30 * 5, 4); // chỉ pnl thật của lệnh theo plan
+    expect(r.skippedIncomplete).toBe(0); // plan data đủ → không bị skip
+    // hypothetical = pnl thật 30 lệnh × $5 + 3 lệnh lệch plan × 0 (unsupported) = 150
+    expect(r.hypotheticalPnl).toBeCloseTo(30 * 5, 4);
   });
 });

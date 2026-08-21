@@ -20,8 +20,20 @@ const ENTRY_DEVIATION_MAX_PIPS = 5;
 const RISK_DEVIATION_MAX_PERCENT = 0.2;
 
 function pipSizeForSymbol(symbol: string): number {
-  if (symbol === 'USDJPY') return 0.01;
-  if (symbol === 'XAUUSD') return 0.1;
+  // Forex JPY pairs + crosses
+  if (['USDJPY','EURJPY','GBPJPY','AUDJPY','NZDJPY','CADJPY','CHFJPY'].includes(symbol)) return 0.01;
+  // Commodities & indices with 0.1 pip
+  if (['XAUUSD','XPTUSD','XPDUSD','NAS100','SPX500','DE40','AUS200'].includes(symbol)) return 0.1;
+  // Crypto
+  if (['BTCUSD'].includes(symbol)) return 1;
+  if (['ETHUSD','BNBUSD','SOLUSD'].includes(symbol)) return 0.01;
+  // Indices with 1 pip
+  if (['US30','UK100','JP225','HK33'].includes(symbol)) return 1;
+  // Commodities with 0.01 pip
+  if (['USOIL','UKOIL'].includes(symbol)) return 0.01;
+  // Silver
+  if (symbol === 'XAGUSD') return 0.001;
+  // Default: standard forex pip
   return 0.0001;
 }
 
@@ -32,9 +44,30 @@ function round(n: number, digits: number): number {
 
 // ⚠️ KEEP IN SYNC: helpers khớp `apps/mobile/src/lib/risk-engine.ts`.
 function pipValuePerLot(symbol: string, price: number): number | null {
-  if (symbol === 'EURUSD') return 10;
-  if (symbol === 'XAUUSD') return 10;
-  if (symbol === 'USDJPY') return 1000 / price;
+  const pip = pipSizeForSymbol(symbol);
+  // Forex majors (quote USD)
+  if (['EURUSD','GBPUSD','AUDUSD','NZDUSD'].includes(symbol)) return 100_000 * pip;
+  // Forex majors (base USD → inverse)
+  if (['USDJPY','USDCAD','USDCHF'].includes(symbol)) return 100_000 * pip / price;
+  // JPY crosses (approx USDJPY=150)
+  if (['EURJPY','GBPJPY','AUDJPY','NZDJPY','CADJPY','CHFJPY'].includes(symbol)) return 100_000 * pip / 150;
+  // GBP crosses (approx GBPUSD=1.27)
+  if (['EURGBP'].includes(symbol)) return 100_000 * pip * 1.27;
+  // AUD crosses (approx AUDUSD=0.65)
+  if (['EURAUD','GBPAUD'].includes(symbol)) return 100_000 * pip * 0.65;
+  // NZD crosses (approx NZDUSD=0.60)
+  if (['EURNZD'].includes(symbol)) return 100_000 * pip * 0.60;
+  // CAD crosses (approx USDCAD=1.35 → 1/1.35=0.74)
+  if (['EURCAD','GBPCAD'].includes(symbol)) return 100_000 * pip * 0.74;
+  // CHF crosses (approx USDCHF=0.89 → 1/0.89=1.12)
+  if (['EURCHF','GBPCHF'].includes(symbol)) return 100_000 * pip * 1.12;
+  // Commodities (quote USD)
+  if (symbol === 'XAUUSD') return 100 * pip;       // 100 oz
+  if (symbol === 'XAGUSD') return 5_000 * pip;     // 5000 oz
+  if (['USOIL','UKOIL'].includes(symbol)) return 1_000 * pip;  // 1000 bbl
+  if (['XPTUSD','XPDUSD'].includes(symbol)) return 100 * pip;  // 100 oz
+  // Indices & Crypto (contract = 1)
+  if (['US30','NAS100','SPX500','DE40','UK100','JP225','HK33','AUS200','BTCUSD','ETHUSD','BNBUSD','SOLUSD'].includes(symbol)) return 1 * pip;
   return null;
 }
 
