@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.trademind.trading"
+      "bundleIdentifier": "com.trademind.discipline"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundColor": "#ffffff",
         "barStyle": "dark-content"
       },
-      "package": "com.trademind.trading"
+      "package": "com.trademind.discipline"
     },
     "web": {
       "output": "single",

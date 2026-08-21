@@ -152,7 +152,7 @@
 - **CI**: GitHub Actions build debug APK mỗi lần push main (không cần EAS token); plugin nhúng JS bundle vào debug APK (`debuggableVariants=[]` cho RN 0.86)
 - **Env inject CI**: `EXPO_PUBLIC_SUPABASE_URL/ANON_KEY/ADMOB_*` set trong workflow (public-by-design, lớp bảo vệ thật là RLS)
 - **Test tự động**: **269 test** — công thức (lot size, delta, violation, score, ATR, portfolio, cooldown, parser), i18n (9 base + 7 content-en), guidance (20 lib + 7 component)
-- **Identity**: package `com.trademind.trading`, tên app "Trading Discipline OS", icon Shield+Candlestick
+- **Identity**: package `com.trademind.discipline`, tên app "Trading Discipline OS", icon Shield+Candlestick
 
 ---
 

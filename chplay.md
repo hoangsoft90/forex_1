@@ -294,7 +294,7 @@ Caption: "Con số thật: thiếu kỷ luật cost bao nhiêu tiền mỗi tu�
 
 | Item | Value |
 |---|---|
-| Package | `com.trademind.trading` |
+| Package | `com.trademind.discipline` |
 | Version | 1.0.0 |
 | Min SDK | 24 (Android 7.0) |
 | Target SDK | 36 |
