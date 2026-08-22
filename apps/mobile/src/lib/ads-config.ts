@@ -26,7 +26,7 @@ export const ENABLE_ADS = true;
  * Đổi thành true nếu cần quay lại test mode.
  * Chỉ có hiệu lực khi ENABLE_ADS = true.
  */
-export const TEST_ADS = true;
+export const TEST_ADS = false;
 
 /** Test ad unit IDs chính thức của Google (an toàn 100%). */
 export const TEST_IDS = {
