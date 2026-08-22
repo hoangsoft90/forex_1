@@ -102,6 +102,9 @@ jobs:
         run: ./gradlew bundleRelease
         env:
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          KEY_ALIAS: trademind
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
